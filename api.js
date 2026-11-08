@@ -10,12 +10,13 @@ export default async(req)=>{
   const admin=()=>E.ADMIN_PASSWORD&&req.headers.get("x-admin")===E.ADMIN_PASSWORD;
   const b=req.method==="POST"?await req.json().catch(()=>({})):{};
   async function notify(t){
-    if(!E.CALLMEBOT_KEY)return;
+    if(!E.CALLMEBOT_KEY&&!(E.TELEGRAM_BOT_TOKEN&&E.TELEGRAM_CHAT_ID))return;
     const h=new Date().toISOString().slice(0,13), rl=await get("rl",{h:"",n:0});
     if(rl.h!==h){rl.h=h;rl.n=0}
     if(rl.n>=80)return;
     rl.n++; await db.setJSON("rl",rl);
-    await fetch(`https://api.callmebot.com/whatsapp.php?phone=${WA}&apikey=${E.CALLMEBOT_KEY}&text=${encodeURIComponent(t)}`).catch(()=>{});
+    if(E.CALLMEBOT_KEY)await fetch(`https://api.callmebot.com/whatsapp.php?phone=${WA}&apikey=${E.CALLMEBOT_KEY}&text=${encodeURIComponent(t)}`).catch(()=>{});
+    if(E.TELEGRAM_BOT_TOKEN&&E.TELEGRAM_CHAT_ID)await fetch(`https://api.telegram.org/bot${E.TELEGRAM_BOT_TOKEN}/sendMessage`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({chat_id:E.TELEGRAM_CHAT_ID,text:t})}).catch(()=>{});
   }
   if(path==="products"&&req.method==="GET")return J(await get("products",[]));
   if(path==="products"&&req.method==="POST"){
