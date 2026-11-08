@@ -95,6 +95,7 @@ input,textarea{padding:11px;border:1px solid var(--line);border-radius:8px;backg
 <a class="btn alt" id="mIg" target="_blank" rel="noopener">Message on Instagram</a>
 <a class="btn alt" id="mMail" target="_blank" rel="noopener">Email on Gmail</a></form></dialog>
 
+<dialog id="ud"><button class="x" id="udx" aria-label="Close">×</button><div class="fm" id="ub"></div></dialog>
 <div class="ov" id="ov"></div>
 <aside id="cart" aria-label="Your cart"><div class="top">Your cart<button class="x" id="cx" aria-label="Close cart">×</button></div><div id="items"></div><div id="co"></div></aside>
 
@@ -111,7 +112,7 @@ function flush(){if(LOG.length<=sentN||location.hash==="#admin")return;const d=L
 addEventListener("pagehide",flush);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flush()});
 const igl="https://ig.me/m/"+IG,gml="https://mail.google.com/mail/?view=cm&to="+MAIL;
 ["fIg","mIg"].forEach(i=>$(i).href=igl);["fMail","mMail"].forEach(i=>$(i).href=gml);
-let P=[],cat="All",cart=[],cur=null,size=null;
+let P=[],cat="All",cart=[],cur=null,size=null,ST={upi:"",name:"",qr:"",online:false};
 try{cart=JSON.parse(localStorage.getItem("cr_cart")||"[]")}catch(e){}
 const save=()=>{try{localStorage.setItem("cr_cart",JSON.stringify(cart))}catch(e){}};
 const bg=p=>p.img?`background-image:url('${p.img}')`:`background:hsl(${(p.id%360)} 28% 34%)`;
@@ -139,7 +140,7 @@ $("pbody").onclick=e=>{const s=e.target.closest("[data-s]");
  if(e.target.id==="add"&&addCur()){$("pd").close();openCart()}
  if(e.target.id==="buy"&&addCur()){ev("buy",cur.n);$("pd").close();openCart()}};
 $("pdx").onclick=()=>$("pd").close();
-[$("pd"),$("md")].forEach(d=>d.onclick=e=>{if(e.target===d)d.close()});
+[$("pd"),$("md"),$("ud")].forEach(d=>d.onclick=e=>{if(e.target===d)d.close()});
 
 const total=()=>cart.reduce((a,i)=>a+i.p*i.q,0);
 function render(){$("cnt").textContent=cart.reduce((a,i)=>a+i.q,0);
@@ -148,7 +149,8 @@ function render(){$("cnt").textContent=cart.reduce((a,i)=>a+i.q,0);
  if(!$("f")){$("co").innerHTML=`<div class="total"><span>Total</span><span id="tot"></span></div><form id="f" novalidate>
  <label>Full name<input id="fn" autocomplete="name"></label><label>Phone number<input id="fp" inputmode="tel" autocomplete="tel"></label>
  <label>Email (for your receipt)<input id="fe" type="email" autocomplete="email"></label><label>Full address with pincode<textarea id="fa" rows="3" autocomplete="street-address"></textarea></label>
- <div class="err" id="fr" role="alert"></div><button class="btn dk" id="pay" type="submit">Pay securely</button></form>`;$("f").onsubmit=e=>{e.preventDefault();pay()}}
+ <div class="err" id="fr" role="alert"></div>${ST.online?'<button class="btn dk" id="pay" type="submit">Pay online (cards, UPI, net banking)</button>':""}${ST.upi?`<button class="btn ${ST.online?"alt":"dk"}" id="upib" type="button">Pay by UPI QR</button>`:""}${!ST.online&&!ST.upi?'<div class="err">Payment is not available yet. Message us on Instagram to order.</div>':""}</form>`;
+ $("f").onsubmit=e=>{e.preventDefault();if(ST.online)pay();else if(ST.upi)upi()};if($("upib"))$("upib").onclick=upi}
  $("tot").textContent=money(total())}
 $("items").onclick=e=>{const b=e.target.closest("[data-k]");if(!b)return;const i=cart.find(x=>x.k===b.dataset.k);if(!i)return;
  if(b.dataset.d==="x")cart=cart.filter(x=>x!==i);else{i.q+=+b.dataset.d;if(i.q<1)cart=cart.filter(x=>x!==i)}save();render()};
@@ -171,6 +173,22 @@ async function pay(){const n=$("fn").value.trim(),ph=$("fp").value.replace(/\D/g
     else{er.textContent="Payment went through but could not be confirmed. Message us on Instagram with your payment ID: "+x.razorpay_payment_id;$("pay").disabled=false}}}).open()
  }catch(e){er.textContent="Could not open payment. Check your connection and try again.";$("pay").disabled=false}}
 
+function cust(){const n=$("fn").value.trim(),ph=$("fp").value.replace(/\D/g,""),em=$("fe").value.trim(),ad=$("fa").value.trim();
+ if(!n||ph.length<10||ad.length<10){$("fr").textContent="Enter your name, a 10-digit phone number and your full address.";return null}
+ $("fr").textContent="";return{n,ph,em,ad}}
+function upi(){const d=cust();if(!d)return;ev("buy","UPI checkout "+money(total()));
+ const amt=total(),link="upi://pay?pa="+encodeURIComponent(ST.upi)+"&pn="+encodeURIComponent(ST.name||"Crossroads")+"&am="+amt+"&cu=INR&tn="+encodeURIComponent("Crossroads order");
+ $("ub").innerHTML=`<h3>Pay ${money(amt)} by UPI</h3>${ST.qr?`<img src="${ST.qr}" alt="UPI QR code" style="width:220px;max-width:100%;display:block;margin:6px auto;border-radius:8px">`:""}
+ <p style="text-align:center">UPI ID: <b>${esc(ST.upi)}</b></p><a class="btn alt" href="${link}">Open my UPI app</a>
+ <p style="color:var(--mut);font-size:.92rem">Pay exactly ${money(amt)}, then enter the UPI transaction ID (UTR) shown in your payment app.</p>
+ <label>UPI transaction ID<input id="ut" inputmode="numeric" autocomplete="off"></label><div class="err" id="ue" role="alert"></div><button class="btn dk" id="uok" type="button">I have paid</button>`;
+ $("ud").showModal();
+ $("uok").onclick=async()=>{const ut=$("ut").value.trim();if(ut.replace(/\W/g,"").length<8){$("ue").textContent="Enter the transaction ID from your payment app.";return}
+  $("uok").disabled=true;
+  const r=await post("order/manual",{items:cart.map(i=>({id:i.id,size:i.s,q:i.q})),customer:{name:d.n,phone:d.ph,email:d.em,address:d.ad},utr:ut}).catch(()=>({ok:false,d:{}}));
+  if(r.ok){cart=[];save();$("ud").close();$("co").innerHTML="";$("items").innerHTML=`<div class="empty"><p class="ok">Order received. Thank you!</p><p>We will check your payment and contact you to confirm delivery.</p></div>`;$("cnt").textContent=0}
+  else{$("ue").textContent=r.d.error||"Something went wrong. Try again.";$("uok").disabled=false}}}
+$("udx").onclick=()=>$("ud").close();
 $("bMsg").onclick=()=>{log("Opened the message box");$("me").textContent="";$("md").showModal()};$("mdx").onclick=()=>$("md").close();
 $("mf").onsubmit=async e=>{e.preventDefault();const t=$("mt").value.trim();if(!t){$("me").textContent="Write your message first.";return}
  const r=await post("message",{name:$("mn").value,contact:$("mc").value,text:t}).catch(()=>({ok:false,d:{}}));
@@ -185,7 +203,7 @@ function logout(){pw="";sessionStorage.removeItem("cr_pw");route()}
 async function adm(){const A=$("admin");
  if(!pw){A.innerHTML=`<div class="adm"><h2>Owner login</h2><form id="lf" style="padding:0"><label>Password<input id="lp" type="password"></label><div class="err" id="le"></div><button class="btn dk" type="submit">Log in</button></form></div>`;
   $("lf").onsubmit=async e=>{e.preventDefault();pw=$("lp").value;const r=await fetch("/api/admin",{headers:H()});if(r.ok){sessionStorage.setItem("cr_pw",pw);adm()}else{pw="";$("le").textContent="Wrong password."}};return}
- const r=await fetch("/api/admin",{headers:H()});if(!r.ok){logout();return}const D=await r.json(),e=editing&&P.find(p=>p.id===editing)||{};
+ const r=await fetch("/api/admin",{headers:H()});if(!r.ok){logout();return}try{ST=await (await fetch("/api/settings")).json()}catch(_){}const D=await r.json(),e=editing&&P.find(p=>p.id===editing)||{};
  A.innerHTML=`<div class="adm"><div class="row"><h2 style="margin:0;flex:1">Your products</h2><button class="link" id="lo">Log out</button></div>
  ${P.map(p=>`<div class="row">${p.img?`<img src="${p.img}" alt="">`:'<div class="th"></div>'}<div><b>${esc(p.n)}</b><br>${money(p.p)} · ${esc(p.c)}${p.sold?" · Sold out":""}</div><button class="link" data-e="${p.id}">Edit</button><button class="link" data-x="${p.id}">Delete</button></div>`).join("")||"<p>No products yet. Add your first one below.</p>"}
  <h2>${e.id?"Edit product":"Add a product"}</h2>
@@ -196,12 +214,19 @@ async function adm(){const A=$("admin");
  <label>Description (optional)<textarea id="pdsc" rows="2">${esc(e.d)}</textarea></label>
  <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="pso" style="width:auto" ${e.sold?"checked":""}>Mark as sold out</label>
  <div class="err" id="pfe"></div><button class="btn dk" type="submit">${e.id?"Save changes":"Add product"}</button></form>
- <h2>Paid orders and pending</h2>${D.orders.map(o=>`<div class="box"><b>${o.paid?"✅ Paid":"⏳ Not paid"} · ${money(o.total)}</b>\n${esc(o.lines.join("\n"))}\n${esc(o.name)} · ${esc(o.phone)} ${esc(o.email)}\n${esc(o.address)}</div>`).join("")||"<p>No orders yet.</p>"}
+ <h2>Payment settings (UPI)</h2>
+ <form id="sf" style="padding:0" novalidate><label>Your UPI ID (like name@bank)<input id="su" value="${esc(ST.upi)}"></label><label>Name shown to customers<input id="sn" value="${esc(ST.name)}"></label>
+ <label>QR code image (a screenshot of your UPI QR)<input id="sq" type="file" accept="image/*"></label>${ST.qr?`<img src="${ST.qr}" alt="Current QR" style="width:140px;border-radius:8px">`:""}
+ <div class="err" id="sfe"></div><button class="btn dk" type="submit">Save payment settings</button></form>
+ <h2>Paid orders and pending</h2>${D.orders.map(o=>`<div class="box"><b>${o.paid?"✅ Paid":"⏳ Not paid"} · ${money(o.total)}</b>\n${esc(o.lines.join("\n"))}\n${esc(o.name)} · ${esc(o.phone)} ${esc(o.email)}\n${esc(o.address)}${o.utr?"\nTxn ID: "+esc(o.utr):""}${o.manual&&!o.paid?`<br><button class="link" data-p="${esc(o.id)}">Mark as paid</button>`:""}</div>`).join("")||"<p>No orders yet.</p>"}
  <h2>Messages</h2>${D.messages.map(m=>`<div class="box"><b>${esc(m.name)} · ${esc(m.contact)}</b>\n${esc(m.text)}</div>`).join("")||"<p>No messages yet.</p>"}</div>`;
  $("lo").onclick=logout;
  A.onclick=async x=>{const b=x.target.closest("button");if(!b)return;
+  if(b.dataset.p){await post("orders/paid",{id:b.dataset.p},H());adm();return}
   if(b.dataset.e){editing=+b.dataset.e;adm();scrollTo(0,1e5)}
   if(b.dataset.x&&confirm("Delete this product?")){P=P.filter(p=>p.id!==+b.dataset.x);await saveP();adm()}};
+ $("sf").onsubmit=async x=>{x.preventDefault();const f=$("sq").files[0],qr=f?await shrink(f):(ST.qr||""),u=$("su").value.trim(),nm=$("sn").value.trim();
+  const r=await post("settings",{upi:u,name:nm,qr},H());$("sfe").className=r.ok?"ok":"err";$("sfe").textContent=r.ok?"Saved.":(r.d.error||"Could not save.");if(r.ok)Object.assign(ST,{upi:u,name:nm,qr})}
  $("pf").onsubmit=async x=>{x.preventDefault();const n=$("pn").value.trim(),pr=+$("pp").value;
   if(!n||!pr){$("pfe").textContent="Enter a name and a price.";return}
   const f=$("pi").files[0],img=f?await shrink(f):(e.img||""),o={id:e.id||Date.now(),n,c:$("pc").value.trim()||"Other",p:pr,o:+$("po").value||0,s:$("ps").value.split(",").map(s=>s.trim()).filter(Boolean),d:$("pdsc").value.trim(),sold:$("pso").checked,img};
@@ -210,7 +235,7 @@ async function adm(){const A=$("admin");
 
 function route(){const a=location.hash==="#admin";$("shop").hidden=a;$("admin").hidden=!a;if(a)adm()}
 addEventListener("hashchange",route);
-(async()=>{try{P=await (await fetch("/api/products")).json()}catch(e){P=[]}
+(async()=>{try{ST=await (await fetch("/api/settings")).json()}catch(e){}try{P=await (await fetch("/api/products")).json()}catch(e){P=[]}
  if(!Array.isArray(P))P=[];
  if(!P.length&&["127.0.0.1","localhost"].includes(location.hostname))P=[{id:11,n:"Sample Oxford Shirt",c:"Shirts",p:1299,o:1799,s:["S","M","L","XL"],d:"Preview only. Add your real products from #admin once the site is online."},{id:12,n:"Sample Sneakers",c:"Shoes",p:1899,o:0,s:["7","8","9","10"]},{id:13,n:"Sample Watch",c:"Watches",p:1499,o:1999,s:["One size"]},{id:14,n:"Sample Wallet",c:"Accessories",p:599,o:0,s:["One size"],sold:true}];cats();grid();render();route();if(location.hash!=="#admin")ev("open","",1)})();
 </script>

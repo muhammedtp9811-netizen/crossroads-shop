@@ -31,6 +31,32 @@ export default async(req,context)=>{
     }
     return J(r);
   }
+  if(path==="settings"&&req.method==="GET"){const t=await get("settings",{});return J({upi:t.upi||"",name:t.name||"",qr:t.qr||"",online:!!(E.RAZORPAY_KEY_ID&&E.RAZORPAY_KEY_SECRET)})}
+  if(path==="settings"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    await db.setJSON("settings",{upi:cut(b.upi,80),name:cut(b.name,60),qr:cut(b.qr,400000)});return J({ok:1});
+  }
+  if(path==="order/manual"){
+    const prods=await get("products",[]),c=b.customer||{},lines=[];let total=0;
+    for(const i of b.items||[]){
+      const p=prods.find(x=>x.id===i.id),q=Math.max(1,Math.min(10,+i.q||1));
+      if(!p||p.sold)return J({error:"An item in your cart is no longer available."},400);
+      lines.push(`${p.n} (${cut(i.size,20)}) x${q}`);total+=p.p*q;
+    }
+    const utr=String(b.utr||"").replace(/\W/g,"").slice(0,30);
+    if(!lines.length||!c.name||!c.phone||!c.address||utr.length<8)return J({error:"Fill in your details and the UPI transaction ID."},400);
+    const orders=await get("orders",[]);
+    if(orders.some(x=>x.utr===utr))return J({error:"This transaction ID was already used."},400);
+    orders.unshift({id:"upi"+Date.now(),lines,total,paid:false,manual:true,utr,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)});
+    await db.setJSON("orders",orders.slice(0,500));
+    await notify(`💰 UPI payment claimed ₹${total}\nTxn ID: ${utr}\n${lines.join("\n")}\n\n${c.name}\n${c.phone}\n${c.address}\nCheck your bank app, then mark it paid in #admin.`,true);
+    return J({ok:1});
+  }
+  if(path==="orders/paid"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const orders=await get("orders",[]),o=orders.find(x=>x.id===b.id);
+    if(o){o.paid=true;await db.setJSON("orders",orders)}return J({ok:1});
+  }
   if(path==="session"){
     const L=Array.isArray(b.log)?b.log.slice(0,60):[];
     if(L.length&&E.RESEND_API_KEY&&await allow()){
