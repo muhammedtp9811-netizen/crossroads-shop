@@ -104,7 +104,11 @@ const $=i=>document.getElementById(i),money=n=>"₹"+(+n).toLocaleString("en-IN"
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const post=(p,b,h,k)=>fetch("/api/"+p,{method:"POST",headers:Object.assign({"content-type":"application/json"},h||{}),body:JSON.stringify(b),keepalive:!!k}).then(r=>r.json().then(d=>({ok:r.ok,d})));
 const seen=new Set();
-function ev(type,name,once){const k=type+name;if(once&&seen.has(k))return;seen.add(k);post("event",{type,name},0,1).catch(()=>{})}
+const LOG=[],T={open:"Opened the store",view:"Looked at: ",cart:"Added to cart: ",buy:"Tapped Buy/Pay: "};let sentN=0;
+const log=x=>LOG.push({t:new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}),x});
+function ev(type,name,once){const k=type+name;if(once&&seen.has(k))return;seen.add(k);log((T[type]||type)+(name||""));post("event",{type,name},0,1).catch(()=>{})}
+function flush(){if(LOG.length<=sentN||location.hash==="#admin")return;const d=LOG.slice(sentN);sentN=LOG.length;try{navigator.sendBeacon("/api/session",new Blob([JSON.stringify({log:d,ref:document.referrer,ua:navigator.userAgent})],{type:"application/json"}))}catch(e){}}
+addEventListener("pagehide",flush);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flush()});
 const igl="https://ig.me/m/"+IG,gml="https://mail.google.com/mail/?view=cm&to="+MAIL;
 ["fIg","mIg"].forEach(i=>$(i).href=igl);["fMail","mMail"].forEach(i=>$(i).href=gml);
 let P=[],cat="All",cart=[],cur=null,size=null;
@@ -117,7 +121,7 @@ function cats(){const c=["All",...new Set(P.map(p=>p.c).filter(Boolean))];
 function grid(){const L=P.filter(p=>cat==="All"||p.c===cat);
  $("grid").innerHTML=L.length?L.map(p=>`<button class="card" data-id="${p.id}"><div class="ph" style="${bg(p)}">${p.img?"":esc(p.n)}${p.sold?'<span class="badge">Sold out</span>':""}</div><b>${esc(p.n)}</b><div class="price">${money(p.p)}${+p.o?`<s>${money(p.o)}</s>`:""}</div></button>`).join("")
  :`<div class="empty" style="grid-column:1/-1">New arrivals are on the way. Message us on Instagram to ask what's coming.</div>`}
-$("cats").onclick=e=>{const b=e.target.closest(".chip");if(b){cat=b.dataset.c;cats();grid()}};
+$("cats").onclick=e=>{const b=e.target.closest(".chip");if(b){cat=b.dataset.c;log("Browsed category: "+cat);cats();grid()}};
 $("grid").onclick=e=>{const b=e.target.closest(".card");if(b)openP(+b.dataset.id)};
 
 function openP(id){cur=P.find(p=>p.id===id);if(!cur)return;const S=cur.s&&cur.s.length?cur.s:["One size"];size=S.length===1?S[0]:null;
@@ -148,7 +152,7 @@ function render(){$("cnt").textContent=cart.reduce((a,i)=>a+i.q,0);
  $("tot").textContent=money(total())}
 $("items").onclick=e=>{const b=e.target.closest("[data-k]");if(!b)return;const i=cart.find(x=>x.k===b.dataset.k);if(!i)return;
  if(b.dataset.d==="x")cart=cart.filter(x=>x!==i);else{i.q+=+b.dataset.d;if(i.q<1)cart=cart.filter(x=>x!==i)}save();render()};
-function openCart(){$("cart").classList.add("on");$("ov").classList.add("on")}
+function openCart(){log("Opened the cart");$("cart").classList.add("on");$("ov").classList.add("on")}
 function closeCart(){$("cart").classList.remove("on");$("ov").classList.remove("on")}
 $("bCart").onclick=openCart;$("cx").onclick=closeCart;$("ov").onclick=closeCart;
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeCart()});
@@ -167,10 +171,10 @@ async function pay(){const n=$("fn").value.trim(),ph=$("fp").value.replace(/\D/g
     else{er.textContent="Payment went through but could not be confirmed. Message us on Instagram with your payment ID: "+x.razorpay_payment_id;$("pay").disabled=false}}}).open()
  }catch(e){er.textContent="Could not open payment. Check your connection and try again.";$("pay").disabled=false}}
 
-$("bMsg").onclick=()=>{$("me").textContent="";$("md").showModal()};$("mdx").onclick=()=>$("md").close();
+$("bMsg").onclick=()=>{log("Opened the message box");$("me").textContent="";$("md").showModal()};$("mdx").onclick=()=>$("md").close();
 $("mf").onsubmit=async e=>{e.preventDefault();const t=$("mt").value.trim();if(!t){$("me").textContent="Write your message first.";return}
  const r=await post("message",{name:$("mn").value,contact:$("mc").value,text:t}).catch(()=>({ok:false,d:{}}));
- if(r.ok){$("mt").value="";$("me").className="ok";$("me").textContent="Message sent. We will reply soon."}else{$("me").className="err";$("me").textContent=r.d.error||"Could not send. Try Instagram or Gmail instead."}};
+ if(r.ok){log("Sent a message");$("mt").value="";$("me").className="ok";$("me").textContent="Message sent. We will reply soon."}else{$("me").className="err";$("me").textContent=r.d.error||"Could not send. Try Instagram or Gmail instead."}};
 
 /* ---------- Owner admin: open yourwebsite/#admin ---------- */
 let pw=sessionStorage.getItem("cr_pw")||"",editing=null;
