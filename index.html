@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Crossroads Shopping</title>
+<meta name="description" content="Curated fashion and accessories delivered to your door.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#141A3C;--ink:#141A3C;--bg:#F4F5F9;--card:#fff;--line:#DDE1EE;--mut:#5A6385;--gold:#C79A3B;--err:#B3261E}
+@media(prefers-color-scheme:dark){:root{--ink:#EEF0FA;--bg:#0E1230;--card:#171C42;--line:#2B3268;--mut:#A8AFD3;--err:#FF8A80}}
+*{box-sizing:border-box;margin:0}
+body{font-family:Archivo,Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+button,input,textarea{font:inherit;color:inherit}a{color:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+header{position:sticky;top:0;z-index:20;background:var(--navy);color:#fff}
+header .wrap{display:flex;align-items:center;justify-content:space-between;height:60px;gap:12px}
+.logo{font-weight:800;font-stretch:112%;font-size:1.2rem;text-decoration:none}
+.logo small{font-weight:500;font-size:.78rem;opacity:.65;margin-left:6px}
+.hb{display:flex;gap:10px}
+.pill{border:1px solid rgba(255,255,255,.35);background:none;color:#fff;border-radius:999px;padding:7px 16px;font-weight:600;cursor:pointer}
+.pill.g{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:700}
+.cats{position:sticky;top:60px;z-index:19;background:var(--bg);border-bottom:1px solid var(--line)}
+.cats .wrap{display:flex;gap:8px;overflow-x:auto;padding-top:12px;padding-bottom:12px;scrollbar-width:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 20px;font-weight:600;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--navy);border-color:var(--navy);color:#fff}
+@media(prefers-color-scheme:dark){.chip[aria-pressed=true]{background:var(--gold);border-color:var(--gold);color:var(--navy)}}
+main{padding:28px 0 90px;min-height:70vh}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:30px 22px}
+.card{background:none;border:0;padding:0;text-align:left;cursor:pointer;display:block;width:100%}
+.ph{aspect-ratio:4/5;background:#2B3268 center/cover;border-radius:6px;display:flex;align-items:flex-end;padding:14px;color:#fff;font-weight:800;position:relative;overflow:hidden}
+.card .ph{transition:transform .3s}.card:hover .ph{transform:scale(1.02)}
+.badge{position:absolute;top:10px;left:10px;background:#fff;color:var(--navy);font-size:.8rem;font-weight:700;padding:3px 10px;border-radius:999px}
+.card b{display:block;margin-top:12px;font-weight:600}
+.price{font-weight:700;font-variant-numeric:tabular-nums}.price s{color:var(--mut);font-weight:400;margin-left:8px;font-size:.9rem}
+.empty{padding:60px 0;color:var(--mut);text-align:center}
+footer{border-top:1px solid var(--line);padding:26px 0;text-align:center;color:var(--mut);font-size:.92rem}
+footer a{margin:0 10px;font-weight:600;color:var(--ink)}
+.btn{display:block;width:100%;text-align:center;border:0;border-radius:10px;padding:13px 20px;font-weight:700;cursor:pointer;text-decoration:none;background:var(--gold);color:var(--navy)}
+.btn.dk{background:var(--navy);color:#fff}.btn.alt{background:none;border:2px solid var(--line);color:var(--ink)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+dialog{border:0;border-radius:16px;padding:0;max-width:780px;width:calc(100% - 28px);background:var(--card);color:var(--ink);overflow:visible}
+dialog::backdrop{background:rgba(10,12,30,.65)}
+.pm{display:grid;grid-template-columns:1fr 1fr}.pm .ph{aspect-ratio:auto;min-height:380px;border-radius:16px 0 0 16px}
+.pd{padding:26px;display:flex;flex-direction:column;gap:12px}.pd h3{font-size:1.5rem;font-weight:700}
+.sizes{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.sizes button{min-width:46px;padding:8px 12px;border:2px solid var(--line);border-radius:8px;background:none;cursor:pointer;font-weight:700}
+.sizes button[aria-pressed=true]{background:var(--navy);border-color:var(--navy);color:#fff}
+@media(prefers-color-scheme:dark){.sizes button[aria-pressed=true]{background:var(--gold);border-color:var(--gold);color:var(--navy)}}
+.x{position:absolute;right:10px;top:10px;z-index:2;border:0;background:var(--card);color:var(--ink);border-radius:50%;width:36px;height:36px;font-size:1.2rem;cursor:pointer}
+.ov{position:fixed;inset:0;background:rgba(10,12,30,.65);z-index:30;display:none}.ov.on{display:block}
+aside{position:fixed;top:0;right:0;bottom:0;width:min(430px,100%);background:var(--card);z-index:31;transform:translateX(100%);transition:transform .25s;overflow-y:auto}
+aside.on{transform:none}
+.top{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line);font-weight:700;font-size:1.15rem}
+.top .x{position:static}
+.it{display:flex;gap:12px;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--line)}
+.q{display:flex;gap:10px;align-items:center;margin-top:6px}.q button{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:none;cursor:pointer}
+.link{border:0;background:none;color:var(--mut);cursor:pointer;text-decoration:underline}
+form,.fm{padding:16px 20px 24px;display:flex;flex-direction:column;gap:10px}
+label{font-weight:600;font-size:.9rem;display:flex;flex-direction:column;gap:4px}
+input,textarea{padding:11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);width:100%}
+.err{color:var(--err);font-size:.9rem;min-height:1.2em}.ok{color:#1B7A3E;font-weight:600}
+.total{display:flex;justify-content:space-between;font-weight:800;font-size:1.15rem;padding:14px 20px 0}
+.adm{max-width:900px;margin:0 auto;padding:28px 20px 80px}.adm h2{margin:26px 0 10px}
+.row{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.row img,.row .th{width:54px;height:54px;border-radius:6px;object-fit:cover;background:#2B3268;flex:none}.row div{flex:1}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;font-size:.95rem;white-space:pre-wrap}
+@media(max-width:760px){.pm{grid-template-columns:1fr}.pm .ph{min-height:260px;border-radius:16px 16px 0 0}.two{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><a class="logo" href="./">Crossroads<small>shopping</small></a>
+<div class="hb"><button class="pill" id="bMsg">Message</button><button class="pill g" id="bCart">Cart (<span id="cnt">0</span>)</button></div></div></header>
+
+<div id="shop">
+<div class="cats"><div class="wrap" id="cats"></div></div>
+<main><div class="wrap"><div class="grid" id="grid"></div></div></main>
+<footer><a id="fIg" target="_blank" rel="noopener">Instagram</a><a id="fMail" target="_blank" rel="noopener">Gmail</a></footer>
+</div>
+<div id="admin" hidden></div>
+
+<dialog id="pd"><button class="x" id="pdx" aria-label="Close">×</button><div class="pm"><div class="ph" id="pimg"></div><div class="pd" id="pbody"></div></div></dialog>
+
+<dialog id="md"><button class="x" id="mdx" aria-label="Close">×</button>
+<form id="mf" novalidate><h3>Send us a message</h3>
+<label>Your name<input id="mn" autocomplete="name"></label>
+<label>Phone or email, so we can reply<input id="mc"></label>
+<label>Message<textarea id="mt" rows="4"></textarea></label>
+<div class="err" id="me" role="alert"></div>
+<button class="btn dk" type="submit">Send message</button>
+<a class="btn alt" id="mIg" target="_blank" rel="noopener">Message on Instagram</a>
+<a class="btn alt" id="mMail" target="_blank" rel="noopener">Email on Gmail</a></form></dialog>
+
+<div class="ov" id="ov"></div>
+<aside id="cart" aria-label="Your cart"><div class="top">Your cart<button class="x" id="cx" aria-label="Close cart">×</button></div><div id="items"></div><div id="co"></div></aside>
+
+<script>
+const IG="crossroads_shopping",MAIL="producingmj@gmail.com";
+const $=i=>document.getElementById(i),money=n=>"₹"+(+n).toLocaleString("en-IN");
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const post=(p,b,h,k)=>fetch("/api/"+p,{method:"POST",headers:Object.assign({"content-type":"application/json"},h||{}),body:JSON.stringify(b),keepalive:!!k}).then(r=>r.json().then(d=>({ok:r.ok,d})));
+const seen=new Set();
+function ev(type,name,once){const k=type+name;if(once&&seen.has(k))return;seen.add(k);post("event",{type,name},0,1).catch(()=>{})}
+const igl="https://ig.me/m/"+IG,gml="https://mail.google.com/mail/?view=cm&to="+MAIL;
+["fIg","mIg"].forEach(i=>$(i).href=igl);["fMail","mMail"].forEach(i=>$(i).href=gml);
+let P=[],cat="All",cart=[],cur=null,size=null;
+try{cart=JSON.parse(localStorage.getItem("cr_cart")||"[]")}catch(e){}
+const save=()=>{try{localStorage.setItem("cr_cart",JSON.stringify(cart))}catch(e){}};
+const bg=p=>p.img?`background-image:url('${p.img}')`:`background:hsl(${(p.id%360)} 28% 34%)`;
+
+function cats(){const c=["All",...new Set(P.map(p=>p.c).filter(Boolean))];
+ $("cats").innerHTML=c.map(x=>`<button class="chip" data-c="${esc(x)}" aria-pressed="${x===cat}">${esc(x)}</button>`).join("")}
+function grid(){const L=P.filter(p=>cat==="All"||p.c===cat);
+ $("grid").innerHTML=L.length?L.map(p=>`<button class="card" data-id="${p.id}"><div class="ph" style="${bg(p)}">${p.img?"":esc(p.n)}${p.sold?'<span class="badge">Sold out</span>':""}</div><b>${esc(p.n)}</b><div class="price">${money(p.p)}${+p.o?`<s>${money(p.o)}</s>`:""}</div></button>`).join("")
+ :`<div class="empty" style="grid-column:1/-1">New arrivals are on the way. Message us on Instagram to ask what's coming.</div>`}
+$("cats").onclick=e=>{const b=e.target.closest(".chip");if(b){cat=b.dataset.c;cats();grid()}};
+$("grid").onclick=e=>{const b=e.target.closest(".card");if(b)openP(+b.dataset.id)};
+
+function openP(id){cur=P.find(p=>p.id===id);if(!cur)return;const S=cur.s&&cur.s.length?cur.s:["One size"];size=S.length===1?S[0]:null;
+ ev("view",cur.n,1);const im=$("pimg");im.setAttribute("style",bg(cur));im.textContent=cur.img?"":cur.n;
+ $("pbody").innerHTML=`<h3>${esc(cur.n)}</h3><div class="price" style="font-size:1.3rem">${money(cur.p)}${+cur.o?`<s>${money(cur.o)}</s>`:""}</div>
+ ${cur.d?`<p style="color:var(--mut)">${esc(cur.d)}</p>`:""}
+ <div><b>${S.length===1?"Size":"Choose a size"}</b><div class="sizes" id="sz">${S.map(s=>`<button type="button" data-s="${esc(s)}" aria-pressed="${s===size}">${esc(s)}</button>`).join("")}</div></div>
+ <div class="err" id="pe"></div>
+ <button class="btn dk" id="buy" ${cur.sold?"disabled":""}>${cur.sold?"Sold out":"Buy now"}</button>
+ <button class="btn alt" id="add" ${cur.sold?"disabled":""}>Add to cart</button>`;$("pd").showModal()}
+function addCur(){if(!size){$("pe").textContent="Choose a size to continue.";return false}
+ const k=cur.id+"|"+size,f=cart.find(i=>i.k===k);if(f)f.q++;else cart.push({k,id:cur.id,n:cur.n,p:cur.p,s:size,q:1});save();render();ev("cart",cur.n+" ("+size+")");return true}
+$("pbody").onclick=e=>{const s=e.target.closest("[data-s]");
+ if(s){size=s.dataset.s;document.querySelectorAll("#sz button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.s===size));$("pe").textContent=""}
+ if(e.target.id==="add"&&addCur()){$("pd").close();openCart()}
+ if(e.target.id==="buy"&&addCur()){ev("buy",cur.n);$("pd").close();openCart()}};
+$("pdx").onclick=()=>$("pd").close();
+[$("pd"),$("md")].forEach(d=>d.onclick=e=>{if(e.target===d)d.close()});
+
+const total=()=>cart.reduce((a,i)=>a+i.p*i.q,0);
+function render(){$("cnt").textContent=cart.reduce((a,i)=>a+i.q,0);
+ if(!cart.length){$("items").innerHTML=`<div class="empty">Your cart is empty. Add a product to get started.</div>`;$("co").innerHTML="";return}
+ $("items").innerHTML=cart.map(i=>`<div class="it"><div><b>${esc(i.n)}</b><div style="color:var(--mut)">Size: ${esc(i.s)}</div><div class="q"><button data-k="${i.k}" data-d="-1" aria-label="Decrease">−</button>${i.q}<button data-k="${i.k}" data-d="1" aria-label="Increase">+</button></div></div><div style="text-align:right"><b>${money(i.p*i.q)}</b><br><button class="link" data-k="${i.k}" data-d="x">Remove</button></div></div>`).join("");
+ if(!$("f")){$("co").innerHTML=`<div class="total"><span>Total</span><span id="tot"></span></div><form id="f" novalidate>
+ <label>Full name<input id="fn" autocomplete="name"></label><label>Phone number<input id="fp" inputmode="tel" autocomplete="tel"></label>
+ <label>Email (for your receipt)<input id="fe" type="email" autocomplete="email"></label><label>Full address with pincode<textarea id="fa" rows="3" autocomplete="street-address"></textarea></label>
+ <div class="err" id="fr" role="alert"></div><button class="btn dk" id="pay" type="submit">Pay securely</button></form>`;$("f").onsubmit=e=>{e.preventDefault();pay()}}
+ $("tot").textContent=money(total())}
+$("items").onclick=e=>{const b=e.target.closest("[data-k]");if(!b)return;const i=cart.find(x=>x.k===b.dataset.k);if(!i)return;
+ if(b.dataset.d==="x")cart=cart.filter(x=>x!==i);else{i.q+=+b.dataset.d;if(i.q<1)cart=cart.filter(x=>x!==i)}save();render()};
+function openCart(){$("cart").classList.add("on");$("ov").classList.add("on")}
+function closeCart(){$("cart").classList.remove("on");$("ov").classList.remove("on")}
+$("bCart").onclick=openCart;$("cx").onclick=closeCart;$("ov").onclick=closeCart;
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeCart()});
+
+function loadRzp(){return new Promise((ok,no)=>{if(window.Razorpay)return ok();const s=document.createElement("script");s.src="https://checkout.razorpay.com/v1/checkout.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
+async function pay(){const n=$("fn").value.trim(),ph=$("fp").value.replace(/\D/g,""),em=$("fe").value.trim(),ad=$("fa").value.trim(),er=$("fr");
+ if(!n||ph.length<10||ad.length<10){er.textContent="Enter your name, a 10-digit phone number and your full address.";return}
+ er.textContent="";$("pay").disabled=true;ev("buy","Cart total "+money(total()));
+ try{const r=await post("pay/create",{items:cart.map(i=>({id:i.id,size:i.s,q:i.q})),customer:{name:n,phone:ph,email:em,address:ad}});
+  if(!r.ok){er.textContent=r.d.error||"Something went wrong. Try again.";$("pay").disabled=false;return}
+  await loadRzp();
+  new Razorpay({key:r.d.key,amount:r.d.amount,currency:"INR",order_id:r.d.order,name:"Crossroads Shopping",prefill:{name:n,contact:ph,email:em},theme:{color:"#141A3C"},
+   modal:{ondismiss:()=>{$("pay").disabled=false}},
+   handler:async x=>{const v=await post("pay/verify",{order_id:x.razorpay_order_id,payment_id:x.razorpay_payment_id,signature:x.razorpay_signature});
+    if(v.ok){cart=[];save();$("co").innerHTML="";$("items").innerHTML=`<div class="empty"><p class="ok">Payment received. Thank you!</p><p>We will contact you soon to confirm your delivery.</p></div>`;$("cnt").textContent=0}
+    else{er.textContent="Payment went through but could not be confirmed. Message us on Instagram with your payment ID: "+x.razorpay_payment_id;$("pay").disabled=false}}}).open()
+ }catch(e){er.textContent="Could not open payment. Check your connection and try again.";$("pay").disabled=false}}
+
+$("bMsg").onclick=()=>{$("me").textContent="";$("md").showModal()};$("mdx").onclick=()=>$("md").close();
+$("mf").onsubmit=async e=>{e.preventDefault();const t=$("mt").value.trim();if(!t){$("me").textContent="Write your message first.";return}
+ const r=await post("message",{name:$("mn").value,contact:$("mc").value,text:t}).catch(()=>({ok:false,d:{}}));
+ if(r.ok){$("mt").value="";$("me").className="ok";$("me").textContent="Message sent. We will reply soon."}else{$("me").className="err";$("me").textContent=r.d.error||"Could not send. Try Instagram or Gmail instead."}};
+
+/* ---------- Owner admin: open yourwebsite/#admin ---------- */
+let pw=sessionStorage.getItem("cr_pw")||"",editing=null;
+const H=()=>({"x-admin":pw});
+function shrink(file){return new Promise(ok=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const m=800,k=Math.min(1,m/Math.max(i.width,i.height)),c=document.createElement("canvas");c.width=i.width*k;c.height=i.height*k;c.getContext("2d").drawImage(i,0,0,c.width,c.height);ok(c.toDataURL("image/jpeg",.75))};i.src=r.result};r.readAsDataURL(file)})}
+async function saveP(){const r=await post("products",{products:P},H());if(!r.ok){alert(r.d.error||"Could not save");if(r.d.error)logout()}return r.ok}
+function logout(){pw="";sessionStorage.removeItem("cr_pw");route()}
+async function adm(){const A=$("admin");
+ if(!pw){A.innerHTML=`<div class="adm"><h2>Owner login</h2><form id="lf" style="padding:0"><label>Password<input id="lp" type="password"></label><div class="err" id="le"></div><button class="btn dk" type="submit">Log in</button></form></div>`;
+  $("lf").onsubmit=async e=>{e.preventDefault();pw=$("lp").value;const r=await fetch("/api/admin",{headers:H()});if(r.ok){sessionStorage.setItem("cr_pw",pw);adm()}else{pw="";$("le").textContent="Wrong password."}};return}
+ const r=await fetch("/api/admin",{headers:H()});if(!r.ok){logout();return}const D=await r.json(),e=editing&&P.find(p=>p.id===editing)||{};
+ A.innerHTML=`<div class="adm"><div class="row"><h2 style="margin:0;flex:1">Your products</h2><button class="link" id="lo">Log out</button></div>
+ ${P.map(p=>`<div class="row">${p.img?`<img src="${p.img}" alt="">`:'<div class="th"></div>'}<div><b>${esc(p.n)}</b><br>${money(p.p)} · ${esc(p.c)}${p.sold?" · Sold out":""}</div><button class="link" data-e="${p.id}">Edit</button><button class="link" data-x="${p.id}">Delete</button></div>`).join("")||"<p>No products yet. Add your first one below.</p>"}
+ <h2>${e.id?"Edit product":"Add a product"}</h2>
+ <form id="pf" style="padding:0" novalidate><label>Photo<input id="pi" type="file" accept="image/*"></label>
+ <label>Name<input id="pn" value="${esc(e.n)}"></label>
+ <div class="two"><label>Category (like Shirts)<input id="pc" value="${esc(e.c)}"></label><label>Sizes, separated by commas<input id="ps" value="${esc((e.s||[]).join(", "))}" placeholder="S, M, L, XL"></label></div>
+ <div class="two"><label>Price (₹)<input id="pp" type="number" min="1" value="${e.p||""}"></label><label>Old price (₹, optional)<input id="po" type="number" min="0" value="${e.o||""}"></label></div>
+ <label>Description (optional)<textarea id="pdsc" rows="2">${esc(e.d)}</textarea></label>
+ <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="pso" style="width:auto" ${e.sold?"checked":""}>Mark as sold out</label>
+ <div class="err" id="pfe"></div><button class="btn dk" type="submit">${e.id?"Save changes":"Add product"}</button></form>
+ <h2>Paid orders and pending</h2>${D.orders.map(o=>`<div class="box"><b>${o.paid?"✅ Paid":"⏳ Not paid"} · ${money(o.total)}</b>\n${esc(o.lines.join("\n"))}\n${esc(o.name)} · ${esc(o.phone)} ${esc(o.email)}\n${esc(o.address)}</div>`).join("")||"<p>No orders yet.</p>"}
+ <h2>Messages</h2>${D.messages.map(m=>`<div class="box"><b>${esc(m.name)} · ${esc(m.contact)}</b>\n${esc(m.text)}</div>`).join("")||"<p>No messages yet.</p>"}</div>`;
+ $("lo").onclick=logout;
+ A.onclick=async x=>{const b=x.target.closest("button");if(!b)return;
+  if(b.dataset.e){editing=+b.dataset.e;adm();scrollTo(0,1e5)}
+  if(b.dataset.x&&confirm("Delete this product?")){P=P.filter(p=>p.id!==+b.dataset.x);await saveP();adm()}};
+ $("pf").onsubmit=async x=>{x.preventDefault();const n=$("pn").value.trim(),pr=+$("pp").value;
+  if(!n||!pr){$("pfe").textContent="Enter a name and a price.";return}
+  const f=$("pi").files[0],img=f?await shrink(f):(e.img||""),o={id:e.id||Date.now(),n,c:$("pc").value.trim()||"Other",p:pr,o:+$("po").value||0,s:$("ps").value.split(",").map(s=>s.trim()).filter(Boolean),d:$("pdsc").value.trim(),sold:$("pso").checked,img};
+  if(e.id)P=P.map(p=>p.id===e.id?o:p);else P.unshift(o);
+  if(await saveP()){editing=null;adm();scrollTo(0,0)}}}
+
+function route(){const a=location.hash==="#admin";$("shop").hidden=a;$("admin").hidden=!a;if(a)adm()}
+addEventListener("hashchange",route);
+(async()=>{try{P=await (await fetch("/api/products")).json()}catch(e){P=[]}
+ if(!Array.isArray(P))P=[];cats();grid();render();route();if(location.hash!=="#admin")ev("open","",1)})();
+</script>
+</body>
+</html>
