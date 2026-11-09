@@ -230,6 +230,7 @@ dialog{border-radius:2px}
 <script>
 const IG="crossroads_shopping",MAIL="producingmj@gmail.com";
 const $=i=>document.getElementById(i),money=n=>"₹"+(+n).toLocaleString("en-IN");
+$("heroShop").addEventListener("click",e=>{e.preventDefault();$("collection").scrollIntoView({behavior:"smooth",block:"start"})});
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const post=(p,b,h,k)=>fetch("/api/"+p,{method:"POST",headers:Object.assign({"content-type":"application/json"},h||{}),body:JSON.stringify(b),keepalive:!!k}).then(r=>r.json().then(d=>({ok:r.ok,d})));
 const seen=new Set();
