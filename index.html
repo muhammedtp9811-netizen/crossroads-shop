@@ -32,7 +32,7 @@ main{padding:28px 0 90px;min-height:70vh}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:30px 22px}
 .card{background:none;border:0;padding:0;text-align:left;cursor:pointer;display:block;width:100%}
 .ph{aspect-ratio:4/5;background:#2B3268 center/cover;border-radius:6px;display:flex;align-items:flex-end;padding:14px;color:#fff;font-weight:800;position:relative;overflow:hidden}
-.card .ph{transition:transform .3s}.card:hover .ph{transform:scale(1.02)}
+.card .ph{transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s}.card:hover .ph{transform:translateY(-4px);box-shadow:0 14px 30px rgba(20,26,60,.14)}
 .badge{position:absolute;top:10px;left:10px;background:#fff;color:var(--navy);font-size:.8rem;font-weight:700;padding:3px 10px;border-radius:999px}
 .card b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;min-height:3em;margin-top:12px;font-weight:650;line-height:1.45}.card:hover b{color:var(--gold)}
 .price{font-weight:700;font-variant-numeric:tabular-nums}.price s{color:var(--mut);font-weight:400;margin-left:8px;font-size:.9rem}
@@ -91,7 +91,7 @@ footer{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 4px;padding:26
  .pd{padding:20px 18px}.cta .btn{width:100%}main{padding-top:18px}}
 @media(pointer:coarse){.q button{width:38px;height:38px}.sizes button{min-height:44px}.chip{padding-top:10px;padding-bottom:10px}}
 dialog{max-height:calc(100vh - 24px);overflow-y:auto}
-@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+.product-gallery{position:relative;overflow:hidden;background:#e9e9e9!important;padding:0!important}.product-gallery img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .45s ease}.product-gallery img.active{opacity:1}.gallery-nav{position:absolute;inset:auto 12px 50%;display:flex;justify-content:space-between;transform:translateY(50%);z-index:3;pointer-events:none}.gallery-nav button{pointer-events:auto;border:0;width:36px;height:36px;border-radius:50%;background:#fffffff0;color:#141A3C;font-size:22px;cursor:pointer}.gallery-dots{position:absolute;bottom:13px;left:0;right:0;display:flex;justify-content:center;gap:7px;z-index:3}.gallery-dots button{width:7px;height:7px;border:0;border-radius:9px;background:#ffffffa0;padding:0}.gallery-dots button.active{width:22px;background:#fff}.gallery-count{position:absolute;top:12px;right:12px;background:#141A3Cbb;color:white;padding:4px 9px;border-radius:20px;font-size:12px;z-index:3}.gallery-empty{height:100%;display:grid;place-items:center;color:white;font-weight:700}@media(max-width:600px){.card b{min-height:2.9em;font-size:.9rem}.grid{gap:20px 11px}}@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
@@ -179,13 +179,18 @@ $("goShop").onclick=e=>{e.preventDefault();history.pushState(null,"",location.pa
 $("grid").onclick=e=>{const b=e.target.closest(".card");if(b)openP(+b.dataset.id)};
 
 function openP(id){cur=P.find(p=>p.id===id);if(!cur)return;const S=cur.s&&cur.s.length?cur.s:["One size"];size=S.length===1?S[0]:null;
- ev("view",cur.n,1);const im=$("pimg");im.setAttribute("style",bg(cur));im.textContent=cur.img?"":cur.n;
+ ev("view",cur.n,1);galleryIndex=0;renderGallery();
  $("pbody").innerHTML=`<h3>${esc(cur.n)}</h3><div class="price" style="font-size:1.3rem">${money(cur.p)}${+cur.o?`<s>${money(cur.o)}</s>`:""}</div>
  ${cur.d?`<p style="color:var(--mut)">${esc(cur.d)}</p>`:""}
  <div><b>${S.length===1?"Size":"Choose a size"}</b><div class="sizes" id="sz">${S.map(s=>`<button type="button" data-s="${esc(s)}" aria-pressed="${s===size}">${esc(s)}</button>`).join("")}</div></div>
  <div class="err" id="pe"></div>
  <button class="btn dk" id="buy" ${cur.sold?"disabled":""}>${cur.sold?"Sold out":"Buy now"}</button>
- <button class="btn alt" id="add" ${cur.sold?"disabled":""}>Add to cart</button>`;$("pd").showModal()}
+ <button class="btn alt" id="add" ${cur.sold?"disabled":""}>Add to cart</button>`;$("pd").showModal();clearInterval(galleryTimer);if(productImages(cur).length>1)galleryTimer=setInterval(()=>galleryGo((galleryIndex+1)%productImages(cur).length),3200)}
+function productImages(p){return Array.isArray(p.images)&&p.images.length?p.images.filter(Boolean):(p.img?[p.img]:[])}
+function renderGallery(){const el=$("pimg"),imgs=productImages(cur);el.classList.add("product-gallery");el.innerHTML=imgs.length?imgs.map((src,i)=>`<img src="${src}" alt="${esc(cur.n)} photo ${i+1}" class="${i===0?"active":""}" loading="${i===0?"eager":"lazy"}">`).join("")+(imgs.length>1?`<div class="gallery-nav"><button type="button" data-gallery="-1" aria-label="Previous photo">‹</button><button type="button" data-gallery="1" aria-label="Next photo">›</button></div><div class="gallery-dots">${imgs.map((_,i)=>`<button type="button" data-dot="${i}" class="${i===0?"active":""}" aria-label="Photo ${i+1}"></button>`).join("")}</div><span class="gallery-count">1 / ${imgs.length}</span>`:""):`<div class="gallery-empty">${esc(cur.n)}</div>`}
+function galleryGo(i){const n=productImages(cur).length;if(!n)return;galleryIndex=(i+n)%n;const el=$("pimg");el.querySelectorAll("img").forEach((im,k)=>im.classList.toggle("active",k===galleryIndex));el.querySelectorAll("[data-dot]").forEach((b,k)=>b.classList.toggle("active",k===galleryIndex));const count=el.querySelector(".gallery-count");if(count)count.textContent=(galleryIndex+1)+" / "+n}
+$("pimg").onclick=e=>{const b=e.target.closest("[data-gallery],[data-dot]");if(!b)return;clearInterval(galleryTimer);galleryGo(b.dataset.dot!==undefined?+b.dataset.dot:galleryIndex+(+b.dataset.gallery));if(productImages(cur).length>1)galleryTimer=setInterval(()=>galleryGo((galleryIndex+1)%productImages(cur).length),3200)};
+$("pd").addEventListener("close",()=>clearInterval(galleryTimer));
 function addCur(){if(!size){$("pe").textContent="Choose a size to continue.";return false}
  const k=cur.id+"|"+size,f=cart.find(i=>i.k===k);if(f)f.q++;else cart.push({k,id:cur.id,n:cur.n,p:cur.p,s:size,q:1});save();render();ev("cart",cur.n+" ("+size+")");return true}
 $("pbody").onclick=e=>{const s=e.target.closest("[data-s]");
@@ -247,7 +252,7 @@ $("mf").onsubmit=async e=>{e.preventDefault();const t=$("mt").value.trim();if(!t
  if(r.ok){log("Sent a message");$("mt").value="";$("me").className="ok";$("me").textContent="Message sent. We will reply soon."}else{$("me").className="err";$("me").textContent=r.d.error||"Could not send. Try Instagram or Gmail instead."}};
 
 /* ---------- Owner admin: open yourwebsite/#admin ---------- */
-let pw=sessionStorage.getItem("cr_pw")||"",editing=null;
+let pw=sessionStorage.getItem("cr_pw")||"",editing=null,galleryIndex=0,galleryTimer=null;
 const H=()=>({"x-admin":pw});
 function shrink(file){return new Promise(ok=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const m=800,k=Math.min(1,m/Math.max(i.width,i.height)),c=document.createElement("canvas");c.width=i.width*k;c.height=i.height*k;c.getContext("2d").drawImage(i,0,0,c.width,c.height);ok(c.toDataURL("image/jpeg",.75))};i.src=r.result};r.readAsDataURL(file)})}
 async function saveP(){const r=await post("products",{products:P},H());if(!r.ok){alert(r.d.error||"Could not save");if(r.d.error)logout()}return r.ok}
@@ -259,7 +264,7 @@ async function adm(){const A=$("admin");
  A.innerHTML=`<div class="adm"><div class="row"><h2 style="margin:0;flex:1">Your products</h2><button class="link" id="lo">Log out</button></div>
  ${P.map(p=>`<div class="row">${p.img?`<img src="${p.img}" alt="">`:'<div class="th"></div>'}<div><b>${esc(p.n)}</b><br>${money(p.p)} · ${esc(p.c)}${p.sold?" · Sold out":""}</div><button class="link" data-e="${p.id}">Edit</button><button class="link" data-x="${p.id}">Delete</button></div>`).join("")||"<p>No products yet. Add your first one below.</p>"}
  <h2>${e.id?"Edit product":"Add a product"}</h2>
- <form id="pf" style="padding:0" novalidate><label>Photo<input id="pi" type="file" accept="image/*"></label>
+ <form id="pf" style="padding:0" novalidate><label>Product photos (select up to 6)<input id="pi" type="file" accept="image/*" multiple><small style="color:var(--mut)">Select several photos to create an automatic slideshow and swipe gallery.</small></label>
  <label>Name<input id="pn" value="${esc(e.n)}"></label>
  <div class="two"><label>Category (like Shirts)<input id="pc" value="${esc(e.c)}"></label><label>Sizes, separated by commas<input id="ps" value="${esc((e.s||[]).join(", "))}" placeholder="S, M, L, XL"></label></div>
  <div class="two"><label>Price (₹)<input id="pp" type="number" min="1" value="${e.p||""}"></label><label>Old price (₹, optional)<input id="po" type="number" min="0" value="${e.o||""}"></label></div>
@@ -282,7 +287,7 @@ async function adm(){const A=$("admin");
   const r=await post("settings",{upi:u,name:nm,qr},H());$("sfe").className=r.ok?"ok":"err";$("sfe").textContent=r.ok?"Saved.":(r.d.error||"Could not save.");if(r.ok)Object.assign(ST,{upi:u,name:nm,qr})}
  $("pf").onsubmit=async x=>{x.preventDefault();const n=$("pn").value.trim(),pr=+$("pp").value;
   if(!n||!pr){$("pfe").textContent="Enter a name and a price.";return}
-  const f=$("pi").files[0],img=f?await shrink(f):(e.img||""),o={id:e.id||Date.now(),n,c:$("pc").value.trim()||"Other",p:pr,o:+$("po").value||0,s:$("ps").value.split(",").map(s=>s.trim()).filter(Boolean),d:$("pdsc").value.trim(),sold:$("pso").checked,tr:$("ptr").checked,img};
+  const files=Array.from($("pi").files).slice(0,6),oldImages=productImages(e),added=files.length?await Promise.all(files.map(shrink)):[],images=[...oldImages,...added].slice(0,6),img=images[0]||"",o={id:e.id||Date.now(),n,c:$("pc").value.trim()||"Other",p:pr,o:+$("po").value||0,s:$("ps").value.split(",").map(s=>s.trim()).filter(Boolean),d:$("pdsc").value.trim(),sold:$("pso").checked,tr:$("ptr").checked,img,images};
   if(e.id)P=P.map(p=>p.id===e.id?o:p);else P.unshift(o);
   if(await saveP()){editing=null;adm();scrollTo(0,0)}}}
 
