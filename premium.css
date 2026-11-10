@@ -1,0 +1,41 @@
+/* Crossroads: phone fixes + product page */
+html,body{overflow-x:hidden}
+.pp{padding-top:22px;padding-bottom:30px}
+.crumb{font-size:.78rem;color:var(--mut);margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap}.crumb a{text-decoration:none}.crumb a:hover{color:var(--gold)}.crumb i{font-style:normal}
+.pgrid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:40px;align-items:start}
+.gal{position:sticky;top:130px;min-width:0}
+.gmain{position:relative;aspect-ratio:4/5;background:#e8e3da;overflow:hidden}
+.gmain img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .6s}.gmain img.on{opacity:1}
+.gnone{position:absolute;inset:0;display:grid;place-items:center;padding:20px;text-align:center;font-weight:800;color:#555;overflow-wrap:anywhere}
+.gmain .badge{z-index:2}
+.ga{position:absolute;top:50%;transform:translateY(-50%);width:38px;height:38px;border:0;border-radius:50%;background:rgba(255,255,255,.9);color:#111b2b;font-size:1.4rem;line-height:1;cursor:pointer;z-index:2}.ga.l{left:10px}.ga.r{right:10px}
+.gth{display:flex;gap:10px;margin-top:10px;overflow-x:auto;scrollbar-width:none}.gth button{flex:none;width:64px;height:80px;padding:0;border:2px solid transparent;background:none;cursor:pointer;opacity:.6;transition:opacity .2s,border-color .2s}.gth button.on{border-color:var(--gold);opacity:1}.gth img{width:100%;height:100%;object-fit:cover;display:block}
+.info{display:flex;flex-direction:column;gap:16px;min-width:0}
+.info h1{font-size:clamp(1.5rem,3.5vw,2.2rem);line-height:1.2;overflow-wrap:anywhere;letter-spacing:-.02em;text-transform:uppercase}
+.price.big{font-size:1.5rem}.off{font-style:normal;font-size:.78rem;background:#1B7A3E;color:#fff;padding:3px 9px;margin-left:10px;border-radius:2px;vertical-align:middle}
+.desc{color:var(--mut);overflow-wrap:anywhere;white-space:pre-line}
+.qty{display:flex;align-items:center;gap:14px}.qty .q{margin:0}.qty span{min-width:22px;text-align:center;font-weight:700}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.trust{list-style:none;padding:14px 0 0;border-top:1px solid var(--line);display:grid;gap:8px;font-size:.9rem;color:var(--mut)}.trust li:before{content:"✓";color:var(--gold);font-weight:800;margin-right:8px}.trust a{color:var(--ink);font-weight:600}
+.rh{margin:46px 0 16px;font-size:1.3rem;text-transform:uppercase;letter-spacing:-.02em}
+.rg{grid-template-columns:repeat(4,minmax(0,1fr))}
+a.card{text-decoration:none;color:inherit}
+.sbar{display:none}
+@media(max-width:760px){.pgrid{grid-template-columns:1fr;gap:18px}.gal{position:static}.rg{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .sbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:25;gap:14px;align-items:center;justify-content:space-between;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(17,27,43,.1)}.sbar .btn{width:auto;flex:1}
+ #prod{padding-bottom:70px}}
+/* phone: stop header, hero and cards from overlapping */
+@media(max-width:600px){
+ header .wrap{height:56px;gap:8px;padding:0 12px}
+ .logo{font-size:1.02rem;letter-spacing:.05em;white-space:nowrap}.logo small{display:none}
+ .hb{gap:6px;flex:none}.pill{padding:7px 11px;font-size:.62rem;letter-spacing:.04em;white-space:nowrap}
+ .menu .wrap{padding:0 12px 10px}
+ .hero-note{display:none}
+ .premium-hero{min-height:470px}.hero-inner{padding:52px 18px 60px}
+ .premium-hero h1{font-size:clamp(2.3rem,12vw,3.5rem);letter-spacing:-.04em}
+ .hero-cta{min-width:0;width:100%;max-width:250px}
+ .editorial-strip{padding:6px 18px}
+ .collection-head{margin:34px 0 18px}
+ .card b{font-size:.88rem;min-height:2.6em}.card .price{font-size:.88rem}.price s{display:block;margin:0}
+ footer{flex-direction:column;align-items:center;gap:10px}footer a{margin:0}
+}
