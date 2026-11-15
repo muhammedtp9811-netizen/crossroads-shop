@@ -141,7 +141,7 @@ footer small{display:block;margin-top:28px;padding-top:18px;border-top:1px solid
 .igi{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
 .igi img{width:100%;aspect-ratio:4/5;object-fit:cover;display:block}
 .igi i{position:absolute;top:6px;left:6px;background:var(--acc);color:#fff;font-style:normal;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:999px}
-.igi div{display:flex;justify-content:space-between;padding:4px}
+.igi div{display:flex;flex-wrap:wrap;justify-content:space-between;padding:2px 4px}.igi .link{padding:2px 4px;font-size:.8rem}
 .box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;font-size:.93rem;white-space:pre-wrap;overflow-wrap:anywhere}
 .box small{display:block;color:var(--mut)}.oa{white-space:normal;margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .fm0{padding:0}.adm form{padding:0}
@@ -167,11 +167,11 @@ details{border-top:1px solid var(--line);padding:14px 0}details:last-of-type{bor
 .sr b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;font-weight:600}.sr small{color:var(--mut)}
 @keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
 @media(max-width:900px){.pp{grid-template-columns:1fr;gap:22px}.pp .gal{position:static}.ck{grid-template-columns:1fr}.sum{position:static;order:-1}}
-@media(max-width:700px){.acts{display:none}.pbar{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:fixed;left:0;right:0;bottom:0;z-index:25;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line)}#product{padding-bottom:120px}.pbar .btn{padding:13px 10px}#toast{bottom:calc(84px + env(safe-area-inset-bottom))}.tools select{max-width:46%}.pp .gm{border-radius:12px}}
+@media(max-width:700px){.acts{display:none}.pbar{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:fixed;left:0;right:0;bottom:0;z-index:25;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line)}#product{padding-bottom:120px}#product .bc b,#product .bc span:last-of-type{display:none}.pbar .btn{padding:13px 10px}#toast{bottom:calc(84px + env(safe-area-inset-bottom))}.tools select{max-width:46%}.pp .gm{border-radius:12px}}
 .hero{position:relative;overflow:hidden;background:var(--bg);border-bottom:1px solid var(--line)}
 @supports(background:color-mix(in srgb,red,blue)){.hero{background:radial-gradient(900px 420px at 85% 10%,color-mix(in srgb,var(--acc) 26%,transparent),transparent 65%),var(--bg)}}
 #c3d{position:absolute;inset:0;width:100%;height:100%;display:block}
-.hi{position:relative;z-index:2;padding-top:60px;padding-bottom:60px}
+.hero .hi{position:relative;z-index:2;padding-top:60px;padding-bottom:60px}
 .kick{font:600 .78rem Inter,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:var(--acc)}
 .hi h2{font-size:clamp(2.5rem,7.5vw,4.8rem);line-height:1.02;font-weight:700;margin:10px 0 14px;max-width:10ch}
 .hs{color:var(--mut);max-width:34ch;margin-bottom:24px}
@@ -195,7 +195,7 @@ details{border-top:1px solid var(--line);padding:14px 0}details:last-of-type{bor
 @keyframes shim{to{background-position:-120% 0}}
 #bTheme svg{transition:transform .5s}#bTheme:hover svg{transform:rotate(180deg)}
 @media(hover:none){.card .im{transform:none!important}}
-@media(max-width:700px){#c3d{opacity:.6}.hi{padding-top:42px;padding-bottom:42px}.hi h2{max-width:9ch}}
+@media(max-width:700px){#c3d{opacity:.6}.hero .hi{padding-top:44px;padding-bottom:44px}.hi h2{max-width:9ch}}
 @keyframes bump{40%{transform:scale(1.35)}}
 @keyframes pop{from{opacity:0;transform:translateY(12px) scale(.98)}}
 @keyframes sheet{from{transform:translateY(40px);opacity:.4}}
@@ -524,7 +524,7 @@ async function route(){stopAuto();document.title="Crossroads Shopping";const v=v
  if(v==="admin"){wasAdmin=true;await adm();return}
  if(wasAdmin){wasAdmin=false;await loadP()}
  cats();if(v==="shop"){grid();maybeHero()}if(v==="product")renderProduct(location.hash.slice(3));if(v==="checkout")renderCheckout();
- scrollTo(0,0);if(v!=="shop")log("Opened the "+v+" page")}
+ scrollTo({top:0,left:0,behavior:"instant"});if(v!=="shop")log("Opened the "+v+" page")}
 addEventListener("hashchange",route);addEventListener("popstate",route);
 (async()=>{
  if(view()==="admin"){await route();return}
