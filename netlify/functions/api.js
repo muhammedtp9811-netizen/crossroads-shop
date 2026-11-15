@@ -2,13 +2,28 @@ import {getStore} from "@netlify/blobs";
 import crypto from "node:crypto";
 export const config={path:"/api/*"};
 const E=process.env, WA=E.WA_NUMBER||"918281036836";
-const J=(d,s=200)=>new Response(JSON.stringify(d),{status:s,headers:{"content-type":"application/json"}});
+const J=(d,s=200)=>new Response(JSON.stringify(d),{status:s,headers:{"content-type":"application/json","cache-control":"no-store"}});
 const cut=(s,n)=>String(s??"").slice(0,n);
 export default async(req,context)=>{
-  const db=getStore("shop"), path=new URL(req.url).pathname.replace(/^\/api\/?/,"");
+  const db=getStore({name:"shop",consistency:"strong"}), path=new URL(req.url).pathname.replace(/^\/api\/?/,"");
   const get=async(k,d)=>(await db.get(k,{type:"json"}))??d;
   const admin=()=>E.ADMIN_PASSWORD&&req.headers.get("x-admin")===E.ADMIN_PASSWORD;
   const b=req.method==="POST"?await req.json().catch(()=>({})):{};
+  const imgId=b=>crypto.createHash("sha1").update(b).digest("hex").slice(0,24);
+  async function pack(list){let changed=false;
+    for(const p of list){
+      const arr=Array.isArray(p.imgs)&&p.imgs.length?p.imgs:(p.img?[p.img]:[]),out=[];
+      for(const x of arr){
+        const str=String(x),m=/^data:image\/(png|jpe?g|webp);base64,(.+)$/.exec(str);
+        if(m){const buf=Buffer.from(m[2],"base64");if(!buf.length||buf.length>3000000)continue;
+          const id=imgId(buf),ab=buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength);
+          await db.set("img/"+id,ab,{metadata:{type:"image/"+(m[1]==="png"?"png":m[1]==="webp"?"webp":"jpeg")}});out.push("/api/img/"+id)}
+        else if(str.startsWith("/api/img/")||/^https?:\/\//.test(str))out.push(str);
+      }
+      if(out.length!==arr.length||arr.some((x,i)=>x!==out[i])||p.img!==(out[0]||""))changed=true;
+      p.imgs=out;p.img=out[0]||"";
+    }
+    return changed}
   const allow=async()=>{const h=new Date().toISOString().slice(0,13),rl=await get("rl",{h:"",n:0});if(rl.h!==h){rl.h=h;rl.n=0}if(rl.n>=80)return false;rl.n++;await db.setJSON("rl",rl);return true};
   const mail=(subject,text)=>fetch("https://api.resend.com/emails",{method:"POST",headers:{authorization:"Bearer "+E.RESEND_API_KEY,"content-type":"application/json"},body:JSON.stringify({from:"Crossroads <onboarding@resend.dev>",to:[E.ALERT_EMAIL||"producingmj@gmail.com"],subject:cut(subject,80),text})}).catch(()=>{});
   async function notify(t,imp){
@@ -57,6 +72,19 @@ export default async(req,context)=>{
     const orders=await get("orders",[]),o=orders.find(x=>x.id===b.id);
     if(o){o.paid=true;await db.setJSON("orders",orders)}return J({ok:1});
   }
+  if(path==="orders/update"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const orders=await get("orders",[]),o=orders.find(x=>x.id===b.id);
+    if(o){if(b.shipped)o.shipped=true;if(b.track!==undefined)o.track=cut(b.track,120);await db.setJSON("orders",orders)}return J({ok:1});
+  }
+  if(path==="orders/delete"){
+    if(!admin())return J({error:"Wrong password"},401);
+    await db.setJSON("orders",(await get("orders",[])).filter(x=>x.id!==b.id));return J({ok:1});
+  }
+  if(path==="messages/delete"){
+    if(!admin())return J({error:"Wrong password"},401);
+    await db.setJSON("messages",(await get("messages",[])).filter(x=>x.t!==b.t));return J({ok:1});
+  }
   if(path==="session"){
     const L=Array.isArray(b.log)?b.log.slice(0,60):[];
     if(L.length&&E.RESEND_API_KEY&&await allow()){
@@ -66,10 +94,15 @@ export default async(req,context)=>{
     }
     return J({ok:1});
   }
-  if(path==="products"&&req.method==="GET")return J(await get("products",[]));
+  if(path.startsWith("img/")&&req.method==="GET"){
+    const id=path.slice(4);if(!/^[a-f0-9]{24}$/.test(id))return J({error:"Not found"},404);
+    const r=await db.getWithMetadata("img/"+id,{type:"arrayBuffer"});if(!r)return J({error:"Not found"},404);
+    return new Response(r.data,{headers:{"content-type":(r.metadata&&r.metadata.type)||"image/jpeg","cache-control":"public, max-age=31536000, immutable"}});
+  }
+  if(path==="products"&&req.method==="GET"){const all=await get("products",[]);if(await pack(all))await db.setJSON("products",all);return J(admin()?all:all.filter(p=>!p.hid))}
   if(path==="products"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
-    await db.setJSON("products",Array.isArray(b.products)?b.products:[]);return J({ok:1});
+    const list=Array.isArray(b.products)?b.products:[];await pack(list);await db.setJSON("products",list);return J({ok:1});
   }
   if(path==="admin"&&req.method==="GET"){
     if(!admin())return J({error:"Wrong password"},401);

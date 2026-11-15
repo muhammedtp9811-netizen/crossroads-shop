@@ -2,191 +2,248 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Crossroads Shopping</title>
-<meta name="theme-color" content="#141A3C">
-<meta name="description" content="Curated fashion and accessories delivered to your door.">
+<meta name="theme-color" content="#080A10">
+<script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("cr_theme")||"dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
+<meta name="description" content="Fashion, trending items, shoes and accessories delivered to your door.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--navy:#141A3C;--ink:#141A3C;--bg:#F4F5F9;--card:#fff;--line:#DDE1EE;--mut:#5A6385;--gold:#C79A3B;--err:#B3261E}
-@media(prefers-color-scheme:dark){:root{--ink:#EEF0FA;--bg:#0E1230;--card:#171C42;--line:#2B3268;--mut:#A8AFD3;--err:#FF8A80}}
+:root{--bg:#F4F6FB;--card:#fff;--ink:#0E1220;--mut:#586078;--line:#E1E5EF;--navy:#0E1220;--acc:#2548E6;--hot:#FF5C39;--err:#C0261B;--ok:#127A45;--sh:0 18px 44px rgba(14,18,32,.13)}
+:root[data-theme=dark]{--bg:#080A10;--card:#10131C;--ink:#F2F4FA;--mut:#98A2B8;--line:#202636;--acc:#3F6DFF;--err:#FF8A80;--ok:#5FD39A;--sh:0 18px 44px rgba(0,0,0,.55)}
 *{box-sizing:border-box;margin:0}
-body{font-family:Archivo,Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
-button,input,textarea{font:inherit;color:inherit}a{color:inherit}
-:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
-.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
-header{position:sticky;top:0;z-index:20;background:var(--navy);color:#fff}
-header .wrap{display:flex;align-items:center;justify-content:space-between;height:60px;gap:12px}
-.logo{font-weight:800;font-stretch:112%;font-size:1.2rem;text-decoration:none}
-.logo small{font-weight:500;font-size:.78rem;opacity:.65;margin-left:6px}
-.hb{display:flex;gap:10px}
-.pill{border:1px solid rgba(255,255,255,.35);background:none;color:#fff;border-radius:999px;padding:7px 16px;font-weight:600;cursor:pointer}
-.pill.g{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:700}
-.cats{position:sticky;top:60px;z-index:19;background:var(--bg);border-bottom:1px solid var(--line)}
-.cats .wrap{display:flex;gap:8px;overflow-x:auto;padding-top:12px;padding-bottom:12px;scrollbar-width:none}
-.chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 20px;font-weight:600;cursor:pointer}
-.chip[aria-pressed=true]{background:var(--navy);border-color:var(--navy);color:#fff}
-@media(prefers-color-scheme:dark){.chip[aria-pressed=true]{background:var(--gold);border-color:var(--gold);color:var(--navy)}}
-main{padding:28px 0 90px;min-height:70vh}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:30px 22px}
-.card{background:none;border:0;padding:0;text-align:left;cursor:pointer;display:block;width:100%}
-.ph{aspect-ratio:4/5;background:#2B3268 center/cover;border-radius:6px;display:flex;align-items:flex-end;padding:14px;color:#fff;font-weight:800;position:relative;overflow:hidden}
-.card .ph{transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s}.card:hover .ph{transform:translateY(-4px);box-shadow:0 14px 30px rgba(20,26,60,.14)}
-.badge{position:absolute;top:10px;left:10px;background:#fff;color:var(--navy);font-size:.8rem;font-weight:700;padding:3px 10px;border-radius:999px}
-.card b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;min-height:3em;margin-top:12px;font-weight:650;line-height:1.45}.card:hover b{color:var(--gold)}
-.price{font-weight:700;font-variant-numeric:tabular-nums}.price s{color:var(--mut);font-weight:400;margin-left:8px;font-size:.9rem}
-.empty{padding:60px 0;color:var(--mut);text-align:center}
-footer{border-top:1px solid var(--line);padding:26px 0;text-align:center;color:var(--mut);font-size:.92rem}
-footer a{margin:0 10px;font-weight:600;color:var(--ink)}
-.btn{display:block;width:100%;text-align:center;border:0;border-radius:10px;padding:13px 20px;font-weight:700;cursor:pointer;text-decoration:none;background:var(--gold);color:var(--navy)}
-.btn.dk{background:var(--navy);color:#fff}.btn.alt{background:none;border:2px solid var(--line);color:var(--ink)}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-dialog{border:0;border-radius:16px;padding:0;max-width:780px;width:calc(100% - 28px);background:var(--card);color:var(--ink);overflow:auto}
-dialog::backdrop{background:rgba(10,12,30,.65)}
-.pm{display:grid;grid-template-columns:1fr 1fr}.pm .ph{aspect-ratio:auto;min-height:380px;border-radius:16px 0 0 16px}
-.pd{padding:26px;display:flex;flex-direction:column;gap:12px}.pd h3{font-size:1.5rem;font-weight:700}
-.sizes{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-.sizes button{min-width:46px;padding:8px 12px;border:2px solid var(--line);border-radius:8px;background:none;cursor:pointer;font-weight:700}
-.sizes button[aria-pressed=true]{background:var(--navy);border-color:var(--navy);color:#fff}
-@media(prefers-color-scheme:dark){.sizes button[aria-pressed=true]{background:var(--gold);border-color:var(--gold);color:var(--navy)}}
-.x{position:absolute;right:10px;top:10px;z-index:2;border:0;background:var(--card);color:var(--ink);border-radius:50%;width:36px;height:36px;font-size:1.2rem;cursor:pointer}
-.ov{position:fixed;inset:0;background:rgba(10,12,30,.65);z-index:30;display:none}.ov.on{display:block}
-aside{position:fixed;top:0;right:0;bottom:0;width:min(430px,100%);background:var(--card);z-index:31;transform:translateX(100%);transition:transform .25s;overflow-y:auto}
-aside.on{transform:none}
-.top{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line);font-weight:700;font-size:1.15rem}
-.top .x{position:static}
-.it{display:flex;gap:12px;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--line)}
-.q{display:flex;gap:10px;align-items:center;margin-top:6px}.q button{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:none;cursor:pointer}
-.link{border:0;background:none;color:var(--mut);cursor:pointer;text-decoration:underline}
-form,.fm{padding:16px 20px 24px;display:flex;flex-direction:column;gap:10px}
-label{font-weight:600;font-size:.9rem;display:flex;flex-direction:column;gap:4px}
-input,textarea{padding:11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);width:100%}
-.err{color:var(--err);font-size:.9rem;min-height:1.2em}.ok{color:#1B7A3E;font-weight:600}
-.total{display:flex;justify-content:space-between;font-weight:800;font-size:1.15rem;padding:14px 20px 0}
-.adm{max-width:900px;margin:0 auto;padding:28px 20px 80px}.adm h2{margin:26px 0 10px}
-.row{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
-.row img,.row .th{width:54px;height:54px;border-radius:6px;object-fit:cover;background:#2B3268;flex:none}.row div{flex:1}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;font-size:.95rem;white-space:pre-wrap}
-@media(max-width:760px){.pm{grid-template-columns:1fr}.pm .ph{min-height:260px;border-radius:16px 16px 0 0}.two{grid-template-columns:1fr}}
-
-.menu .wrap{height:auto;justify-content:flex-start;gap:8px;overflow-x:auto;padding-top:0;padding-bottom:12px;scrollbar-width:none}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font:16px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);overflow-x:hidden}
+h1,h2,h3,.logo{font-family:"Playfair Display",Georgia,"Times New Roman",serif}
+button,input,select,textarea{font:inherit;color:inherit}a{color:inherit}img{max-width:100%}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.wrap{max-width:1200px;margin:0 auto;padding:0 22px}
+.ann{background:var(--acc);color:#fff;text-align:center;font-size:.78rem;letter-spacing:.05em;padding:8px 14px}
+header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+@supports(background:color-mix(in srgb,red,blue)){header{background:color-mix(in srgb,var(--bg) 90%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}}
+.hr{display:flex;align-items:center;justify-content:space-between;height:62px;gap:10px}
+.logo{font-size:1.5rem;font-weight:600;text-decoration:none;letter-spacing:.02em;white-space:nowrap}
+.logo span{font:500 .68rem Inter,sans-serif;letter-spacing:.26em;text-transform:uppercase;color:var(--acc);margin-left:9px}
+.hb{display:flex;gap:4px}
+.ib{position:relative;width:44px;height:44px;border:0;background:none;color:var(--ink);border-radius:50%;display:grid;place-items:center;cursor:pointer;transition:background .2s,transform .2s;text-decoration:none}
+.ib:hover{background:var(--line)}.ib:active{transform:scale(.94)}
+.ib b{position:absolute;top:3px;right:1px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--acc);color:#fff;font-size:.7rem;line-height:18px;text-align:center}
+.bump{animation:bump .4s}
+.menu .wrap{display:flex;gap:28px;overflow-x:auto;scrollbar-width:none}
 .menu .wrap::-webkit-scrollbar{display:none}
-.menu .chip{background:transparent;color:#fff;border-color:rgba(255,255,255,.3);text-decoration:none;display:inline-block}
-.menu .chip[aria-pressed=true],.menu .chip[aria-current=page]{background:var(--gold);border-color:var(--gold);color:var(--navy)}
-.pg{padding:32px 0 90px;min-height:70vh}.narrow{max-width:760px}
-.pg h1{font-size:clamp(1.8rem,5vw,2.4rem);line-height:1.15;margin-bottom:8px}.pg h2{font-size:1.25rem;margin:30px 0 8px}
+.menu button,.menu a{flex:none;border:0;background:none;color:var(--mut);font:600 .8rem Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:13px 0 14px;position:relative;cursor:pointer;text-decoration:none;transition:color .2s}
+.menu button:after,.menu a:after{content:"";position:absolute;left:0;right:0;bottom:7px;height:2px;background:var(--acc);transform:scaleX(0);transform-origin:left;transition:transform .28s}
+.menu button:hover,.menu a:hover,.menu [aria-current=true],.menu [aria-current=page]{color:var(--ink)}
+.menu button:hover:after,.menu a:hover:after,.menu [aria-current=true]:after,.menu [aria-current=page]:after{transform:scaleX(1)}
+.th{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:34px 0 24px}
+.th h1{font-size:clamp(1.8rem,4.5vw,2.6rem);line-height:1.15;font-weight:600}
+.sub{color:var(--mut);font-size:.92rem}
+.tools{display:flex;gap:10px;flex:1 1 300px;max-width:520px}
+.tools input,.tools select{height:44px;border:1px solid var(--line);border-radius:999px;background:var(--card);padding:0 16px;min-width:0}
+.tools input{flex:1}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:36px 22px;padding-bottom:70px}
+.card{display:block;width:100%;min-width:0;border:0;background:none;padding:0;text-align:left;cursor:pointer;opacity:0;transform:translateY(16px)}
+.card.in{opacity:1;transform:none;transition:opacity .6s ease var(--d,0ms),transform .6s ease var(--d,0ms)}
+.im{display:block;position:relative;aspect-ratio:4/5;overflow:hidden;border-radius:12px;background:var(--line)}
+.im img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .6s ease,opacity .4s ease}
+.im .im2{opacity:0}
+.card:hover .im img:first-child{transform:scale(1.05)}.card:hover .im2{opacity:1}
+.ph{position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.85);font:600 4rem "Playfair Display",Georgia,serif}
+.bd{position:absolute;top:10px;left:10px;background:#fff;color:var(--navy);font:600 .72rem Inter,sans-serif;font-style:normal;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:999px}
+.bd.so{background:var(--navy);color:#fff}
+.qv{position:absolute;left:10px;right:10px;bottom:10px;background:rgba(255,255,255,.96);color:var(--navy);padding:10px;text-align:center;font:600 .82rem Inter,sans-serif;font-style:normal;letter-spacing:.06em;text-transform:uppercase;border-radius:8px;transform:translateY(130%);transition:transform .3s ease}
+.card:hover .qv{transform:none}
+@media(hover:none){.qv{display:none}}
+.nm{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;margin-top:12px;font-weight:500;line-height:1.4;min-height:2.8em}
+.price{display:block;margin-top:4px;font-weight:700;font-variant-numeric:tabular-nums}
+.price s{color:var(--mut);font-weight:400;font-size:.88rem;margin-left:8px}
+.empty{grid-column:1/-1;padding:70px 0;text-align:center;color:var(--mut)}
+.btn{display:block;width:100%;text-align:center;border:1.5px solid transparent;border-radius:999px;padding:14px 22px;font:600 .95rem Inter,sans-serif;cursor:pointer;text-decoration:none;background:var(--acc);color:#fff;transition:transform .2s,box-shadow .2s,border-color .2s,opacity .2s}
+.btn:hover{transform:translateY(-2px);box-shadow:var(--sh)}.btn:active{transform:none}
+.btn.alt{background:transparent;border-color:var(--line);color:var(--ink)}.btn.alt:hover{border-color:var(--ink)}
+.btn.sm{display:inline-block;width:auto;padding:8px 16px;font-size:.85rem}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.link{border:0;background:none;color:var(--mut);cursor:pointer;text-decoration:underline;padding:4px 6px}.link:hover{color:var(--ink)}
+.err{color:var(--err);font-size:.9rem;min-height:1.2em}.ok{color:var(--ok);font-weight:600}
+dialog{border:0;border-radius:18px;padding:0;max-width:900px;width:calc(100% - 28px);background:var(--card);color:var(--ink);max-height:calc(100vh - 28px);max-height:calc(100dvh - 28px);overflow:auto;box-shadow:var(--sh)}
+dialog::backdrop{background:rgba(8,10,28,.6);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+dialog[open]{animation:pop .25s ease}
+.x{position:sticky;top:10px;display:block;width:38px;height:38px;margin:10px 10px -48px auto;z-index:5;border-radius:50%;border:0;background:var(--card);color:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.25);font-size:1.3rem;line-height:1;cursor:pointer;transition:transform .2s}
+.x:hover{transform:rotate(90deg)}
+.pm{display:grid;grid-template-columns:1.05fr 1fr}
+.gm{position:relative;aspect-ratio:4/5;background:var(--line);overflow:hidden}
+.gm img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .7s ease}.gm img.on,.gm img:only-child{opacity:1}
+.gd{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;gap:7px;z-index:2}.gd i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.55);transition:width .3s,background .3s}.gd i.on{width:22px;border-radius:4px;background:#fff}
+.gt{display:flex;gap:8px;padding:10px;overflow-x:auto;scrollbar-width:none}
+.gt button{flex:none;width:56px;height:70px;border:2px solid transparent;border-radius:8px;padding:0;overflow:hidden;cursor:pointer;opacity:.65;background:none;transition:opacity .2s}
+.gt button[aria-pressed=true],.gt button:hover{opacity:1}.gt button[aria-pressed=true]{border-color:var(--acc)}
+.gt img{width:100%;height:100%;object-fit:cover;display:block}
+.pd{padding:34px 28px 26px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.pd h2{font-size:1.6rem;line-height:1.25;font-weight:600;overflow-wrap:anywhere}
+.price.lg{font-size:1.35rem;margin:0}
+.dsc{color:var(--mut);overflow-wrap:anywhere;white-space:pre-line}
+.sizes{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.sizes button{min-width:50px;height:44px;padding:0 16px;border:1.5px solid var(--line);border-radius:999px;background:none;font-weight:600;cursor:pointer;transition:border-color .2s,background .2s,color .2s}
+.sizes button:hover{border-color:var(--ink)}
+.sizes button[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#fff}
+.act{display:grid;gap:10px}
+.tr{list-style:none;padding:0;color:var(--mut);font-size:.88rem;display:grid;gap:4px}
+.tr li:before{content:"✓";color:var(--acc);margin-right:8px;font-weight:700}
+.ov{position:fixed;inset:0;background:rgba(8,10,28,.55);z-index:30;opacity:0;pointer-events:none;transition:opacity .25s}.ov.on{opacity:1;pointer-events:auto}
+aside{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--card);z-index:31;transform:translateX(100%);transition:transform .3s ease;overflow-y:auto;box-shadow:var(--sh)}
+aside.on{transform:none}
+.top{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line);font:600 1.3rem "Playfair Display",Georgia,serif}
+.top .x{position:static;margin:0;box-shadow:none;background:none}
+.it{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line);align-items:start}
+.it .t0{width:64px;height:80px;border-radius:8px;background:var(--line);overflow:hidden}.it .t0 img{width:100%;height:100%;object-fit:cover;display:block}
+.it b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;font-weight:600;line-height:1.35}
+.it small{color:var(--mut)}.it .pr{text-align:right}
+.q{display:flex;gap:10px;align-items:center;margin-top:6px}
+.q button{width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:none;cursor:pointer;transition:background .2s}.q button:hover{background:var(--line)}
+.cempty{padding:44px 24px;color:var(--mut);text-align:center}
+.total{display:flex;justify-content:space-between;font-weight:700;font-size:1.15rem;padding:16px 20px 0}
+form,.fm{padding:16px 20px 26px;display:flex;flex-direction:column;gap:12px}
+label{font-weight:600;font-size:.88rem;display:flex;flex-direction:column;gap:5px}
+input,textarea,select{padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--bg);width:100%}
+input:focus,textarea:focus,select:focus{border-color:var(--acc);outline:none;box-shadow:0 0 0 3px rgba(63,109,255,.25)}
+.tools input,.tools select{width:auto}.tools input{width:100%}
+.pg{padding:44px 0 90px;min-height:70vh}.narrow{max-width:760px}
+.pg h1{font-size:clamp(1.9rem,5vw,2.7rem);line-height:1.15;margin-bottom:8px}
+.pg h2{font-size:1.35rem;margin:34px 0 8px}
 .lead{font-size:1.2rem;font-weight:600;margin-bottom:10px}
-.cardx{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:block;text-decoration:none}
-.cc{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:16px 0}
-.cc a b{display:block;font-size:1.05rem}.cc a span{display:block;word-break:break-all;font-weight:600;margin:4px 0}.cc a small{color:var(--mut)}
-a.cardx:hover{border-color:var(--gold)}
+.cardx{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:block;text-decoration:none;transition:border-color .2s,transform .2s,box-shadow .2s}
+a.cardx:hover{border-color:var(--acc);transform:translateY(-3px);box-shadow:var(--sh)}
+.cc{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:18px 0}
+.cc b{display:block;font-size:1.05rem}.cc span{display:block;word-break:break-all;font-weight:600;margin:4px 0}.cc small{color:var(--mut)}
 .stp li{margin:8px 0}
-table.info{width:100%;border-collapse:collapse}table.info th,table.info td{text-align:left;padding:10px 6px;border-bottom:1px solid var(--line);vertical-align:top}table.info th{width:38%;color:var(--mut);font-weight:600}table.info td{word-break:break-word}
-.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}.cta .btn{width:auto;min-width:170px}
-footer{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 4px;padding:26px 14px}
-@media(max-width:600px){.logo small{display:none}.pill{padding:6px 13px;font-size:.92rem}.wrap{padding:0 14px}
- .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 12px}.card b{font-size:.95rem}.ph{padding:10px;font-size:.95rem}
- .pd{padding:20px 18px}.cta .btn{width:100%}main{padding-top:18px}}
-@media(pointer:coarse){.q button{width:38px;height:38px}.sizes button{min-height:44px}.chip{padding-top:10px;padding-bottom:10px}}
-dialog{max-height:calc(100vh - 24px);overflow-y:auto}
-.product-gallery{position:relative;overflow:hidden;background:#e9e9e9!important;padding:0!important}.product-gallery img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .45s ease}.product-gallery img.active{opacity:1}.gallery-nav{position:absolute;inset:auto 12px 50%;display:flex;justify-content:space-between;transform:translateY(50%);z-index:3;pointer-events:none}.gallery-nav button{pointer-events:auto;border:0;width:36px;height:36px;border-radius:50%;background:#fffffff0;color:#141A3C;font-size:22px;cursor:pointer}.gallery-dots{position:absolute;bottom:13px;left:0;right:0;display:flex;justify-content:center;gap:7px;z-index:3}.gallery-dots button{width:7px;height:7px;border:0;border-radius:9px;background:#ffffffa0;padding:0}.gallery-dots button.active{width:22px;background:#fff}.gallery-count{position:absolute;top:12px;right:12px;background:#141A3Cbb;color:white;padding:4px 9px;border-radius:20px;font-size:12px;z-index:3}.gallery-empty{height:100%;display:grid;place-items:center;color:white;font-weight:700}@media(max-width:600px){.card b{min-height:2.9em;font-size:.9rem}.grid{gap:20px 11px}}@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-
-/* Crossroads premium editorial storefront refresh */
-:root{color-scheme:light;--navy:#111b2b;--ink:#172233;--bg:#f7f5f0;--card:#fffefa;--line:#e6e0d5;--mut:#73756f;--gold:#b9955b}
-@media(prefers-color-scheme:dark){:root{--ink:#172233;--bg:#f7f5f0;--card:#fffefa;--line:#e6e0d5;--mut:#73756f}}
-body{background:var(--bg);color:var(--ink);font-family:Archivo,Arial,sans-serif;letter-spacing:.005em}
-header{background:#111b2b;box-shadow:0 5px 24px #111b2b18}
-header .wrap{height:72px}
-.logo{font-size:1.38rem;letter-spacing:.08em;text-transform:uppercase}
-.logo small{font-size:.64rem;letter-spacing:.24em;text-transform:uppercase;display:block;margin:0;line-height:1}
-.pill{border-radius:2px;padding:9px 18px;letter-spacing:.06em;text-transform:uppercase;font-size:.72rem}
-.pill.g{background:#c5a36b;border-color:#c5a36b;color:#111b2b}
-.menu .wrap{padding-top:4px;padding-bottom:14px}
-.menu .chip{border-radius:2px;text-transform:uppercase;letter-spacing:.1em;font-size:.68rem;padding:8px 15px}
-.menu .chip[aria-pressed=true],.menu .chip[aria-current=page]{background:#c5a36b;border-color:#c5a36b;color:#111b2b}
-.premium-hero{position:relative;isolation:isolate;min-height:590px;display:flex;align-items:center;overflow:hidden;background:#26313a url('https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=2200&q=85') center 35%/cover no-repeat;color:#fff}
-.premium-hero:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(9,17,27,.82),rgba(9,17,27,.48) 48%,rgba(9,17,27,.08));z-index:-1}
-.hero-inner{width:min(1180px,100%);margin:auto;padding:88px 24px 96px}
-.hero-kicker{font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;color:#e2c99e;font-weight:700;margin-bottom:22px}
-.premium-hero h1{font-size:clamp(3rem,7vw,6.4rem);line-height:.98;letter-spacing:-.055em;max-width:720px;font-weight:800;text-transform:uppercase}
-.premium-hero p{font-size:1.05rem;max-width:440px;color:#f1eee8;margin:24px 0 30px}
-.hero-cta{display:inline-flex;align-items:center;justify-content:center;min-width:190px;padding:16px 24px;background:#c5a36b;color:#111b2b;text-decoration:none;text-transform:uppercase;font-size:.72rem;letter-spacing:.16em;font-weight:800;transition:background .2s,transform .2s}
-.hero-cta:hover{background:#e0c18c;transform:translateY(-2px)}
-.hero-note{position:absolute;right:max(24px,calc((100vw - 1180px)/2));bottom:30px;font-size:.65rem;letter-spacing:.22em;text-transform:uppercase;color:#fff9}
-.editorial-strip{display:grid;grid-template-columns:repeat(3,1fr);background:#111b2b;color:#fff;padding:22px max(20px,calc((100vw - 1180px)/2));gap:18px}
-.editorial-strip div{text-align:center;border-right:1px solid #ffffff25;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;padding:4px 8px}
-.editorial-strip div:last-child{border:0}
-.collection-head{display:flex;justify-content:space-between;align-items:end;gap:20px;margin:58px 0 26px}
-.collection-head span{display:block;color:#a38350;font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;font-weight:800;margin-bottom:8px}
-.collection-head h2{font-size:clamp(1.8rem,4vw,2.8rem);letter-spacing:-.045em;text-transform:uppercase}
-.collection-head p{color:var(--mut);max-width:300px;font-size:.9rem}
-#shop main{padding:0 0 90px}
-#shop main>.wrap{padding-bottom:20px}
-.grid{grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:34px 22px}
-.card{background:transparent}
-.card .ph{border-radius:0;background-color:#e8e3da;aspect-ratio:3/4}
-.card b{font-size:1rem;letter-spacing:.01em;min-height:2.9em;text-transform:none;color:#182333}
-.card .price{font-size:.96rem;color:#8d7044;margin-top:4px}
-.card:hover .ph{transform:translateY(-5px);box-shadow:0 18px 34px #1b24301c}
-.empty{background:#fffefa;border:1px solid var(--line);padding:70px 20px;margin:18px 0}
-footer{background:#111b2b;color:#d8d4cc;border:0;padding:36px 14px}
-footer a{color:#fff;text-decoration:none;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase}
-.btn{border-radius:2px;background:#c5a36b;color:#111b2b;text-transform:uppercase;letter-spacing:.1em;font-size:.76rem}
-.btn.dk{background:#111b2b;color:#fff}
-.btn.alt{border-radius:2px}
-dialog{border-radius:2px}
-.pd h3{text-transform:uppercase;letter-spacing:-.02em}
-.sizes button{border-radius:2px}
-.sizes button[aria-pressed=true]{background:#111b2b;border-color:#111b2b}
-.adm{background:var(--bg)}
-@media(max-width:760px){
- .premium-hero{min-height:540px;background-position:58% center}
- .hero-inner{padding:76px 20px 90px}
- .premium-hero h1{font-size:clamp(2.8rem,13vw,4.5rem);max-width:560px}
- .premium-hero p{font-size:.95rem;max-width:330px}
- .editorial-strip{grid-template-columns:1fr;padding:14px 20px;gap:0}
- .editorial-strip div{border-right:0;border-bottom:1px solid #ffffff25;padding:12px}
- .editorial-strip div:last-child{border:0}
- .collection-head{display:block;margin:42px 0 20px}
- .collection-head p{margin-top:8px}
- .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 12px}
- header .wrap{height:64px}
+table.info{width:100%;border-collapse:collapse}table.info th,table.info td{text-align:left;padding:11px 6px;border-bottom:1px solid var(--line);vertical-align:top}table.info th{width:36%;color:var(--mut);font-weight:600}table.info td{word-break:break-word}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}.cta .btn{width:auto;min-width:180px}
+footer{background:var(--navy);color:#C9CEEA;padding:46px 0 30px;margin-top:20px}
+.fg{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:30px}
+footer h4{color:#fff;font:600 .8rem Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px}
+footer a{display:block;text-decoration:none;padding:3px 0;transition:color .2s,transform .2s}footer a:hover{color:#fff;transform:translateX(3px)}
+footer .lg{font:600 1.4rem "Playfair Display",Georgia,serif;color:#fff;margin-bottom:8px}
+footer small{display:block;margin-top:28px;padding-top:18px;border-top:1px solid #2B3268;font-size:.82rem}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,30px);background:var(--navy);color:#fff;border:1px solid var(--line);padding:11px 20px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;z-index:60;font-size:.9rem;white-space:nowrap}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+.adm{max-width:960px;margin:0 auto;padding:26px 18px 90px}
+.adm h2,.adm h3{margin:30px 0 10px}.ab{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.ab h2{margin:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:16px}
+.stats div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}.stats b{display:block;font-size:1.3rem}.stats span{color:var(--mut);font-size:.85rem}
+.row{display:grid;grid-template-columns:54px minmax(0,1fr);gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.row .rt{width:54px;height:66px;border-radius:8px;background:var(--line);overflow:hidden}.row .rt img{width:100%;height:100%;object-fit:cover}
+.row b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}.row small{color:var(--mut)}
+.ra{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:2px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chk{flex-direction:row;align-items:center;gap:8px;font-weight:500}.chk input{width:auto}
+.ig{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.igi{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.igi img{width:100%;aspect-ratio:4/5;object-fit:cover;display:block}
+.igi i{position:absolute;top:6px;left:6px;background:var(--acc);color:#fff;font-style:normal;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:999px}
+.igi div{display:flex;justify-content:space-between;padding:4px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;font-size:.93rem;white-space:pre-wrap;overflow-wrap:anywhere}
+.box small{display:block;color:var(--mut)}.oa{white-space:normal;margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.fm0{padding:0}.adm form{padding:0}
+.bc{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.85rem;color:var(--mut);margin:6px 0 20px}.bc a{text-decoration:none}.bc a:hover{color:var(--ink)}.bc b{color:var(--ink);font-weight:500;overflow-wrap:anywhere}
+.pp{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:46px;align-items:start}
+.pp .gal{position:sticky;top:130px;min-width:0}.pp .gm{border-radius:16px}.pp .gt{padding:12px 0 0}
+.pp .pd{padding:0;gap:16px}
+.pp h1{font-size:clamp(1.6rem,3.6vw,2.3rem);line-height:1.2;font-weight:600;overflow-wrap:anywhere;margin:0}
+.off{font-style:normal;background:var(--acc);color:#fff;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:999px;margin-left:10px;vertical-align:middle}
+.qty{display:flex;align-items:center;gap:6px;margin-top:8px}.qty button{width:42px;height:42px;border-radius:50%;border:1.5px solid var(--line);background:none;cursor:pointer;font-size:1.15rem;transition:border-color .2s}.qty button:hover{border-color:var(--ink)}.qty b{min-width:36px;text-align:center}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+details{border-top:1px solid var(--line);padding:14px 0}details:last-of-type{border-bottom:1px solid var(--line)}details summary{cursor:pointer;font-weight:600}details p{margin-top:8px;color:var(--mut)}
+.rh{font-size:1.5rem;margin:60px 0 20px;font-weight:600}
+.pbar{display:none}
+.shake{animation:shake .4s}
+.ck{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:28px;align-items:start;margin-top:18px}
+.sum{position:sticky;top:130px}.fh{font-size:1.25rem;margin:4px 0 6px;font-weight:600}
+.pmo{flex-direction:row;align-items:flex-start;gap:12px;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;cursor:pointer;font-weight:600}.pmo:has(input:checked){border-color:var(--acc)}
+.pmo input{width:auto;margin-top:5px}.pmo small{display:block;color:var(--mut);font-weight:400}
+.upi{display:grid;gap:10px;justify-items:center;text-align:center;border:1.5px dashed var(--line);border-radius:12px;padding:16px}.upi img{width:200px;max-width:100%;border-radius:10px}.upi label{width:100%;text-align:left}
+.sr{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.sr .t0{width:56px;height:70px;border-radius:8px;background:var(--line);overflow:hidden}.sr .t0 img{width:100%;height:100%;object-fit:cover;display:block}
+.sr b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;font-weight:600}.sr small{color:var(--mut)}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@media(max-width:900px){.pp{grid-template-columns:1fr;gap:22px}.pp .gal{position:static}.ck{grid-template-columns:1fr}.sum{position:static;order:-1}}
+@media(max-width:700px){.acts{display:none}.pbar{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:fixed;left:0;right:0;bottom:0;z-index:25;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line)}#product{padding-bottom:120px}.pbar .btn{padding:13px 10px}#toast{bottom:calc(84px + env(safe-area-inset-bottom))}.tools select{max-width:46%}.pp .gm{border-radius:12px}}
+.hero{position:relative;overflow:hidden;background:var(--bg);border-bottom:1px solid var(--line)}
+@supports(background:color-mix(in srgb,red,blue)){.hero{background:radial-gradient(900px 420px at 85% 10%,color-mix(in srgb,var(--acc) 26%,transparent),transparent 65%),var(--bg)}}
+#c3d{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hi{position:relative;z-index:2;padding-top:60px;padding-bottom:60px}
+.kick{font:600 .78rem Inter,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:var(--acc)}
+.hi h2{font-size:clamp(2.5rem,7.5vw,4.8rem);line-height:1.02;font-weight:700;margin:10px 0 14px;max-width:10ch}
+.hs{color:var(--mut);max-width:34ch;margin-bottom:24px}
+.hero .btn{display:inline-block;width:auto;padding:15px 38px}
+.mq{overflow:hidden;border-bottom:1px solid var(--line);background:var(--card)}
+.mq div{display:flex;width:max-content;animation:mq 30s linear infinite}
+.mq span{padding:13px 28px;font:600 .78rem Inter,sans-serif;letter-spacing:.22em;white-space:nowrap}
+.mq span:after{content:"/";margin-left:56px;color:var(--acc)}
+@keyframes mq{to{transform:translateX(-50%)}}
+.card{opacity:0;transform:perspective(900px) translateY(26px) rotateX(10deg)}
+.card .im{transform:perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .25s ease,box-shadow .3s ease;will-change:transform}
+.card:hover .im{box-shadow:var(--sh)}
+.im:after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s;background:radial-gradient(circle at var(--gx,50%) var(--gy,50%),rgba(255,255,255,.25),transparent 55%)}
+.card:hover .im:after{opacity:1}
+.gal{perspective:1200px}
+.gm img{transform:perspective(1100px) rotateY(-14deg) scale(.93);transition:opacity .8s ease,transform 1s cubic-bezier(.2,.7,.2,1)}
+.gm img.on,.gm img:only-child{transform:none}
+.sk{pointer-events:none}
+.sk .im{background:linear-gradient(100deg,var(--line) 30%,color-mix(in srgb,var(--line) 50%,var(--card)) 50%,var(--line) 70%);background-size:220% 100%;animation:shim 1.3s linear infinite}
+.sk .nm{display:block;height:14px;border-radius:7px;background:var(--line);margin-top:14px;min-height:0;width:70%}
+@keyframes shim{to{background-position:-120% 0}}
+#bTheme svg{transition:transform .5s}#bTheme:hover svg{transform:rotate(180deg)}
+@media(hover:none){.card .im{transform:none!important}}
+@media(max-width:700px){#c3d{opacity:.6}.hi{padding-top:42px;padding-bottom:42px}.hi h2{max-width:9ch}}
+@keyframes bump{40%{transform:scale(1.35)}}
+@keyframes pop{from{opacity:0;transform:translateY(12px) scale(.98)}}
+@keyframes sheet{from{transform:translateY(40px);opacity:.4}}
+@media(max-width:700px){
+ .wrap{padding:0 16px}.logo{font-size:1.3rem}.logo span{display:none}.hm{display:none}
+ .menu .wrap{gap:22px}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:26px 12px;padding-bottom:50px}
+ .nm{font-size:.92rem}.th{margin:24px 0 18px}.tools{max-width:none;flex-basis:100%}
+ dialog{width:100%;max-width:100%;margin:auto 0 0;border-radius:20px 20px 0 0;max-height:92vh;max-height:92dvh}dialog[open]{animation:sheet .3s ease}
+ .pm{grid-template-columns:1fr}.pd{padding:20px 18px 0}
+ .act{position:sticky;bottom:0;background:var(--card);padding:12px 0 calc(14px + env(safe-area-inset-bottom));margin-top:4px;box-shadow:0 -10px 14px -12px rgba(0,0,0,.25)}
+ .fg{grid-template-columns:1fr;gap:22px}.cta .btn{width:100%}.two{grid-template-columns:1fr}
+ #toast{white-space:normal;width:max-content;max-width:calc(100% - 32px);text-align:center}
 }
-@media(prefers-reduced-motion:reduce){.hero-cta,.card .ph{transition:none}}
-
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.card{opacity:1;transform:none}}
 </style>
 </head>
 <body>
-<header><div class="wrap"><a class="logo" href="./">Crossroads<small>shopping</small></a>
-<div class="hb"><a class="pill" href="#contact">Message</a><button class="pill g" id="bCart">Cart (<span id="cnt">0</span>)</button></div></div>
-<nav class="menu" aria-label="Shop menu"><div class="wrap" id="cats"></div></nav></header>
+<div class="ann" id="ann">Delivered to your door<span class="hm"> &nbsp;·&nbsp; Pay by UPI &nbsp;·&nbsp; Questions? Message us on Instagram</span></div>
+<header id="hd">
+<div class="wrap hr">
+<a class="logo" href="./" id="logo">Crossroads<span>Shopping</span></a>
+<div class="hb">
+<button class="ib" id="bTheme" aria-label="Switch light or dark theme"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4v16" /><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
+<a class="ib" href="#contact" aria-label="Message us"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4V5z"/></svg></a>
+<button class="ib" id="bCart" aria-label="Open your bag"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg><b id="cnt" hidden>0</b></button>
+</div>
+</div>
+<nav class="menu" aria-label="Shop menu"><div class="wrap" id="cats"></div></nav>
+</header>
 
 <div id="shop">
-<section class="premium-hero" aria-label="Crossroads fashion collection">
- <div class="hero-inner">
-  <div class="hero-kicker">Crossroads Shopping · New season, new perspective</div>
-  <h1>Style that<br>moves with you.</h1>
-  <p>Discover everyday fashion, statement pieces and fresh finds selected to make your own.</p>
-  <a class="hero-cta" href="#collection" id="heroShop">Explore the collection&nbsp; ↗</a>
- </div>
- <div class="hero-note">Find your way. Define your style.</div>
-</section>
-<div class="editorial-strip"><div>Curated everyday style</div><div>Fresh finds, updated regularly</div><div>Here when you need us</div></div>
-<main><div class="wrap">
- <div class="collection-head" id="collection"><div><span>The Crossroads edit</span><h2>Shop the collection</h2></div><p>Pieces worth wearing on repeat. Find your next favourite below.</p></div>
- <div class="grid" id="grid"></div>
-</div></main></div>
+<section class="hero" id="hero"><canvas id="c3d" aria-hidden="true"></canvas><div class="wrap hi"><p class="kick">New collection</p><h2>Wear the drop.</h2><p class="hs">Fashion, trending items and shoes delivered to your door.</p><button class="btn" id="heroCta" type="button">Shop now</button></div></section>
+<div class="mq" aria-hidden="true"><div><span>NEW DROP</span><span>FASHION</span><span>TRENDING</span><span>SHOES</span><span>NEW DROP</span><span>FASHION</span><span>TRENDING</span><span>SHOES</span><span>NEW DROP</span><span>FASHION</span><span>TRENDING</span><span>SHOES</span><span>NEW DROP</span><span>FASHION</span><span>TRENDING</span><span>SHOES</span></div></div>
+<div class="wrap">
+<div class="th"><div><h1 id="ttl">All products</h1><p class="sub" id="cn"></p></div>
+<div class="tools"><input id="q" type="search" placeholder="Search products" aria-label="Search products"><select id="so" aria-label="Sort products"><option value="n">Newest</option><option value="l">Price: low to high</option><option value="h">Price: high to low</option></select></div></div>
+<div class="grid" id="grid"></div>
+</div></div>
 
 <section class="pg" id="about" hidden><div class="wrap narrow">
 <h1>About Crossroads Shopping</h1>
 <p class="lead">Your next favourite find is here.</p>
-<p>Crossroads Shopping is an online fashion store. We bring dresses, trending items, shoes and accessories together in one place and deliver them to your door.</p>
+<p>Crossroads Shopping is an online fashion store. We bring fashion, trending items, shoes and accessories together in one place and deliver them to your door.</p>
 <h2>What you can shop</h2>
-<p>Use the menu at the top of every page to browse each category, like Dresses, Trending and Shoes. New items are added regularly.</p>
+<p>Use the menu at the top of every page to browse each category, like Fashion, Trending and Shoes. New items are added regularly.</p>
 <h2>How ordering works</h2>
-<ol class="stp"><li><b>Pick your product.</b> Choose your size and add it to your cart.</li><li><b>Pay securely.</b> Pay by UPI or online payment and enter your delivery address.</li><li><b>We confirm and ship.</b> We check your order and send it to your door. Message us any time if you need help.</li></ol>
+<ol class="stp"><li><b>Pick your product.</b> Choose your size and add it to your bag.</li><li><b>Pay securely.</b> Pay by UPI or online payment and enter your delivery address.</li><li><b>We confirm and ship.</b> We check your order and send it to your door. Message us any time if you need help.</li></ol>
 <h2>Website details</h2>
 <div class="cardx"><table class="info">
 <tr><th>Store name</th><td>Crossroads Shopping</td></tr>
@@ -196,7 +253,7 @@ dialog{border-radius:2px}
 <tr><th>Payments</th><td>UPI and online payment</td></tr>
 <tr><th>Customer support</th><td>Instagram message, email, or the message form on the Contact page</td></tr>
 </table></div>
-<div class="cta"><a class="btn dk" href="./" id="goShop">Browse products</a><a class="btn alt" href="#contact">Contact us</a></div>
+<div class="cta"><a class="btn" href="./" id="goShop">Browse products</a><a class="btn alt" href="#contact">Contact us</a></div>
 </div></section>
 
 <section class="pg" id="contact" hidden><div class="wrap narrow">
@@ -213,171 +270,270 @@ dialog{border-radius:2px}
 <label>Phone or email, so we can reply<input id="mc"></label>
 <label>Message<textarea id="mt" rows="5"></textarea></label>
 <div class="err" id="me" role="alert"></div>
-<button class="btn dk" type="submit">Send message</button>
+<button class="btn" type="submit">Send message</button>
 </form>
 </div></section>
 
-<footer id="foot"><a href="#about">About us</a><a href="#contact">Contact</a><a id="fIg" target="_blank" rel="noopener">Instagram</a><a id="fMail">Email</a></footer>
+<section class="pg" id="product" hidden></section>
+<section class="pg" id="checkout" hidden></section>
+
 <div id="admin" hidden></div>
 
-<dialog id="pd"><button class="x" id="pdx" aria-label="Close">×</button><div class="pm"><div class="ph" id="pimg"></div><div class="pd" id="pbody"></div></div></dialog>
+<footer id="foot"><div class="wrap">
+<div class="fg">
+<div><div class="lg">Crossroads Shopping</div><p>Your next favourite find is here.</p></div>
+<div><h4>Explore</h4><a href="./" id="fHome">Shop</a><a href="#about">About us</a><a href="#contact">Contact</a></div>
+<div><h4>Get in touch</h4><a id="fIg" target="_blank" rel="noopener" class="ig-t"></a><a id="fMail" class="mail-t"></a></div>
+</div>
+<small>© <span id="yr"></span> Crossroads Shopping. All rights reserved.</small>
+</div></footer>
 
-
-<dialog id="ud"><button class="x" id="udx" aria-label="Close">×</button><div class="fm" id="ub"></div></dialog>
 <div class="ov" id="ov"></div>
-<aside id="cart" aria-label="Your cart"><div class="top">Your cart<button class="x" id="cx" aria-label="Close cart">×</button></div><div id="items"></div><div id="co"></div></aside>
+<aside id="cart" aria-label="Your bag"><div class="top">Your bag<button class="x" id="cx" aria-label="Close bag">×</button></div><div id="items"></div><div id="co"></div></aside>
+<div id="toast" role="status"></div>
 
 <script>
 const IG="crossroads_shopping",MAIL="producingmj@gmail.com";
 const $=i=>document.getElementById(i),money=n=>"₹"+(+n).toLocaleString("en-IN");
-$("heroShop").addEventListener("click",e=>{e.preventDefault();$("collection").scrollIntoView({behavior:"smooth",block:"start"})});
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const post=(p,b,h,k)=>fetch("/api/"+p,{method:"POST",headers:Object.assign({"content-type":"application/json"},h||{}),body:JSON.stringify(b),keepalive:!!k}).then(r=>r.json().then(d=>({ok:r.ok,d})));
-const seen=new Set();
-const LOG=[],T={open:"Opened the store",view:"Looked at: ",cart:"Added to cart: ",buy:"Tapped Buy/Pay: "};let sentN=0;
+const seen=new Set(),LOG=[],T={open:"Opened the store",view:"Looked at: ",cart:"Added to cart: ",buy:"Tapped Buy/Pay: "};let sentN=0;
 const log=x=>LOG.push({t:new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}),x});
 function ev(type,name,once){const k=type+name;if(once&&seen.has(k))return;seen.add(k);log((T[type]||type)+(name||""));post("event",{type,name},0,1).catch(()=>{})}
 function flush(){if(LOG.length<=sentN||location.hash==="#admin")return;const d=LOG.slice(sentN);sentN=LOG.length;try{navigator.sendBeacon("/api/session",new Blob([JSON.stringify({log:d,ref:document.referrer,ua:navigator.userAgent})],{type:"application/json"}))}catch(e){}}
 addEventListener("pagehide",flush);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flush()});
-const igl="https://ig.me/m/"+IG,gml="https://mail.google.com/mail/?view=cm&to="+MAIL;
-["fIg","cIg","aIg"].forEach(i=>$(i).href=igl);["fMail","cMail","aMail"].forEach(i=>$(i).href="mailto:"+MAIL);
-document.querySelectorAll(".ig-t").forEach(e=>e.textContent="@"+IG);document.querySelectorAll(".mail-t").forEach(e=>e.textContent=MAIL);$("host").textContent=location.host||"crossroadsshoppings.in";
-let P=[],cat="All",cart=[],cur=null,size=null,ST={upi:"",name:"",qr:"",online:false};
+$("bTheme").onclick=()=>{const t=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";document.documentElement.setAttribute("data-theme",t);try{localStorage.setItem("cr_theme",t)}catch(e){}document.querySelector("meta[name=theme-color]").content=t==="dark"?"#080A10":"#F4F6FB";document.dispatchEvent(new Event("themechange"))};
+$("heroCta").onclick=()=>$("grid").scrollIntoView({behavior:"smooth",block:"start"});
+$("fIg").href=$("cIg").href=$("aIg").href="https://ig.me/m/"+IG;
+["fMail","cMail","aMail"].forEach(i=>$(i).href="mailto:"+MAIL);
+document.querySelectorAll(".ig-t").forEach(e=>e.textContent="@"+IG);document.querySelectorAll(".mail-t").forEach(e=>e.textContent=MAIL);
+$("host").textContent=location.host||"crossroadsshoppings.in";$("yr").textContent=new Date().getFullYear();
+
+let P=[],cat="All",cart=[],cur=null,size=null,Q="",SO="n",ST={upi:"",name:"",qr:"",online:false},wasAdmin=false,loading=true;
 try{cart=JSON.parse(localStorage.getItem("cr_cart")||"[]")}catch(e){}
 const save=()=>{try{localStorage.setItem("cr_cart",JSON.stringify(cart))}catch(e){}};
-const bg=p=>p.img?`background-image:url('${p.img}')`:`background:hsl(${(p.id%360)} 28% 34%)`;
+const imgs=p=>p.imgs&&p.imgs.length?p.imgs:(p.img?[p.img]:[]);
+const view=()=>{const x=location.hash;return x==="#about"?"about":x==="#contact"?"contact":x==="#admin"?"admin":x==="#checkout"?"checkout":x.startsWith("#p/")?"product":"shop"};
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.h);toast.h=setTimeout(()=>e.classList.remove("on"),1900)}
+const ph=p=>`<span class="ph" style="background:linear-gradient(135deg,hsl(${p.id%360} 25% 32%),hsl(${(p.id+40)%360} 30% 22%))">${esc((p.n||"").trim().charAt(0).toUpperCase())}</span>`;
 
-const view=()=>location.hash==="#about"?"about":location.hash==="#contact"?"contact":location.hash==="#admin"?"admin":"shop";
-function cats(){const c=["All",...(P.some(p=>p.tr)?["Trending"]:[]),...new Set(P.map(p=>p.c).filter(Boolean))],v=view();
- $("cats").innerHTML=c.map(x=>`<button class="chip" data-c="${esc(x)}" aria-pressed="${v==="shop"&&x===cat}">${esc(x)}</button>`).join("")+`<a class="chip" href="#about" aria-current="${v==="about"?"page":"false"}">About</a><a class="chip" href="#contact" aria-current="${v==="contact"?"page":"false"}">Contact</a>`}
-function grid(){const L=P.filter(p=>cat==="All"||(cat==="Trending"?p.tr:p.c===cat));
- $("grid").innerHTML=L.length?L.map(p=>`<button class="card" data-id="${p.id}"><div class="ph" style="${bg(p)}">${p.img?"":esc(p.n)}${p.sold?'<span class="badge">Sold out</span>':""}</div><b>${esc(p.n)}</b><div class="price">${money(p.p)}${+p.o?`<s>${money(p.o)}</s>`:""}</div></button>`).join("")
- :`<div class="empty" style="grid-column:1/-1">New arrivals are on the way. Message us on Instagram to ask what's coming.</div>`}
-$("cats").onclick=e=>{const b=e.target.closest("button.chip");if(!b)return;cat=b.dataset.c;log("Browsed category: "+cat);if(view()!=="shop"){history.pushState(null,"",location.pathname);route()}else{cats()}grid()};
-$("goShop").onclick=e=>{e.preventDefault();history.pushState(null,"",location.pathname);route()};
-$("grid").onclick=e=>{const b=e.target.closest(".card");if(b)openP(+b.dataset.id)};
+async function loadP(){let ok=true;try{const r=await fetch("/api/products");P=await r.json();if(!r.ok)throw 0}catch(e){ok=false;try{P=JSON.parse(localStorage.getItem("cr_pc")||"[]")}catch(_){P=[]}}
+ if(!Array.isArray(P))P=[];
+ if(ok){const s=JSON.stringify(P);let ch=true;try{ch=s!==localStorage.getItem("cr_pc");localStorage.setItem("cr_pc",s)}catch(e){}return ch}
+ if(!P.length&&["127.0.0.1","localhost"].includes(location.hostname))P=[{id:11,n:"Sample linen shirt with a really long product title to test how it wraps",c:"Fashion",p:1299,o:1799,s:["S","M","L","XL"],tr:true,d:"Preview only. Add your real products from #admin once the site is online."},{id:12,n:"Sample sneakers",c:"Shoes",p:1899,o:0,s:["7","8","9","10"]},{id:13,n:"Sample watch",c:"Accessories",p:1499,o:1999,s:["One size"]},{id:14,n:"Sample wallet",c:"Accessories",p:599,o:0,s:["One size"],sold:true}];
+ return true}
 
-function openP(id){cur=P.find(p=>p.id===id);if(!cur)return;const S=cur.s&&cur.s.length?cur.s:["One size"];size=S.length===1?S[0]:null;
- ev("view",cur.n,1);galleryIndex=0;renderGallery();
- $("pbody").innerHTML=`<h3>${esc(cur.n)}</h3><div class="price" style="font-size:1.3rem">${money(cur.p)}${+cur.o?`<s>${money(cur.o)}</s>`:""}</div>
- ${cur.d?`<p style="color:var(--mut)">${esc(cur.d)}</p>`:""}
- <div><b>${S.length===1?"Size":"Choose a size"}</b><div class="sizes" id="sz">${S.map(s=>`<button type="button" data-s="${esc(s)}" aria-pressed="${s===size}">${esc(s)}</button>`).join("")}</div></div>
- <div class="err" id="pe"></div>
- <button class="btn dk" id="buy" ${cur.sold?"disabled":""}>${cur.sold?"Sold out":"Buy now"}</button>
- <button class="btn alt" id="add" ${cur.sold?"disabled":""}>Add to cart</button>`;$("pd").showModal();clearInterval(galleryTimer);if(productImages(cur).length>1)galleryTimer=setInterval(()=>galleryGo((galleryIndex+1)%productImages(cur).length),3200)}
-function productImages(p){return Array.isArray(p.images)&&p.images.length?p.images.filter(Boolean):(p.img?[p.img]:[])}
-function renderGallery(){const el=$("pimg"),imgs=productImages(cur);el.classList.add("product-gallery");el.innerHTML=imgs.length?imgs.map((src,i)=>`<img src="${src}" alt="${esc(cur.n)} photo ${i+1}" class="${i===0?"active":""}" loading="${i===0?"eager":"lazy"}">`).join("")+(imgs.length>1?`<div class="gallery-nav"><button type="button" data-gallery="-1" aria-label="Previous photo">‹</button><button type="button" data-gallery="1" aria-label="Next photo">›</button></div><div class="gallery-dots">${imgs.map((_,i)=>`<button type="button" data-dot="${i}" class="${i===0?"active":""}" aria-label="Photo ${i+1}"></button>`).join("")}</div><span class="gallery-count">1 / ${imgs.length}</span>`:""):`<div class="gallery-empty">${esc(cur.n)}</div>`}
-function galleryGo(i){const n=productImages(cur).length;if(!n)return;galleryIndex=(i+n)%n;const el=$("pimg");el.querySelectorAll("img").forEach((im,k)=>im.classList.toggle("active",k===galleryIndex));el.querySelectorAll("[data-dot]").forEach((b,k)=>b.classList.toggle("active",k===galleryIndex));const count=el.querySelector(".gallery-count");if(count)count.textContent=(galleryIndex+1)+" / "+n}
-$("pimg").onclick=e=>{const b=e.target.closest("[data-gallery],[data-dot]");if(!b)return;clearInterval(galleryTimer);galleryGo(b.dataset.dot!==undefined?+b.dataset.dot:galleryIndex+(+b.dataset.gallery));if(productImages(cur).length>1)galleryTimer=setInterval(()=>galleryGo((galleryIndex+1)%productImages(cur).length),3200)};
-$("pd").addEventListener("close",()=>clearInterval(galleryTimer));
-function addCur(){if(!size){$("pe").textContent="Choose a size to continue.";return false}
- const k=cur.id+"|"+size,f=cart.find(i=>i.k===k);if(f)f.q++;else cart.push({k,id:cur.id,n:cur.n,p:cur.p,s:size,q:1});save();render();ev("cart",cur.n+" ("+size+")");return true}
-$("pbody").onclick=e=>{const s=e.target.closest("[data-s]");
- if(s){size=s.dataset.s;document.querySelectorAll("#sz button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.s===size));$("pe").textContent=""}
- if(e.target.id==="add"&&addCur()){$("pd").close();openCart()}
- if(e.target.id==="buy"&&addCur()){ev("buy",cur.n);$("pd").close();openCart()}};
-$("pdx").onclick=()=>$("pd").close();
-[$("pd"),$("ud")].forEach(d=>d.onclick=e=>{if(e.target===d)d.close()});
+function cats(){const V=P.filter(p=>!p.hid),c=["All",...(V.some(p=>p.tr)?["Trending"]:[]),...new Set(V.map(p=>p.c).filter(Boolean))],v=view();
+ $("cats").innerHTML=c.map(x=>`<button data-c="${esc(x)}" aria-current="${v==="shop"&&x===cat}">${esc(x)}</button>`).join("")+`<a href="#about" aria-current="${v==="about"?"page":"false"}">About</a><a href="#contact" aria-current="${v==="contact"?"page":"false"}">Contact</a>`}
+function list(){let L=P.filter(p=>!p.hid&&(cat==="All"||(cat==="Trending"?p.tr:p.c===cat))&&(!Q||((p.n||"")+" "+(p.c||"")).toLowerCase().includes(Q)));
+ if(SO==="l")L=[...L].sort((a,b)=>a.p-b.p);else if(SO==="h")L=[...L].sort((a,b)=>b.p-a.p);return L}
+function card(p,i){const m=imgs(p),dc=+p.o>p.p?Math.round((1-p.p/p.o)*100):0;
+ return `<button class="card" data-id="${p.id}" style="--d:${(i%8)*60}ms"><span class="im">${m[0]?`<img src="${m[0]}" alt="${esc(p.n)}" loading="lazy" decoding="async">${m[1]?`<img class="im2" src="${m[1]}" alt="" loading="lazy">`:""}`:ph(p)}${p.sold?'<i class="bd so">Sold out</i>':dc?`<i class="bd">-${dc}%</i>`:p.tr?'<i class="bd">Trending</i>':""}<em class="qv">Quick view</em></span><span class="nm">${esc(p.n)}</span><span class="price">${money(p.p)}${+p.o>p.p?`<s>${money(p.o)}</s>`:""}</span></button>`}
+function reveal(){const cs=document.querySelectorAll(".card:not(.in)");if(!("IntersectionObserver" in window)){cs.forEach(c=>c.classList.add("in"));return}
+ const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{rootMargin:"0px 0px -5% 0px"});cs.forEach(c=>io.observe(c))}
+function grid(){if(loading&&!P.length){$("grid").innerHTML=Array.from({length:8},()=>'<div class="card sk in"><span class="im"></span><span class="nm"></span></div>').join("");$("cn").textContent="Loading...";return}const L=list();$("ttl").textContent=cat==="All"?"All products":cat;$("cn").textContent=L.length+(L.length===1?" product":" products");
+ $("grid").innerHTML=L.length?L.map(card).join(""):`<div class="empty">${P.some(p=>!p.hid)?"No products match your search.":"New arrivals are on the way. Message us on Instagram to ask what is coming."}</div>`;reveal()}
+$("cats").onclick=e=>{const b=e.target.closest("button[data-c]");if(!b)return;cat=b.dataset.c;log("Browsed category: "+cat);if(view()!=="shop"){history.pushState(null,"",location.pathname);route()}else{cats();grid()}};
+$("q").oninput=e=>{Q=e.target.value.trim().toLowerCase();grid()};$("so").onchange=e=>{SO=e.target.value;grid()};
+$("grid").onclick=e=>{const b=e.target.closest(".card");if(b)location.hash="#p/"+b.dataset.id};
+function home(e){e.preventDefault();cat="All";history.pushState(null,"",location.pathname);route()}
+["logo","goShop","fHome"].forEach(i=>$(i).onclick=home);
+
+let cg=0,auto=null,autoT=null,qty=1;
+function bump(){const c=$("cnt");c.classList.remove("bump");void c.offsetWidth;c.classList.add("bump")}
+function renderProduct(id){
+ cur=P.find(p=>String(p.id)===String(id)&&!p.hid);const el=$("product");cg=0;
+ if(!cur){if(loading){el.innerHTML='<div class="wrap narrow"><p class="sub" style="padding:60px 0">Loading...</p></div>';return}el.innerHTML=`<div class="wrap narrow"><h1>Product not found</h1><p>This item may have been removed.</p><p style="margin-top:16px"><a class="btn" href="./" data-nav="" style="max-width:240px">Back to shop</a></p></div>`;return}
+ const S=cur.s&&cur.s.length?cur.s:["One size"],m=imgs(cur),dc=+cur.o>cur.p?Math.round((1-cur.p/cur.o)*100):0,dis=cur.sold?"disabled":"";
+ size=S.length===1?S[0]:null;qty=1;ev("view",cur.n,1);document.title=cur.n+" | Crossroads Shopping";
+ const rel=P.filter(p=>!p.hid&&p.id!==cur.id&&(p.c===cur.c||p.tr)).slice(0,4),btns=`<button class="btn alt" data-act="add" ${dis}>Add to bag</button><button class="btn" data-act="buy" ${dis}>${cur.sold?"Sold out":"Buy now"}</button>`;
+ el.innerHTML=`<div class="wrap"><nav class="bc" aria-label="Breadcrumb"><a href="./" data-nav="">Home</a><span>/</span><a href="./" data-nav="${esc(cur.c||"")}">${esc(cur.c||"Shop")}</a><span>/</span><b>${esc(cur.n)}</b></nav>
+ <div class="pp"><div class="gal"><div class="gm" id="gm">${m.length?m.map((s,k)=>`<img class="sl${k===0?" on":""}" ${k===0?'fetchpriority="high" ':""}decoding="async" src="${s}" alt="${esc(cur.n)}">`).join(""):ph(cur)}${m.length>1?`<div class="gd">${m.map((_,k)=>`<i class="${k===0?"on":""}"></i>`).join("")}</div>`:""}</div>${m.length>1?`<div class="gt">${m.map((s,k)=>`<button type="button" data-g="${k}" aria-label="Photo ${k+1}" aria-pressed="${k===0}"><img src="${s}" alt=""></button>`).join("")}</div>`:""}</div>
+ <div class="pd"><h1>${esc(cur.n)}</h1><div class="price lg">${money(cur.p)}${dc?`<s>${money(cur.o)}</s><i class="off">-${dc}%</i>`:""}</div>${cur.d?`<p class="dsc">${esc(cur.d)}</p>`:""}
+ <div><b>${S.length===1?"Size":"Select size"}</b><div class="sizes" id="sz">${S.map(s=>`<button type="button" data-s="${esc(s)}" aria-pressed="${s===size}">${esc(s)}</button>`).join("")}</div></div>
+ <div><b>Quantity</b><div class="qty"><button type="button" data-q="-1" aria-label="Less">−</button><b id="qv">1</b><button type="button" data-q="1" aria-label="More">+</button></div></div>
+ <div class="acts">${btns}</div>
+ <ul class="tr"><li>Pay by UPI or online payment</li><li>Delivered to your door</li><li>Questions? Message us on Instagram</li></ul>
+ <details><summary>Delivery and payment</summary><p>Pay by UPI or online payment at checkout. We confirm your order and send it to your door.</p></details>
+ <details><summary>Need help?</summary><p>Message us on <a href="https://ig.me/m/${IG}" target="_blank" rel="noopener">Instagram</a> or email <a href="mailto:${MAIL}">${MAIL}</a>.</p></details></div></div>
+ ${rel.length?`<h2 class="rh">You may also like</h2><div class="grid" id="rel">${rel.map(card).join("")}</div>`:""}</div><div class="pbar">${btns}</div>`;
+ reveal();startAuto(2500);
+ const gm=$("gm");let x0=null;gm.onmouseenter=stopAuto;gm.onmouseleave=()=>startAuto(1500);
+ gm.ontouchstart=e=>{x0=e.touches[0].clientX;stopAuto()};
+ gm.ontouchend=e=>{if(x0===null||m.length<2)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>40)go((cg+(dx<0?1:-1)+m.length)%m.length,true);else startAuto(4000)}}
+function go(k,manual){cg=k;document.querySelectorAll("#gm .sl").forEach((e,n)=>e.classList.toggle("on",n===k));document.querySelectorAll("#gm .gd i").forEach((e,n)=>e.classList.toggle("on",n===k));document.querySelectorAll(".gt button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.g===k));if(manual)startAuto(6000)}
+function stopAuto(){clearInterval(auto);clearTimeout(autoT);auto=null}
+function startAuto(delay){stopAuto();if(!cur||view()!=="product")return;const m=imgs(cur);if(m.length<2||matchMedia("(prefers-reduced-motion:reduce)").matches)return;autoT=setTimeout(()=>{auto=setInterval(()=>go((cg+1)%m.length),3500)},delay||2500)}
+function addCur(){if(!size){toast("Please choose a size");const z=$("sz");if(z){z.scrollIntoView({behavior:"smooth",block:"center"});z.classList.remove("shake");void z.offsetWidth;z.classList.add("shake")}return false}
+ const k=cur.id+"|"+size,f=cart.find(i=>i.k===k);if(f)f.q=Math.min(10,f.q+qty);else cart.push({k,id:cur.id,n:cur.n,p:cur.p,s:size,q:qty});save();render();ev("cart",cur.n+" ("+size+") x"+qty);bump();toast("Added to your bag");return true}
+$("product").onclick=e=>{
+ const g=e.target.closest("[data-g]");if(g){go(+g.dataset.g,true);return}
+ const s=e.target.closest("[data-s]");if(s){size=s.dataset.s;document.querySelectorAll("#sz button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.s===size));return}
+ const q=e.target.closest("[data-q]");if(q){qty=Math.max(1,Math.min(10,qty+ +q.dataset.q));$("qv").textContent=qty;return}
+ const a=e.target.closest("[data-act]");if(a){if(!addCur())return;if(a.dataset.act==="buy"){ev("buy",cur.n);location.hash="#checkout"}else openCart();return}
+ const c=e.target.closest(".card");if(c){location.hash="#p/"+c.dataset.id;return}
+ const n=e.target.closest("[data-nav]");if(n){e.preventDefault();cat=n.dataset.nav||"All";history.pushState(null,"",location.pathname);route()}};
 
 const total=()=>cart.reduce((a,i)=>a+i.p*i.q,0);
-function render(){$("cnt").textContent=cart.reduce((a,i)=>a+i.q,0);
- if(!cart.length){$("items").innerHTML=`<div class="empty">Your cart is empty. Add a product to get started.</div>`;$("co").innerHTML="";return}
- $("items").innerHTML=cart.map(i=>`<div class="it"><div><b>${esc(i.n)}</b><div style="color:var(--mut)">Size: ${esc(i.s)}</div><div class="q"><button data-k="${i.k}" data-d="-1" aria-label="Decrease">−</button>${i.q}<button data-k="${i.k}" data-d="1" aria-label="Increase">+</button></div></div><div style="text-align:right"><b>${money(i.p*i.q)}</b><br><button class="link" data-k="${i.k}" data-d="x">Remove</button></div></div>`).join("");
- if(!$("f")){$("co").innerHTML=`<div class="total"><span>Total</span><span id="tot"></span></div><form id="f" novalidate>
- <label>Full name<input id="fn" autocomplete="name"></label><label>Phone number<input id="fp" inputmode="tel" autocomplete="tel"></label>
- <label>Email (for your receipt)<input id="fe" type="email" autocomplete="email"></label><label>Full address with pincode<textarea id="fa" rows="3" autocomplete="street-address"></textarea></label>
- <div class="err" id="fr" role="alert"></div>${ST.online?'<button class="btn dk" id="pay" type="submit">Pay online (cards, UPI, net banking)</button>':""}${ST.upi?`<button class="btn ${ST.online?"alt":"dk"}" id="upib" type="button">Pay by UPI QR</button>`:""}${!ST.online&&!ST.upi?'<div class="err">Payment is not available yet. Message us on Instagram to order.</div>':""}</form>`;
- $("f").onsubmit=e=>{e.preventDefault();if(ST.online)pay();else if(ST.upi)upi()};if($("upib"))$("upib").onclick=upi}
- $("tot").textContent=money(total())}
+function render(){const c=cart.reduce((a,i)=>a+i.q,0);$("cnt").textContent=c;$("cnt").hidden=!c;
+ if($("sumc"))$("sumc").innerHTML=sumHTML();
+ if(!cart.length){$("items").innerHTML=`<div class="cempty">Your bag is empty.<br>Add a product to get started.</div>`;$("co").innerHTML="";return}
+ $("items").innerHTML=cart.map(i=>{const p=P.find(x=>x.id===i.id),m=p?imgs(p):[];
+  return `<div class="it"><div class="t0">${m[0]?`<img src="${m[0]}" alt="">`:""}</div><div><b>${esc(i.n)}</b><small>Size: ${esc(i.s)}</small><div class="q"><button data-k="${i.k}" data-d="-1" aria-label="Decrease">−</button>${i.q}<button data-k="${i.k}" data-d="1" aria-label="Increase">+</button></div></div><div class="pr"><b>${money(i.p*i.q)}</b><button class="link" data-k="${i.k}" data-d="x">Remove</button></div></div>`}).join("");
+ $("co").innerHTML=`<div class="total"><span>Total</span><span>${money(total())}</span></div><div class="fm"><button class="btn" id="goCk" type="button">Checkout</button><button class="btn alt" id="goCont" type="button">Continue shopping</button></div>`;
+ $("goCk").onclick=()=>{closeCart();ev("buy","Checkout "+money(total()));location.hash="#checkout"};$("goCont").onclick=closeCart}
 $("items").onclick=e=>{const b=e.target.closest("[data-k]");if(!b)return;const i=cart.find(x=>x.k===b.dataset.k);if(!i)return;
  if(b.dataset.d==="x")cart=cart.filter(x=>x!==i);else{i.q+=+b.dataset.d;if(i.q<1)cart=cart.filter(x=>x!==i)}save();render()};
-function openCart(){log("Opened the cart");$("cart").classList.add("on");$("ov").classList.add("on")}
-function closeCart(){$("cart").classList.remove("on");$("ov").classList.remove("on")}
+function openCart(){log("Opened the bag");$("cart").classList.add("on");$("ov").classList.add("on");document.body.style.overflow="hidden"}
+function closeCart(){$("cart").classList.remove("on");$("ov").classList.remove("on");document.body.style.overflow=""}
 $("bCart").onclick=openCart;$("cx").onclick=closeCart;$("ov").onclick=closeCart;
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeCart()});
 
 function loadRzp(){return new Promise((ok,no)=>{if(window.Razorpay)return ok();const s=document.createElement("script");s.src="https://checkout.razorpay.com/v1/checkout.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
-async function pay(){const n=$("fn").value.trim(),ph=$("fp").value.replace(/\D/g,""),em=$("fe").value.trim(),ad=$("fa").value.trim(),er=$("fr");
- if(!n||ph.length<10||ad.length<10){er.textContent="Enter your name, a 10-digit phone number and your full address.";return}
- er.textContent="";$("pay").disabled=true;ev("buy","Cart total "+money(total()));
- try{const r=await post("pay/create",{items:cart.map(i=>({id:i.id,size:i.s,q:i.q})),customer:{name:n,phone:ph,email:em,address:ad}});
-  if(!r.ok){er.textContent=r.d.error||"Something went wrong. Try again.";$("pay").disabled=false;return}
-  await loadRzp();
-  new Razorpay({key:r.d.key,amount:r.d.amount,currency:"INR",order_id:r.d.order,name:"Crossroads Shopping",prefill:{name:n,contact:ph,email:em},theme:{color:"#141A3C"},
-   modal:{ondismiss:()=>{$("pay").disabled=false}},
-   handler:async x=>{const v=await post("pay/verify",{order_id:x.razorpay_order_id,payment_id:x.razorpay_payment_id,signature:x.razorpay_signature});
-    if(v.ok){cart=[];save();$("co").innerHTML="";$("items").innerHTML=`<div class="empty"><p class="ok">Payment received. Thank you!</p><p>We will contact you soon to confirm your delivery.</p></div>`;$("cnt").textContent=0}
-    else{er.textContent="Payment went through but could not be confirmed. Message us on Instagram with your payment ID: "+x.razorpay_payment_id;$("pay").disabled=false}}}).open()
- }catch(e){er.textContent="Could not open payment. Check your connection and try again.";$("pay").disabled=false}}
-
+function sumHTML(){return cart.map(i=>{const p=P.find(x=>x.id===i.id),m=p?imgs(p):[];return `<div class="sr"><div class="t0">${m[0]?`<img src="${m[0]}" alt="">`:""}</div><div><b>${esc(i.n)}</b><small>Size: ${esc(i.s)} · Qty: ${i.q}</small></div><b>${money(i.p*i.q)}</b></div>`}).join("")+`<div class="total" style="padding:14px 0 0"><span>Total</span><span>${money(total())}</span></div>`}
+function upiHTML(){const amt=total(),link="upi://pay?pa="+encodeURIComponent(ST.upi)+"&pn="+encodeURIComponent(ST.name||"Crossroads")+"&am="+amt+"&cu=INR&tn="+encodeURIComponent("Crossroads order");
+ return `<div class="upi">${ST.qr?`<img src="${ST.qr}" alt="UPI QR code">`:""}<p>UPI ID: <b>${esc(ST.upi)}</b></p><a class="btn alt" href="${link}">Open my UPI app</a><p class="sub">Pay exactly ${money(amt)}, then enter the UPI transaction ID (UTR) shown in your payment app.</p><label>UPI transaction ID<input id="ut" inputmode="numeric" autocomplete="off"></label></div>`}
+function renderCheckout(){const el=$("checkout");
+ if(!cart.length){el.innerHTML=`<div class="wrap narrow"><h1>Your bag is empty</h1><p>Add something you like, then come back to check out.</p><p style="margin-top:16px"><a class="btn" href="./" data-nav="" style="max-width:240px">Continue shopping</a></p></div>`;return}
+ const first=ST.online?"online":ST.upi?"upi":"";
+ el.innerHTML=`<div class="wrap"><nav class="bc" aria-label="Breadcrumb"><a href="./" data-nav="">Home</a><span>/</span><b>Checkout</b></nav><h1 style="font-size:clamp(1.8rem,4vw,2.4rem)">Checkout</h1>
+ <div class="ck"><form id="f" novalidate class="cardx"><h2 class="fh">Delivery details</h2>
+ <label>Full name<input id="fn" autocomplete="name"></label><label>Phone number<input id="fp" inputmode="tel" autocomplete="tel"></label>
+ <label>Email (for your receipt)<input id="fe" type="email" autocomplete="email"></label><label>Full address with pincode<textarea id="fa" rows="3" autocomplete="street-address"></textarea></label>
+ <h2 class="fh" style="margin-top:10px">Payment</h2>
+ ${ST.online?`<label class="pmo"><input type="radio" name="pm" value="online" ${first==="online"?"checked":""}><span>Pay online<small>Cards, UPI and net banking</small></span></label>`:""}
+ ${ST.upi?`<label class="pmo"><input type="radio" name="pm" value="upi" ${first==="upi"?"checked":""}><span>Pay by UPI QR<small>Scan, pay, then enter your transaction ID</small></span></label>`:""}
+ ${!first?'<div class="err">Payment is not available yet. Message us on Instagram to order.</div>':""}
+ <div id="upip" ${first==="upi"?"":"hidden"}></div><div class="err" id="fr" role="alert"></div>
+ ${first?`<button class="btn" id="pay" type="submit">${first==="upi"?"I have paid, place order":"Pay securely"}</button>`:""}</form>
+ <div class="sum cardx"><h2 class="fh">Order summary</h2><div id="sumc">${sumHTML()}</div></div></div></div>`;
+ if(first==="upi")$("upip").innerHTML=upiHTML();
+ $("f").onsubmit=e=>{e.preventDefault();place()};
+ $("f").onchange=e=>{if(e.target.name==="pm"){const u=e.target.value==="upi";$("upip").hidden=!u;if(u)$("upip").innerHTML=upiHTML();$("pay").textContent=u?"I have paid, place order":"Pay securely"}}}
+$("checkout").onclick=e=>{const n=e.target.closest("[data-nav]");if(n){e.preventDefault();cat=n.dataset.nav||"All";history.pushState(null,"",location.pathname);route()}};
 function cust(){const n=$("fn").value.trim(),ph=$("fp").value.replace(/\D/g,""),em=$("fe").value.trim(),ad=$("fa").value.trim();
  if(!n||ph.length<10||ad.length<10){$("fr").textContent="Enter your name, a 10-digit phone number and your full address.";return null}
  $("fr").textContent="";return{n,ph,em,ad}}
-function upi(){const d=cust();if(!d)return;ev("buy","UPI checkout "+money(total()));
- const amt=total(),link="upi://pay?pa="+encodeURIComponent(ST.upi)+"&pn="+encodeURIComponent(ST.name||"Crossroads")+"&am="+amt+"&cu=INR&tn="+encodeURIComponent("Crossroads order");
- $("ub").innerHTML=`<h3>Pay ${money(amt)} by UPI</h3>${ST.qr?`<img src="${ST.qr}" alt="UPI QR code" style="width:220px;max-width:100%;display:block;margin:6px auto;border-radius:8px">`:""}
- <p style="text-align:center">UPI ID: <b>${esc(ST.upi)}</b></p><a class="btn alt" href="${link}">Open my UPI app</a>
- <p style="color:var(--mut);font-size:.92rem">Pay exactly ${money(amt)}, then enter the UPI transaction ID (UTR) shown in your payment app.</p>
- <label>UPI transaction ID<input id="ut" inputmode="numeric" autocomplete="off"></label><div class="err" id="ue" role="alert"></div><button class="btn dk" id="uok" type="button">I have paid</button>`;
- $("ud").showModal();
- $("uok").onclick=async()=>{const ut=$("ut").value.trim();if(ut.replace(/\W/g,"").length<8){$("ue").textContent="Enter the transaction ID from your payment app.";return}
-  $("uok").disabled=true;
-  const r=await post("order/manual",{items:cart.map(i=>({id:i.id,size:i.s,q:i.q})),customer:{name:d.n,phone:d.ph,email:d.em,address:d.ad},utr:ut}).catch(()=>({ok:false,d:{}}));
-  if(r.ok){cart=[];save();$("ud").close();$("co").innerHTML="";$("items").innerHTML=`<div class="empty"><p class="ok">Order received. Thank you!</p><p>We will check your payment and contact you to confirm delivery.</p></div>`;$("cnt").textContent=0}
-  else{$("ue").textContent=r.d.error||"Something went wrong. Try again.";$("uok").disabled=false}}}
-$("udx").onclick=()=>$("ud").close();
-$("mf").onsubmit=async e=>{e.preventDefault();const t=$("mt").value.trim();if(!t){$("me").textContent="Write your message first.";return}
+function done(a,b){cart=[];save();render();$("checkout").innerHTML=`<div class="wrap narrow" style="text-align:center;padding:50px 0"><h1 class="ok">${a}</h1><p>${b}</p><p style="margin-top:22px"><a class="btn" href="./" data-nav="" style="max-width:240px;margin:0 auto">Continue shopping</a></p></div>`;scrollTo(0,0)}
+async function place(){const d=cust();if(!d)return;const r=document.querySelector("input[name=pm]:checked"),er=$("fr");if(!r){er.textContent="Choose a payment method.";return}
+ const items=cart.map(i=>({id:i.id,size:i.s,q:i.q})),customer={name:d.n,phone:d.ph,email:d.em,address:d.ad};ev("buy","Pay "+money(total()));$("pay").disabled=true;
+ if(r.value==="upi"){const ut=$("ut").value.trim();if(ut.replace(/\W/g,"").length<8){er.textContent="Enter the UPI transaction ID from your payment app.";$("pay").disabled=false;return}
+  const x=await post("order/manual",{items,customer,utr:ut}).catch(()=>({ok:false,d:{}}));
+  if(x.ok)done("Order received. Thank you!","We will check your payment and contact you to confirm delivery.");else{er.textContent=x.d.error||"Something went wrong. Try again.";$("pay").disabled=false}return}
+ try{const x=await post("pay/create",{items,customer});
+  if(!x.ok){er.textContent=x.d.error||"Something went wrong. Try again.";$("pay").disabled=false;return}
+  await loadRzp();
+  new Razorpay({key:x.d.key,amount:x.d.amount,currency:"INR",order_id:x.d.order,name:"Crossroads Shopping",prefill:{name:d.n,contact:d.ph,email:d.em},theme:{color:"#2548E6"},
+   modal:{ondismiss:()=>{$("pay").disabled=false}},
+   handler:async y=>{const v=await post("pay/verify",{order_id:y.razorpay_order_id,payment_id:y.razorpay_payment_id,signature:y.razorpay_signature});
+    if(v.ok)done("Payment received. Thank you!","We will contact you soon to confirm your delivery.");
+    else{er.textContent="Payment went through but could not be confirmed. Message us on Instagram with your payment ID: "+y.razorpay_payment_id;$("pay").disabled=false}}}).open()
+ }catch(e){er.textContent="Could not open payment. Check your connection and try again.";$("pay").disabled=false}}
+
+$("mf").onsubmit=async e=>{e.preventDefault();const t=$("mt").value.trim();if(!t){$("me").className="err";$("me").textContent="Write your message first.";return}
  const r=await post("message",{name:$("mn").value,contact:$("mc").value,text:t}).catch(()=>({ok:false,d:{}}));
- if(r.ok){log("Sent a message");$("mt").value="";$("me").className="ok";$("me").textContent="Message sent. We will reply soon."}else{$("me").className="err";$("me").textContent=r.d.error||"Could not send. Try Instagram or Gmail instead."}};
+ if(r.ok){log("Sent a message");$("mt").value="";$("me").className="ok";$("me").textContent="Message sent. We will reply soon."}else{$("me").className="err";$("me").textContent=r.d.error||"Could not send. Try Instagram or email instead."}};
 
+function tilt(root){root.addEventListener("pointermove",e=>{if(e.pointerType!=="mouse")return;const c=e.target.closest(".card");if(!c||c.classList.contains("sk"))return;const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;c.style.setProperty("--ry",(x*12).toFixed(2)+"deg");c.style.setProperty("--rx",(-y*12).toFixed(2)+"deg");c.style.setProperty("--gx",(x*100+50).toFixed(0)+"%");c.style.setProperty("--gy",(y*100+50).toFixed(0)+"%")});
+ root.addEventListener("pointerout",e=>{const c=e.target.closest(".card");if(c&&!c.contains(e.relatedTarget)){c.style.setProperty("--ry","0deg");c.style.setProperty("--rx","0deg")}})}
+tilt($("grid"));tilt($("product"));
+let h3=false;function maybeHero(){if(!h3&&view()==="shop"){h3=true;hero3d()}}
+async function hero3d(){const c=$("c3d");if(!c)return;
+ if(matchMedia("(prefers-reduced-motion:reduce)").matches||(navigator.connection&&navigator.connection.saveData)){c.remove();return}
+ try{const THREE=await import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js");
+  const r=new THREE.WebGLRenderer({canvas:c,antialias:true,alpha:true,powerPreference:"low-power"});r.setPixelRatio(Math.min(devicePixelRatio||1,1.75));
+  const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(38,1,.1,100);cam.position.set(0,0,8);
+  const col=()=>new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue("--acc").trim()||"#3F6DFF");
+  const g=new THREE.Group();sc.add(g);
+  const knot=new THREE.Mesh(new THREE.TorusKnotGeometry(1.15,.34,140,20),new THREE.MeshStandardMaterial({color:col(),metalness:.7,roughness:.25}));g.add(knot);
+  const wire=new THREE.Mesh(new THREE.IcosahedronGeometry(2.1,1),new THREE.MeshBasicMaterial({color:col(),wireframe:true,transparent:true,opacity:.22}));g.add(wire);
+  const N=180,pa=new Float32Array(N*3);for(let i=0;i<N;i++){const a=Math.random()*6.283,b=Math.acos(2*Math.random()-1),d=3+Math.random()*3.5;pa[i*3]=d*Math.sin(b)*Math.cos(a);pa[i*3+1]=d*Math.sin(b)*Math.sin(a);pa[i*3+2]=d*Math.cos(b)}
+  const pg=new THREE.BufferGeometry();pg.setAttribute("position",new THREE.BufferAttribute(pa,3));
+  const pts=new THREE.Points(pg,new THREE.PointsMaterial({color:0x9db4ff,size:.045,transparent:true,opacity:.8}));g.add(pts);
+  sc.add(new THREE.HemisphereLight(0xffffff,0x223355,1.1));
+  const l1=new THREE.PointLight(0xffffff,90,40);l1.position.set(4,4,7);sc.add(l1);
+  const l2=new THREE.PointLight(0xff5c39,60,40);l2.position.set(-5,-3,4);sc.add(l2);
+  let lw=0;const fit=()=>{const w=c.clientWidth,h=c.clientHeight;if(!w||!h)return;lw=w;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();g.position.x=w>760?2.8:0;g.scale.setScalar(w>760?1:.8)};
+  fit();let mx=0,my=0,vis=true;addEventListener("pointermove",e=>{mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5},{passive:true});
+  new IntersectionObserver(e=>{vis=e[0].isIntersecting}).observe($("hero"));
+  document.addEventListener("themechange",()=>{knot.material.color.copy(col());wire.material.color.copy(col())});
+  const clock=new THREE.Clock();
+  (function loop(){requestAnimationFrame(loop);if(!vis||document.hidden)return;if(c.clientWidth&&c.clientWidth!==lw)fit();const t=clock.getElapsedTime();knot.rotation.x=t*.25+my*.6;knot.rotation.y=t*.35+mx*.8;wire.rotation.y=-t*.12;pts.rotation.y=t*.05;g.position.y=Math.sin(t*.8)*.12;r.render(sc,cam)})();
+ }catch(e){c.remove()}}
 /* ---------- Owner admin: open yourwebsite/#admin ---------- */
-let pw=sessionStorage.getItem("cr_pw")||"",editing=null,galleryIndex=0,galleryTimer=null;
+let pw=sessionStorage.getItem("cr_pw")||"",editing=null,draft=[];
 const H=()=>({"x-admin":pw});
-function shrink(file){return new Promise(ok=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const m=800,k=Math.min(1,m/Math.max(i.width,i.height)),c=document.createElement("canvas");c.width=i.width*k;c.height=i.height*k;c.getContext("2d").drawImage(i,0,0,c.width,c.height);ok(c.toDataURL("image/jpeg",.75))};i.src=r.result};r.readAsDataURL(file)})}
-async function saveP(){const r=await post("products",{products:P},H());if(!r.ok){alert(r.d.error||"Could not save");if(r.d.error)logout()}return r.ok}
-function logout(){pw="";sessionStorage.removeItem("cr_pw");route()}
+function shrink(file,m=720){return new Promise(ok=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,m/Math.max(i.width,i.height)),c=document.createElement("canvas");c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);c.getContext("2d").drawImage(i,0,0,c.width,c.height);ok(c.toDataURL("image/jpeg",.72))};i.onerror=()=>ok("");i.src=r.result};r.readAsDataURL(file)})}
+async function saveP(){const r=await post("products",{products:P},H()).catch(()=>({ok:false,d:{error:"No connection"}}));if(!r.ok){alert(r.d.error||"Could not save");if(r.d.error==="Wrong password"){pw="";sessionStorage.removeItem("cr_pw")}}return r.ok}
+function drawImgs(){$("ig").innerHTML=draft.map((s,k)=>`<div class="igi"><img src="${s}" alt="">${k===0?"<i>Main</i>":""}<div>${k?`<button type="button" class="link" data-m="${k}">Make main</button>`:"<span></span>"}<button type="button" class="link" data-r="${k}">Remove</button></div></div>`).join("")}
+const dt=t=>{try{return new Date(t).toLocaleString("en-IN")}catch(e){return""}};
 async function adm(){const A=$("admin");
- if(!pw){A.innerHTML=`<div class="adm"><h2>Owner login</h2><form id="lf" style="padding:0"><label>Password<input id="lp" type="password"></label><div class="err" id="le"></div><button class="btn dk" type="submit">Log in</button></form></div>`;
-  $("lf").onsubmit=async e=>{e.preventDefault();pw=$("lp").value;const r=await fetch("/api/admin",{headers:H()});if(r.ok){sessionStorage.setItem("cr_pw",pw);adm()}else{pw="";$("le").textContent="Wrong password."}};return}
- const r=await fetch("/api/admin",{headers:H()});if(!r.ok){logout();return}try{ST=await (await fetch("/api/settings")).json()}catch(_){}const D=await r.json(),e=editing&&P.find(p=>p.id===editing)||{};
- A.innerHTML=`<div class="adm"><div class="row"><h2 style="margin:0;flex:1">Your products</h2><button class="link" id="lo">Log out</button></div>
- ${P.map(p=>`<div class="row">${p.img?`<img src="${p.img}" alt="">`:'<div class="th"></div>'}<div><b>${esc(p.n)}</b><br>${money(p.p)} · ${esc(p.c)}${p.sold?" · Sold out":""}</div><button class="link" data-e="${p.id}">Edit</button><button class="link" data-x="${p.id}">Delete</button></div>`).join("")||"<p>No products yet. Add your first one below.</p>"}
- <h2>${e.id?"Edit product":"Add a product"}</h2>
- <form id="pf" style="padding:0" novalidate><label>Product photos (select up to 6)<input id="pi" type="file" accept="image/*" multiple><small style="color:var(--mut)">Select several photos to create an automatic slideshow and swipe gallery.</small></label>
- <label>Name<input id="pn" value="${esc(e.n)}"></label>
- <div class="two"><label>Category (like Shirts)<input id="pc" value="${esc(e.c)}"></label><label>Sizes, separated by commas<input id="ps" value="${esc((e.s||[]).join(", "))}" placeholder="S, M, L, XL"></label></div>
+ if(!pw){A.innerHTML=`<div class="adm"><h2>Owner login</h2><form id="lf"><label>Password<input id="lp" type="password" autocomplete="current-password"></label><div class="err" id="le"></div><button class="btn" type="submit">Log in</button></form><p style="margin-top:16px"><a href="./">Back to store</a></p></div>`;
+  $("lf").onsubmit=async e=>{e.preventDefault();pw=$("lp").value;const r=await fetch("/api/admin",{headers:H()}).catch(()=>null);if(r&&r.ok){sessionStorage.setItem("cr_pw",pw);adm()}else{pw="";$("le").textContent="Wrong password."}};return}
+ let D;try{const[r,q]=await Promise.all([fetch("/api/admin",{headers:H()}),fetch("/api/products",{headers:H()})]);
+  if(!r.ok){pw="";sessionStorage.removeItem("cr_pw");adm();return}D=await r.json();P=await q.json();if(!Array.isArray(P))P=[];try{ST=await (await fetch("/api/settings")).json()}catch(_){}}
+ catch(_){A.innerHTML=`<div class="adm"><p>Could not load. Check your connection and refresh.</p></div>`;return}
+ const e=(editing&&P.find(p=>p.id===editing))||{};draft=imgs(e).slice();
+ const paid=D.orders.filter(o=>o.paid),rev=paid.reduce((a,o)=>a+o.total,0),toShip=paid.filter(o=>!o.shipped).length;
+ A.innerHTML=`<div class="adm"><div class="ab"><h2>Owner dashboard</h2><span><a href="./">View store</a> <button class="link" id="lo">Log out</button></span></div>
+ <div class="stats"><div><b>${P.length}</b><span>Products</span></div><div><b>${paid.length}</b><span>Paid orders</span></div><div><b>${money(rev)}</b><span>Paid sales</span></div><div><b>${toShip}</b><span>To ship</span></div><div><b>${D.messages.length}</b><span>Messages</span></div></div>
+ <h3>Your products</h3>${P.map((p,i)=>{const m=imgs(p);return `<div class="row"><div class="rt">${m[0]?`<img src="${m[0]}" alt="">`:""}</div><div><b>${esc(p.n)}</b><small>${money(p.p)} · ${esc(p.c||"")}${p.sold?" · Sold out":""}${p.tr?" · Trending":""}${p.hid?" · Hidden":""} · ${m.length} photo${m.length===1?"":"s"}</small></div>
+ <div class="ra"><button class="link" data-a="edit" data-id="${p.id}">Edit</button><button class="link" data-a="hide" data-id="${p.id}">${p.hid?"Show":"Hide"}</button><button class="link" data-a="dup" data-id="${p.id}">Duplicate</button>${i?`<button class="link" data-a="up" data-id="${p.id}">Move up</button>`:""}${i<P.length-1?`<button class="link" data-a="down" data-id="${p.id}">Move down</button>`:""}<button class="link" data-a="del" data-id="${p.id}">Delete</button></div></div>`}).join("")||"<p>No products yet. Add your first one below.</p>"}
+ <h3>${e.id?"Edit product":"Add a product"}</h3>
+ <form id="pf" novalidate><div><b style="font-size:.88rem">Photos (up to 5, the first is the main photo)</b></div><div class="ig" id="ig"></div>
+ <label class="btn alt sm" style="cursor:pointer;width:fit-content">+ Add photos<input id="pi" type="file" accept="image/*" multiple hidden></label>
+ <label>Product name<input id="pn" value="${esc(e.n)}"></label>
+ <div class="two"><label>Category (like Fashion or Shoes)<input id="pc" list="cl" value="${esc(e.c)}"></label><label>Sizes, separated by commas<input id="ps" value="${esc((e.s||[]).join(", "))}" placeholder="S, M, L, XL"></label></div>
+ <datalist id="cl"><option value="Fashion"><option value="Shoes"><option value="Accessories"><option value="Watches"><option value="Bags"></datalist>
  <div class="two"><label>Price (₹)<input id="pp" type="number" min="1" value="${e.p||""}"></label><label>Old price (₹, optional)<input id="po" type="number" min="0" value="${e.o||""}"></label></div>
- <label>Description (optional)<textarea id="pdsc" rows="2">${esc(e.d)}</textarea></label>
- <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="pso" style="width:auto" ${e.sold?"checked":""}>Mark as sold out</label>
- <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="ptr" style="width:auto" ${e.tr?"checked":""}>Show in Trending</label>
- <div class="err" id="pfe"></div><button class="btn dk" type="submit">${e.id?"Save changes":"Add product"}</button></form>
- <h2>Payment settings (UPI)</h2>
- <form id="sf" style="padding:0" novalidate><label>Your UPI ID (like name@bank)<input id="su" value="${esc(ST.upi)}"></label><label>Name shown to customers<input id="sn" value="${esc(ST.name)}"></label>
+ <label>Description (optional)<textarea id="pdsc" rows="3">${esc(e.d)}</textarea></label>
+ <label class="chk"><input type="checkbox" id="pso" ${e.sold?"checked":""}>Mark as sold out</label>
+ <label class="chk"><input type="checkbox" id="ptr" ${e.tr?"checked":""}>Show in Trending</label>
+ <label class="chk"><input type="checkbox" id="phd" ${e.hid?"checked":""}>Hide from the store</label>
+ <div class="err" id="pfe"></div><button class="btn" type="submit">${e.id?"Save changes":"Add product"}</button>${e.id?`<button class="btn alt" type="button" data-a="cancel" style="margin-top:8px">Cancel editing</button>`:""}</form>
+ <h3>Payment settings (UPI)</h3>
+ <form id="sf" novalidate><label>Your UPI ID (like name@bank)<input id="su" value="${esc(ST.upi)}"></label><label>Name shown to customers<input id="sn" value="${esc(ST.name)}"></label>
  <label>QR code image (a screenshot of your UPI QR)<input id="sq" type="file" accept="image/*"></label>${ST.qr?`<img src="${ST.qr}" alt="Current QR" style="width:140px;border-radius:8px">`:""}
- <div class="err" id="sfe"></div><button class="btn dk" type="submit">Save payment settings</button></form>
- <h2>Paid orders and pending</h2>${D.orders.map(o=>`<div class="box"><b>${o.paid?"✅ Paid":"⏳ Not paid"} · ${money(o.total)}</b>\n${esc(o.lines.join("\n"))}\n${esc(o.name)} · ${esc(o.phone)} ${esc(o.email)}\n${esc(o.address)}${o.utr?"\nTxn ID: "+esc(o.utr):""}${o.manual&&!o.paid?`<br><button class="link" data-p="${esc(o.id)}">Mark as paid</button>`:""}</div>`).join("")||"<p>No orders yet.</p>"}
- <h2>Messages</h2>${D.messages.map(m=>`<div class="box"><b>${esc(m.name)} · ${esc(m.contact)}</b>\n${esc(m.text)}</div>`).join("")||"<p>No messages yet.</p>"}</div>`;
- $("lo").onclick=logout;
- A.onclick=async x=>{const b=x.target.closest("button");if(!b)return;
-  if(b.dataset.p){await post("orders/paid",{id:b.dataset.p},H());adm();return}
-  if(b.dataset.e){editing=+b.dataset.e;adm();scrollTo(0,1e5)}
-  if(b.dataset.x&&confirm("Delete this product?")){P=P.filter(p=>p.id!==+b.dataset.x);await saveP();adm()}};
- $("sf").onsubmit=async x=>{x.preventDefault();const f=$("sq").files[0],qr=f?await shrink(f):(ST.qr||""),u=$("su").value.trim(),nm=$("sn").value.trim();
-  const r=await post("settings",{upi:u,name:nm,qr},H());$("sfe").className=r.ok?"ok":"err";$("sfe").textContent=r.ok?"Saved.":(r.d.error||"Could not save.");if(r.ok)Object.assign(ST,{upi:u,name:nm,qr})}
+ <div class="err" id="sfe"></div><button class="btn" type="submit">Save payment settings</button></form>
+ <h3>Orders</h3>${D.orders.map(o=>`<div class="box"><b>${o.paid?"Paid":"Not paid"}${o.shipped?" · Shipped":""} · ${money(o.total)}</b><small>${esc(dt(o.t))}</small>${esc(o.lines.join("\n"))}\n${esc(o.name)} · ${esc(o.phone)} ${esc(o.email||"")}\n${esc(o.address)}${o.utr?"\nUPI transaction ID: "+esc(o.utr):""}${o.track?"\nTracking: "+esc(o.track):""}<div class="oa">${o.manual&&!o.paid?`<button class="btn sm" data-a="paid" data-id="${esc(o.id)}">Mark as paid</button>`:""}${o.paid&&!o.shipped?`<button class="btn sm" data-a="ship" data-id="${esc(o.id)}">Mark as shipped</button>`:""}<button class="link" data-a="odel" data-id="${esc(o.id)}">Delete</button></div></div>`).join("")||"<p>No orders yet.</p>"}
+ <h3>Messages</h3>${D.messages.map(m=>`<div class="box"><b>${esc(m.name)} · ${esc(m.contact)}</b><small>${esc(dt(m.t))}</small>${esc(m.text)}<div class="oa"><button class="link" data-a="mdel" data-t="${esc(m.t)}">Delete</button></div></div>`).join("")||"<p>No messages yet.</p>"}</div>`;
+ drawImgs();
+ $("lo").onclick=()=>{pw="";sessionStorage.removeItem("cr_pw");adm()};
+ $("ig").onclick=x=>{const b=x.target.closest("button");if(!b)return;if(b.dataset.r!==undefined)draft.splice(+b.dataset.r,1);if(b.dataset.m!==undefined){const[s]=draft.splice(+b.dataset.m,1);draft.unshift(s)}drawImgs()};
+ $("pi").onchange=async x=>{const fs=[...x.target.files].slice(0,5-draft.length);if(!fs.length){$("pfe").textContent="You can add up to 5 photos.";return}$("pfe").textContent="Adding photos...";for(const f of fs){const s=await shrink(f);if(s)draft.push(s)}x.target.value="";$("pfe").textContent="";drawImgs()};
+ A.onclick=async x=>{const b=x.target.closest("[data-a]");if(!b)return;const a=b.dataset.a,id=b.dataset.id,i=P.findIndex(p=>String(p.id)===id);
+  if(a==="edit"){editing=+id;await adm();$("pf").scrollIntoView({behavior:"smooth"});return}
+  if(a==="cancel"){editing=null;adm();return}
+  if(a==="hide"&&i>-1){P[i].hid=!P[i].hid;await saveP();adm();return}
+  if(a==="dup"&&i>-1){P.splice(i+1,0,Object.assign({},P[i],{id:Date.now(),n:P[i].n+" (copy)",hid:true}));await saveP();adm();return}
+  if((a==="up"&&i>0)||(a==="down"&&i>-1&&i<P.length-1)){const j=a==="up"?i-1:i+1;[P[i],P[j]]=[P[j],P[i]];await saveP();adm();return}
+  if(a==="del"&&i>-1&&confirm("Delete this product?")){P.splice(i,1);await saveP();adm();return}
+  if(a==="paid"){await post("orders/paid",{id},H());adm();return}
+  if(a==="ship"){const t=prompt("Tracking number or note (optional)");if(t===null)return;await post("orders/update",{id,shipped:true,track:t},H());adm();return}
+  if(a==="odel"&&confirm("Delete this order?")){await post("orders/delete",{id},H());adm();return}
+  if(a==="mdel"&&confirm("Delete this message?")){await post("messages/delete",{t:b.dataset.t},H());adm()}};
+ $("sf").onsubmit=async x=>{x.preventDefault();const f=$("sq").files[0],qr=f?await shrink(f,800):(ST.qr||""),u=$("su").value.trim(),nm=$("sn").value.trim();
+  const r=await post("settings",{upi:u,name:nm,qr},H()).catch(()=>({ok:false,d:{}}));$("sfe").className=r.ok?"ok":"err";$("sfe").textContent=r.ok?"Saved.":(r.d.error||"Could not save.");if(r.ok)Object.assign(ST,{upi:u,name:nm,qr})};
  $("pf").onsubmit=async x=>{x.preventDefault();const n=$("pn").value.trim(),pr=+$("pp").value;
-  if(!n||!pr){$("pfe").textContent="Enter a name and a price.";return}
-  const files=Array.from($("pi").files).slice(0,6),oldImages=productImages(e),added=files.length?await Promise.all(files.map(shrink)):[],images=[...oldImages,...added].slice(0,6),img=images[0]||"",o={id:e.id||Date.now(),n,c:$("pc").value.trim()||"Other",p:pr,o:+$("po").value||0,s:$("ps").value.split(",").map(s=>s.trim()).filter(Boolean),d:$("pdsc").value.trim(),sold:$("pso").checked,tr:$("ptr").checked,img,images};
+  if(!n||!pr){$("pfe").className="err";$("pfe").textContent="Enter a name and a price.";return}
+  const o={id:e.id||Date.now(),n,c:$("pc").value.trim()||"Fashion",p:pr,o:+$("po").value||0,s:$("ps").value.split(",").map(s=>s.trim()).filter(Boolean),d:$("pdsc").value.trim(),sold:$("pso").checked,tr:$("ptr").checked,hid:$("phd").checked,imgs:draft.slice(),img:draft[0]||""};
   if(e.id)P=P.map(p=>p.id===e.id?o:p);else P.unshift(o);
-  if(await saveP()){editing=null;adm();scrollTo(0,0)}}}
+  if(await saveP()){editing=null;await adm();scrollTo(0,0)}}}
 
-function route(){const v=view();$("shop").hidden=v!=="shop";$("about").hidden=v!=="about";$("contact").hidden=v!=="contact";$("admin").hidden=v!=="admin";$("foot").hidden=v==="admin";cats();
- if(v==="admin")adm();else{scrollTo(0,0);if(v!=="shop")log("Opened the "+v+" page")}}
-addEventListener("hashchange",route);
-(async()=>{try{ST=await (await fetch("/api/settings")).json()}catch(e){}try{P=await (await fetch("/api/products")).json()}catch(e){P=[]}
- if(!Array.isArray(P))P=[];
- if(!P.length&&["127.0.0.1","localhost"].includes(location.hostname))P=[{id:11,n:"Sample Oxford Shirt",c:"Shirts",p:1299,o:1799,s:["S","M","L","XL"],d:"Preview only. Add your real products from #admin once the site is online."},{id:12,n:"Sample Sneakers",c:"Shoes",p:1899,o:0,s:["7","8","9","10"]},{id:13,n:"Sample Watch",c:"Watches",p:1499,o:1999,s:["One size"]},{id:14,n:"Sample Wallet",c:"Accessories",p:599,o:0,s:["One size"],sold:true}];cats();grid();render();route();if(location.hash!=="#admin")ev("open","",1)})();
+async function route(){stopAuto();document.title="Crossroads Shopping";const v=view();["shop","about","contact","product","checkout","admin"].forEach(k=>$(k).hidden=v!==k);$("foot").hidden=$("hd").hidden=$("ann").hidden=v==="admin";
+ if(v==="admin"){wasAdmin=true;await adm();return}
+ if(wasAdmin){wasAdmin=false;await loadP()}
+ cats();if(v==="shop"){grid();maybeHero()}if(v==="product")renderProduct(location.hash.slice(3));if(v==="checkout")renderCheckout();
+ scrollTo(0,0);if(v!=="shop")log("Opened the "+v+" page")}
+addEventListener("hashchange",route);addEventListener("popstate",route);
+(async()=>{
+ if(view()==="admin"){await route();return}
+ try{const c=JSON.parse(localStorage.getItem("cr_pc")||"[]");if(Array.isArray(c)&&c.length){P=c;loading=false}}catch(e){}
+ render();const first=route();
+ const st=fetch("/api/settings").then(r=>r.json()).then(x=>{ST=x}).catch(()=>{});
+ const ch=await loadP();await st;const was=loading;loading=false;
+ if(view()!=="admin"&&(ch||was)){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout()}
+ await first;if(view()!=="admin")ev("open","",1)})();
 </script>
- <link rel="stylesheet" href="/premium.css">
-<script src="/premium.js"></script>
 </body>
 </html>
