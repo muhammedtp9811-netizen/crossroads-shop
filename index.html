@@ -299,9 +299,30 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const post=(p,b,h,k)=>fetch("/api/"+p,{method:"POST",headers:Object.assign({"content-type":"application/json"},h||{}),body:JSON.stringify(b),keepalive:!!k}).then(r=>r.json().then(d=>({ok:r.ok,d})));
 const seen=new Set(),LOG=[],T={open:"Opened the store",view:"Looked at: ",cart:"Added to cart: ",buy:"Tapped Buy/Pay: "};let sentN=0;
 const log=x=>LOG.push({t:new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}),x});
-function ev(type,name,once){const k=type+name;if(once&&seen.has(k))return;seen.add(k);log((T[type]||type)+(name||""));post("event",{type,name},0,1).catch(()=>{})}
-function flush(){if(LOG.length<=sentN||location.hash==="#admin")return;const d=LOG.slice(sentN);sentN=LOG.length;try{navigator.sendBeacon("/api/session",new Blob([JSON.stringify({log:d,ref:document.referrer,ua:navigator.userAgent})],{type:"application/json"}))}catch(e){}}
+function ev(type,name,once){const k=type+name;if(once&&seen.has(k))return;seen.add(k);log((T[type]||type)+(name||""));
+ const base=String(name||"").replace(/ \([^)]*\) x\d+$/,"");
+ if(type==="view"){EC.v++;AC.push({a:"view",n:"Product: "+base})}else if(type==="cart"){EC.c++;AC.push({a:"cart",n:"Product: "+base})}else if(type==="buy"){EC.k++;AC.push({a:"buy",n:base})}
+ jstore();if(type==="cart"||type==="buy")sync();
+ post("event",{type,name},0,1).catch(()=>{})}
+function flush(){if(LOG.length<=sentN||location.hash.startsWith("#admin"))return;const d=LOG.slice(sentN);sentN=LOG.length;try{navigator.sendBeacon("/api/session",new Blob([JSON.stringify({log:d,ref:document.referrer,ua:navigator.userAgent})],{type:"application/json"}))}catch(e){}}
 addEventListener("pagehide",flush);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flush()});
+/* ---- visitor analytics (devices where you logged in to the admin are ignored) ---- */
+const own=()=>{try{return localStorage.getItem("cr_owner")==="1"}catch(e){return false}};
+let VID="",SID="",T0=Date.now(),NV=0,JR=[],AC=[],EC={v:0,c:0,k:0,o:0},OV=0,hb=0;
+try{VID=localStorage.getItem("cr_vid")||"";if(!VID){VID=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem("cr_vid",VID);NV=1}
+ SID=sessionStorage.getItem("cr_sid")||"";
+ if(!SID){SID=Math.random().toString(36).slice(2)+Date.now().toString(36);sessionStorage.setItem("cr_sid",SID);sessionStorage.setItem("cr_t0",String(T0));if(NV)sessionStorage.setItem("cr_nv","1")}
+ else{T0=+sessionStorage.getItem("cr_t0")||T0;NV=+sessionStorage.getItem("cr_nv")||0;const j=JSON.parse(sessionStorage.getItem("cr_j")||"{}");JR=j.JR||[];AC=j.AC||[];EC=j.EC||EC;OV=j.OV||0}}catch(e){}
+const jstore=()=>{try{sessionStorage.setItem("cr_j",JSON.stringify({JR:JR.slice(-40),AC:AC.slice(-30),EC,OV}))}catch(e){}};
+let jt=null;function jp(n){if(!n||(JR.length&&JR[JR.length-1].p===n))return;JR.push({p:n,t:Math.round((Date.now()-T0)/1000)});jstore();clearTimeout(jt);jt=setTimeout(()=>sync(),1500)}
+function pageName(){const v=view();if(v==="product"){const p=P.find(x=>String(x.id)===location.hash.slice(3));return"Product: "+(p?String(p.n).slice(0,50):"item")}
+ return v==="shop"?(cat==="All"?"Home":"Category: "+cat):v==="about"?"About":v==="contact"?"Contact":v==="checkout"?"Checkout":""}
+function sync(final){if(own()||!VID||!SID||location.hash.startsWith("#admin"))return;
+ const body=JSON.stringify({vid:VID,sid:SID,t0:T0,nv:NV,ref:document.referrer,utm:new URLSearchParams(location.search).get("utm_source")||"",w:innerWidth,pages:JR.slice(-40),acts:AC.slice(-30),ev:EC,ov:OV,dur:Math.round((Date.now()-T0)/1000)});
+ try{fetch("/api/track",{method:"POST",headers:{"content-type":"application/json"},body,keepalive:true}).catch(()=>{})}catch(e){}if(final)try{navigator.sendBeacon&&navigator.sendBeacon("/api/track",new Blob([body],{type:"application/json"}))}catch(e){}}
+addEventListener("pagehide",()=>sync(true));document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")sync(true)});
+setInterval(()=>{if(document.visibilityState==="visible"&&hb++<15)sync()},60000);
+
 $("bTheme").onclick=()=>{const t=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";document.documentElement.setAttribute("data-theme",t);try{localStorage.setItem("cr_theme",t)}catch(e){}document.querySelector("meta[name=theme-color]").content=t==="dark"?"#080A10":"#F4F6FB";document.dispatchEvent(new Event("themechange"))};
 $("heroCta").onclick=()=>$("grid").scrollIntoView({behavior:"smooth",block:"start"});
 $("fIg").href=$("cIg").href=$("aIg").href="https://ig.me/m/"+IG;
@@ -312,8 +333,8 @@ $("host").textContent=location.host||"crossroadsshoppings.in";$("yr").textConten
 let P=[],cat="All",cart=[],cur=null,size=null,Q="",SO="n",ST={upi:"",name:"",qr:"",online:false},wasAdmin=false,loading=true;
 try{cart=JSON.parse(localStorage.getItem("cr_cart")||"[]")}catch(e){}
 const save=()=>{try{localStorage.setItem("cr_cart",JSON.stringify(cart))}catch(e){}};
-const imgs=p=>p.imgs&&p.imgs.length?p.imgs:(p.img?[p.img]:[]);
-const view=()=>{const x=location.hash;return x==="#about"?"about":x==="#contact"?"contact":x==="#admin"?"admin":x==="#checkout"?"checkout":x.startsWith("#p/")?"product":"shop"};
+const imgs=p=>p.images&&p.images.length?p.images:(p.imgs&&p.imgs.length?p.imgs:(p.img?[p.img]:[]));
+const view=()=>{const x=location.hash;return x==="#about"?"about":x==="#contact"?"contact":x.startsWith("#admin")?"admin":x==="#checkout"?"checkout":x.startsWith("#p/")?"product":"shop"};
 function toast(t){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.h);toast.h=setTimeout(()=>e.classList.remove("on"),1900)}
 const ph=p=>`<span class="ph" style="background:linear-gradient(135deg,hsl(${p.id%360} 25% 32%),hsl(${(p.id+40)%360} 30% 22%))">${esc((p.n||"").trim().charAt(0).toUpperCase())}</span>`;
 
@@ -414,19 +435,19 @@ $("checkout").onclick=e=>{const n=e.target.closest("[data-nav]");if(n){e.prevent
 function cust(){const n=$("fn").value.trim(),ph=$("fp").value.replace(/\D/g,""),em=$("fe").value.trim(),ad=$("fa").value.trim();
  if(!n||ph.length<10||ad.length<10){$("fr").textContent="Enter your name, a 10-digit phone number and your full address.";return null}
  $("fr").textContent="";return{n,ph,em,ad}}
-function done(a,b){cart=[];save();render();$("checkout").innerHTML=`<div class="wrap narrow" style="text-align:center;padding:50px 0"><h1 class="ok">${a}</h1><p>${b}</p><p style="margin-top:22px"><a class="btn" href="./" data-nav="" style="max-width:240px;margin:0 auto">Continue shopping</a></p></div>`;scrollTo(0,0)}
-async function place(){const d=cust();if(!d)return;const r=document.querySelector("input[name=pm]:checked"),er=$("fr");if(!r){er.textContent="Choose a payment method.";return}
+function done(a,b,amt){EC.o++;OV+=+amt||0;AC.push({a:"order",n:money(+amt||0)});jstore();sync();cart=[];save();render();$("checkout").innerHTML=`<div class="wrap narrow" style="text-align:center;padding:50px 0"><h1 class="ok">${a}</h1><p>${b}</p><p style="margin-top:22px"><a class="btn" href="./" data-nav="" style="max-width:240px;margin:0 auto">Continue shopping</a></p></div>`;scrollTo(0,0)}
+async function place(){const d=cust();if(!d)return;const tot=total();const r=document.querySelector("input[name=pm]:checked"),er=$("fr");if(!r){er.textContent="Choose a payment method.";return}
  const items=cart.map(i=>({id:i.id,size:i.s,q:i.q})),customer={name:d.n,phone:d.ph,email:d.em,address:d.ad};ev("buy","Pay "+money(total()));$("pay").disabled=true;
  if(r.value==="upi"){const ut=$("ut").value.trim();if(ut.replace(/\W/g,"").length<8){er.textContent="Enter the UPI transaction ID from your payment app.";$("pay").disabled=false;return}
   const x=await post("order/manual",{items,customer,utr:ut}).catch(()=>({ok:false,d:{}}));
-  if(x.ok)done("Order received. Thank you!","We will check your payment and contact you to confirm delivery.");else{er.textContent=x.d.error||"Something went wrong. Try again.";$("pay").disabled=false}return}
+  if(x.ok)done("Order received. Thank you!","We will check your payment and contact you to confirm delivery.",tot);else{er.textContent=x.d.error||"Something went wrong. Try again.";$("pay").disabled=false}return}
  try{const x=await post("pay/create",{items,customer});
   if(!x.ok){er.textContent=x.d.error||"Something went wrong. Try again.";$("pay").disabled=false;return}
   await loadRzp();
   new Razorpay({key:x.d.key,amount:x.d.amount,currency:"INR",order_id:x.d.order,name:"Crossroads Shopping",prefill:{name:d.n,contact:d.ph,email:d.em},theme:{color:"#2548E6"},
    modal:{ondismiss:()=>{$("pay").disabled=false}},
    handler:async y=>{const v=await post("pay/verify",{order_id:y.razorpay_order_id,payment_id:y.razorpay_payment_id,signature:y.razorpay_signature});
-    if(v.ok)done("Payment received. Thank you!","We will contact you soon to confirm your delivery.");
+    if(v.ok)done("Payment received. Thank you!","We will contact you soon to confirm your delivery.",tot);
     else{er.textContent="Payment went through but could not be confirmed. Message us on Instagram with your payment ID: "+y.razorpay_payment_id;$("pay").disabled=false}}}).open()
  }catch(e){er.textContent="Could not open payment. Check your connection and try again.";$("pay").disabled=false}}
 
@@ -460,70 +481,17 @@ async function hero3d(){const c=$("c3d");if(!c)return;
   const clock=new THREE.Clock();
   (function loop(){requestAnimationFrame(loop);if(!vis||document.hidden)return;if(c.clientWidth&&c.clientWidth!==lw)fit();const t=clock.getElapsedTime();knot.rotation.x=t*.25+my*.6;knot.rotation.y=t*.35+mx*.8;wire.rotation.y=-t*.12;pts.rotation.y=t*.05;g.position.y=Math.sin(t*.8)*.12;r.render(sc,cam)})();
  }catch(e){c.remove()}}
-/* ---------- Owner admin: open yourwebsite/#admin ---------- */
-let pw=sessionStorage.getItem("cr_pw")||"",editing=null,draft=[];
-const H=()=>({"x-admin":pw});
-function shrink(file,m=720){return new Promise(ok=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,m/Math.max(i.width,i.height)),c=document.createElement("canvas");c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);c.getContext("2d").drawImage(i,0,0,c.width,c.height);ok(c.toDataURL("image/jpeg",.72))};i.onerror=()=>ok("");i.src=r.result};r.readAsDataURL(file)})}
-async function saveP(){const r=await post("products",{products:P},H()).catch(()=>({ok:false,d:{error:"No connection"}}));if(!r.ok){alert(r.d.error||"Could not save");if(r.d.error==="Wrong password"){pw="";sessionStorage.removeItem("cr_pw")}}return r.ok}
-function drawImgs(){$("ig").innerHTML=draft.map((s,k)=>`<div class="igi"><img src="${s}" alt="">${k===0?"<i>Main</i>":""}<div>${k?`<button type="button" class="link" data-m="${k}">Make main</button>`:"<span></span>"}<button type="button" class="link" data-r="${k}">Remove</button></div></div>`).join("")}
-const dt=t=>{try{return new Date(t).toLocaleString("en-IN")}catch(e){return""}};
+/* ---------- Owner admin: open yourwebsite/#admin (code loads from /admin.js only when needed) ---------- */
 async function adm(){const A=$("admin");
- if(!pw){A.innerHTML=`<div class="adm"><h2>Owner login</h2><form id="lf"><label>Password<input id="lp" type="password" autocomplete="current-password"></label><div class="err" id="le"></div><button class="btn" type="submit">Log in</button></form><p style="margin-top:16px"><a href="./">Back to store</a></p></div>`;
-  $("lf").onsubmit=async e=>{e.preventDefault();pw=$("lp").value;const r=await fetch("/api/admin",{headers:H()}).catch(()=>null);if(r&&r.ok){sessionStorage.setItem("cr_pw",pw);adm()}else{pw="";$("le").textContent="Wrong password."}};return}
- let D;try{const[r,q]=await Promise.all([fetch("/api/admin",{headers:H()}),fetch("/api/products",{headers:H()})]);
-  if(!r.ok){pw="";sessionStorage.removeItem("cr_pw");adm();return}D=await r.json();P=await q.json();if(!Array.isArray(P))P=[];try{ST=await (await fetch("/api/settings")).json()}catch(_){}}
- catch(_){A.innerHTML=`<div class="adm"><p>Could not load. Check your connection and refresh.</p></div>`;return}
- const e=(editing&&P.find(p=>p.id===editing))||{};draft=imgs(e).slice();
- const paid=D.orders.filter(o=>o.paid),rev=paid.reduce((a,o)=>a+o.total,0),toShip=paid.filter(o=>!o.shipped).length;
- A.innerHTML=`<div class="adm"><div class="ab"><h2>Owner dashboard</h2><span><a href="./">View store</a> <button class="link" id="lo">Log out</button></span></div>
- <div class="stats"><div><b>${P.length}</b><span>Products</span></div><div><b>${paid.length}</b><span>Paid orders</span></div><div><b>${money(rev)}</b><span>Paid sales</span></div><div><b>${toShip}</b><span>To ship</span></div><div><b>${D.messages.length}</b><span>Messages</span></div></div>
- <h3>Your products</h3>${P.map((p,i)=>{const m=imgs(p);return `<div class="row"><div class="rt">${m[0]?`<img src="${m[0]}" alt="">`:""}</div><div><b>${esc(p.n)}</b><small>${money(p.p)} · ${esc(p.c||"")}${p.sold?" · Sold out":""}${p.tr?" · Trending":""}${p.hid?" · Hidden":""} · ${m.length} photo${m.length===1?"":"s"}</small></div>
- <div class="ra"><button class="link" data-a="edit" data-id="${p.id}">Edit</button><button class="link" data-a="hide" data-id="${p.id}">${p.hid?"Show":"Hide"}</button><button class="link" data-a="dup" data-id="${p.id}">Duplicate</button>${i?`<button class="link" data-a="up" data-id="${p.id}">Move up</button>`:""}${i<P.length-1?`<button class="link" data-a="down" data-id="${p.id}">Move down</button>`:""}<button class="link" data-a="del" data-id="${p.id}">Delete</button></div></div>`}).join("")||"<p>No products yet. Add your first one below.</p>"}
- <h3>${e.id?"Edit product":"Add a product"}</h3>
- <form id="pf" novalidate><div><b style="font-size:.88rem">Photos (up to 5, the first is the main photo)</b></div><div class="ig" id="ig"></div>
- <label class="btn alt sm" style="cursor:pointer;width:fit-content">+ Add photos<input id="pi" type="file" accept="image/*" multiple hidden></label>
- <label>Product name<input id="pn" value="${esc(e.n)}"></label>
- <div class="two"><label>Category (like Fashion or Shoes)<input id="pc" list="cl" value="${esc(e.c)}"></label><label>Sizes, separated by commas<input id="ps" value="${esc((e.s||[]).join(", "))}" placeholder="S, M, L, XL"></label></div>
- <datalist id="cl"><option value="Fashion"><option value="Shoes"><option value="Accessories"><option value="Watches"><option value="Bags"></datalist>
- <div class="two"><label>Price (₹)<input id="pp" type="number" min="1" value="${e.p||""}"></label><label>Old price (₹, optional)<input id="po" type="number" min="0" value="${e.o||""}"></label></div>
- <label>Description (optional)<textarea id="pdsc" rows="3">${esc(e.d)}</textarea></label>
- <label class="chk"><input type="checkbox" id="pso" ${e.sold?"checked":""}>Mark as sold out</label>
- <label class="chk"><input type="checkbox" id="ptr" ${e.tr?"checked":""}>Show in Trending</label>
- <label class="chk"><input type="checkbox" id="phd" ${e.hid?"checked":""}>Hide from the store</label>
- <div class="err" id="pfe"></div><button class="btn" type="submit">${e.id?"Save changes":"Add product"}</button>${e.id?`<button class="btn alt" type="button" data-a="cancel" style="margin-top:8px">Cancel editing</button>`:""}</form>
- <h3>Payment settings (UPI)</h3>
- <form id="sf" novalidate><label>Your UPI ID (like name@bank)<input id="su" value="${esc(ST.upi)}"></label><label>Name shown to customers<input id="sn" value="${esc(ST.name)}"></label>
- <label>QR code image (a screenshot of your UPI QR)<input id="sq" type="file" accept="image/*"></label>${ST.qr?`<img src="${ST.qr}" alt="Current QR" style="width:140px;border-radius:8px">`:""}
- <div class="err" id="sfe"></div><button class="btn" type="submit">Save payment settings</button></form>
- <h3>Orders</h3>${D.orders.map(o=>`<div class="box"><b>${o.paid?"Paid":"Not paid"}${o.shipped?" · Shipped":""} · ${money(o.total)}</b><small>${esc(dt(o.t))}</small>${esc(o.lines.join("\n"))}\n${esc(o.name)} · ${esc(o.phone)} ${esc(o.email||"")}\n${esc(o.address)}${o.utr?"\nUPI transaction ID: "+esc(o.utr):""}${o.track?"\nTracking: "+esc(o.track):""}<div class="oa">${o.manual&&!o.paid?`<button class="btn sm" data-a="paid" data-id="${esc(o.id)}">Mark as paid</button>`:""}${o.paid&&!o.shipped?`<button class="btn sm" data-a="ship" data-id="${esc(o.id)}">Mark as shipped</button>`:""}<button class="link" data-a="odel" data-id="${esc(o.id)}">Delete</button></div></div>`).join("")||"<p>No orders yet.</p>"}
- <h3>Messages</h3>${D.messages.map(m=>`<div class="box"><b>${esc(m.name)} · ${esc(m.contact)}</b><small>${esc(dt(m.t))}</small>${esc(m.text)}<div class="oa"><button class="link" data-a="mdel" data-t="${esc(m.t)}">Delete</button></div></div>`).join("")||"<p>No messages yet.</p>"}</div>`;
- drawImgs();
- $("lo").onclick=()=>{pw="";sessionStorage.removeItem("cr_pw");adm()};
- $("ig").onclick=x=>{const b=x.target.closest("button");if(!b)return;if(b.dataset.r!==undefined)draft.splice(+b.dataset.r,1);if(b.dataset.m!==undefined){const[s]=draft.splice(+b.dataset.m,1);draft.unshift(s)}drawImgs()};
- $("pi").onchange=async x=>{const fs=[...x.target.files].slice(0,5-draft.length);if(!fs.length){$("pfe").textContent="You can add up to 5 photos.";return}$("pfe").textContent="Adding photos...";for(const f of fs){const s=await shrink(f);if(s)draft.push(s)}x.target.value="";$("pfe").textContent="";drawImgs()};
- A.onclick=async x=>{const b=x.target.closest("[data-a]");if(!b)return;const a=b.dataset.a,id=b.dataset.id,i=P.findIndex(p=>String(p.id)===id);
-  if(a==="edit"){editing=+id;await adm();$("pf").scrollIntoView({behavior:"smooth"});return}
-  if(a==="cancel"){editing=null;adm();return}
-  if(a==="hide"&&i>-1){P[i].hid=!P[i].hid;await saveP();adm();return}
-  if(a==="dup"&&i>-1){P.splice(i+1,0,Object.assign({},P[i],{id:Date.now(),n:P[i].n+" (copy)",hid:true}));await saveP();adm();return}
-  if((a==="up"&&i>0)||(a==="down"&&i>-1&&i<P.length-1)){const j=a==="up"?i-1:i+1;[P[i],P[j]]=[P[j],P[i]];await saveP();adm();return}
-  if(a==="del"&&i>-1&&confirm("Delete this product?")){P.splice(i,1);await saveP();adm();return}
-  if(a==="paid"){await post("orders/paid",{id},H());adm();return}
-  if(a==="ship"){const t=prompt("Tracking number or note (optional)");if(t===null)return;await post("orders/update",{id,shipped:true,track:t},H());adm();return}
-  if(a==="odel"&&confirm("Delete this order?")){await post("orders/delete",{id},H());adm();return}
-  if(a==="mdel"&&confirm("Delete this message?")){await post("messages/delete",{t:b.dataset.t},H());adm()}};
- $("sf").onsubmit=async x=>{x.preventDefault();const f=$("sq").files[0],qr=f?await shrink(f,800):(ST.qr||""),u=$("su").value.trim(),nm=$("sn").value.trim();
-  const r=await post("settings",{upi:u,name:nm,qr},H()).catch(()=>({ok:false,d:{}}));$("sfe").className=r.ok?"ok":"err";$("sfe").textContent=r.ok?"Saved.":(r.d.error||"Could not save.");if(r.ok)Object.assign(ST,{upi:u,name:nm,qr})};
- $("pf").onsubmit=async x=>{x.preventDefault();const n=$("pn").value.trim(),pr=+$("pp").value;
-  if(!n||!pr){$("pfe").className="err";$("pfe").textContent="Enter a name and a price.";return}
-  const o={id:e.id||Date.now(),n,c:$("pc").value.trim()||"Fashion",p:pr,o:+$("po").value||0,s:$("ps").value.split(",").map(s=>s.trim()).filter(Boolean),d:$("pdsc").value.trim(),sold:$("pso").checked,tr:$("ptr").checked,hid:$("phd").checked,imgs:draft.slice(),img:draft[0]||""};
-  if(e.id)P=P.map(p=>p.id===e.id?o:p);else P.unshift(o);
-  if(await saveP()){editing=null;await adm();scrollTo(0,0)}}}
+ if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
+  try{await new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=1";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
+  catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
+ window.CRAdmin.open(A)}
 
 async function route(){stopAuto();document.title="Crossroads Shopping";const v=view();["shop","about","contact","product","checkout","admin"].forEach(k=>$(k).hidden=v!==k);$("foot").hidden=$("hd").hidden=$("ann").hidden=v==="admin";
  if(v==="admin"){wasAdmin=true;await adm();return}
  if(wasAdmin){wasAdmin=false;await loadP()}
- cats();if(v==="shop"){grid();maybeHero()}if(v==="product")renderProduct(location.hash.slice(3));if(v==="checkout")renderCheckout();
+ jp(pageName());cats();if(v==="shop"){grid();maybeHero()}if(v==="product")renderProduct(location.hash.slice(3));if(v==="checkout")renderCheckout();
  scrollTo({top:0,left:0,behavior:"instant"});if(v!=="shop")log("Opened the "+v+" page")}
 addEventListener("hashchange",route);addEventListener("popstate",route);
 (async()=>{
@@ -533,7 +501,7 @@ addEventListener("hashchange",route);addEventListener("popstate",route);
  const st=fetch("/api/settings").then(r=>r.json()).then(x=>{ST=x}).catch(()=>{});
  const ch=await loadP();await st;const was=loading;loading=false;
  if(view()!=="admin"&&(ch||was)){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout()}
- await first;if(view()!=="admin")ev("open","",1)})();
+ await first;if(view()!=="admin"){ev("open","",1);sync()}})();
 </script>
 </body>
 </html>

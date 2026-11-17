@@ -4,6 +4,15 @@ export const config={path:"/api/*"};
 const E=process.env, WA=E.WA_NUMBER||"918281036836";
 const J=(d,s=200)=>new Response(JSON.stringify(d),{status:s,headers:{"content-type":"application/json","cache-control":"no-store"}});
 const cut=(s,n)=>String(s??"").slice(0,n);
+const ist=(t=Date.now())=>new Date(t+19800000).toISOString().slice(0,10);
+const hourOf=t=>new Date(t+19800000).getUTCHours();
+const devOf=u=>/iPhone/.test(u)?"iPhone":/iPad/.test(u)?"iPad":/Android/.test(u)?"Android phone":/Windows/.test(u)?"Windows PC":/Macintosh|Mac OS/.test(u)?"Mac":/Linux/.test(u)?"Linux":"Other";
+const brOf=u=>/Instagram/.test(u)?"Instagram app":/FBAN|FBAV/.test(u)?"Facebook app":/Edg\//.test(u)?"Edge":/OPR\//.test(u)?"Opera":/CriOS|Chrome\//.test(u)?"Chrome":/FxiOS|Firefox/.test(u)?"Firefox":/Safari\//.test(u)?"Safari":"Other";
+function srcOf(ref,utm,ua,host){const x=String(utm||"").toLowerCase();if(x){if(/insta|^ig/.test(x))return"Instagram";if(/whats|^wa/.test(x))return"WhatsApp";return cut(utm,20)}
+  let h="";try{h=new URL(ref).hostname.replace(/^www\./,"")}catch(e){}
+  if(!h)return /Instagram/.test(ua)?"Instagram":"Direct";if(h===host)return"Direct";
+  if(/instagram\.com$/.test(h))return"Instagram";if(/whatsapp|wa\.me$/.test(h))return"WhatsApp";if(/google\./.test(h))return"Google";if(/facebook\.com$|fb\.com$|l\.facebook/.test(h))return"Facebook";if(/youtube\.com$|youtu\.be$/.test(h))return"YouTube";if(/^t\.co$|twitter\.com$|x\.com$/.test(h))return"X (Twitter)";
+  return cut(h,30)}
 export default async(req,context)=>{
   const db=getStore({name:"shop",consistency:"strong"}), path=new URL(req.url).pathname.replace(/^\/api\/?/,"");
   const get=async(k,d)=>(await db.get(k,{type:"json"}))??d;
@@ -12,7 +21,7 @@ export default async(req,context)=>{
   const imgId=b=>crypto.createHash("sha1").update(b).digest("hex").slice(0,24);
   async function pack(list){let changed=false;
     for(const p of list){
-      const arr=Array.isArray(p.imgs)&&p.imgs.length?p.imgs:(p.img?[p.img]:[]),out=[];
+      const arr=Array.isArray(p.images)&&p.images.length?p.images:(Array.isArray(p.imgs)&&p.imgs.length?p.imgs:(p.img?[p.img]:[])),out=[];
       for(const x of arr){
         const str=String(x),m=/^data:image\/(png|jpe?g|webp);base64,(.+)$/.exec(str);
         if(m){const buf=Buffer.from(m[2],"base64");if(!buf.length||buf.length>3000000)continue;
@@ -20,8 +29,8 @@ export default async(req,context)=>{
           await db.set("img/"+id,ab,{metadata:{type:"image/"+(m[1]==="png"?"png":m[1]==="webp"?"webp":"jpeg")}});out.push("/api/img/"+id)}
         else if(str.startsWith("/api/img/")||/^https?:\/\//.test(str))out.push(str);
       }
-      if(out.length!==arr.length||arr.some((x,i)=>x!==out[i])||p.img!==(out[0]||""))changed=true;
-      p.imgs=out;p.img=out[0]||"";
+      if(out.length!==arr.length||arr.some((x,i)=>x!==out[i])||p.img!==(out[0]||"")||("imgs" in p))changed=true;
+      p.images=out;p.img=out[0]||"";delete p.imgs;
     }
     return changed}
   const allow=async()=>{const h=new Date().toISOString().slice(0,13),rl=await get("rl",{h:"",n:0});if(rl.h!==h){rl.h=h;rl.n=0}if(rl.n>=80)return false;rl.n++;await db.setJSON("rl",rl);return true};
@@ -62,7 +71,8 @@ export default async(req,context)=>{
     if(!lines.length||!c.name||!c.phone||!c.address||utr.length<8)return J({error:"Fill in your details and the UPI transaction ID."},400);
     const orders=await get("orders",[]);
     if(orders.some(x=>x.utr===utr))return J({error:"This transaction ID was already used."},400);
-    orders.unshift({id:"upi"+Date.now(),lines,total,paid:false,manual:true,utr,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)});
+    const mx=Math.max(1000,...orders.map(o=>o.no||0));
+    orders.unshift({id:"upi"+Date.now(),no:mx+1,method:"upi",ev:[{a:"placed",t:new Date().toISOString()}],lines,total,paid:false,manual:true,utr,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)});
     await db.setJSON("orders",orders.slice(0,500));
     await notify(`💰 UPI payment claimed ₹${total}\nTxn ID: ${utr}\n${lines.join("\n")}\n\n${c.name}\n${c.phone}\n${c.address}\nCheck your bank app, then mark it paid in #admin.`,true);
     return J({ok:1});
@@ -70,12 +80,14 @@ export default async(req,context)=>{
   if(path==="orders/paid"){
     if(!admin())return J({error:"Wrong password"},401);
     const orders=await get("orders",[]),o=orders.find(x=>x.id===b.id);
-    if(o){o.paid=true;await db.setJSON("orders",orders)}return J({ok:1});
+    if(o&&!o.paid){o.paid=true;(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});await db.setJSON("orders",orders)}return J({ok:1});
   }
   if(path==="orders/update"){
     if(!admin())return J({error:"Wrong password"},401);
     const orders=await get("orders",[]),o=orders.find(x=>x.id===b.id);
-    if(o){if(b.shipped)o.shipped=true;if(b.track!==undefined)o.track=cut(b.track,120);await db.setJSON("orders",orders)}return J({ok:1});
+    if(o){for(const k of ["paid","shipped","delivered","cancelled"])if(typeof b[k]==="boolean"&&o[k]!==b[k]){o[k]=b[k];if(b[k])(o.ev=o.ev||[]).push({a:k==="cancelled"?"cancelled":k,t:new Date().toISOString()})}
+      if(b.track!==undefined)o.track=cut(b.track,120);if(b.note!==undefined)o.note=cut(b.note,500);await db.setJSON("orders",orders)}
+    return J({ok:1});
   }
   if(path==="orders/delete"){
     if(!admin())return J({error:"Wrong password"},401);
@@ -84,6 +96,46 @@ export default async(req,context)=>{
   if(path==="messages/delete"){
     if(!admin())return J({error:"Wrong password"},401);
     await db.setJSON("messages",(await get("messages",[])).filter(x=>x.t!==b.t));return J({ok:1});
+  }
+  if(path==="track"&&req.method==="POST"&&b.forget){
+    if(!admin())return J({error:"Wrong password"},401);
+    const key="an/"+ist(Math.min(+b.t0||Date.now(),Date.now())),doc=await get(key,{s:{}});
+    if(doc.s[b.sid]){delete doc.s[b.sid];await db.setJSON(key,doc)}return J({ok:1});
+  }
+  if(path==="track"&&req.method==="POST"){
+    const ua=req.headers.get("user-agent")||"";
+    if(/bot|crawl|spider|headless|preview|facebookexternalhit|slurp|lighthouse|pingdom/i.test(ua))return J({ok:1});
+    const sid=cut(b.sid,48),vid=cut(b.vid,48),t0=+b.t0||Date.now();if(!sid||!vid)return J({ok:1});
+    const day=ist(Math.min(t0,Date.now())),key="an/"+day,doc=await get(key,{s:{}});let s=doc.s[sid];
+    if(!s){if(Object.keys(doc.s).length>=2000)return J({ok:1});
+      const g=(context&&context.geo)||{},host=new URL(req.url).hostname;
+      s=doc.s[sid]={sid,vid,t0:Math.min(t0,Date.now()),nv:b.nv?1:0,src:srcOf(b.ref,b.utm,ua,host),dev:devOf(ua),br:brOf(ua),w:Math.min(+b.w||0,5000),loc:[g.city,g.subdivision&&g.subdivision.name,g.country&&g.country.name].filter(Boolean).slice(0,2).join(", ")||"Unknown"}}
+    s.t1=Date.now();s.dur=Math.max(0,Math.min(+b.dur||0,86400));
+    s.pages=(Array.isArray(b.pages)?b.pages:[]).slice(0,40).map(x=>({p:cut(x&&x.p,80),t:Math.max(0,+x.t||0)}));
+    s.acts=(Array.isArray(b.acts)?b.acts:[]).slice(0,30).map(x=>({a:cut(x&&x.a,10),n:cut(x&&x.n,80)}));
+    const e=b.ev||{};s.ev={v:Math.min(+e.v||0,99),c:Math.min(+e.c||0,99),k:Math.min(+e.k||0,99),o:Math.min(+e.o||0,9)};s.ov=Math.min(+b.ov||0,1e7);
+    await db.setJSON(key,doc);return J({ok:1});
+  }
+  if(path==="analytics"&&req.method==="GET"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const days=Math.max(1,Math.min(30,+new URL(req.url).searchParams.get("days")||7)),list=[];
+    for(let i=0;i<days;i++)list.push(ist(Date.now()-i*864e5));
+    const docs=await Promise.all(list.map(d=>get("an/"+d,{s:{}}))),orders=await get("orders",[]),S=[];
+    docs.forEach(d=>Object.values(d.s||{}).forEach(x=>S.push(x)));
+    const top=(arr,f,n=8)=>{const m={};arr.forEach(x=>{const k=f(x);if(k)m[k]=(m[k]||0)+1});return Object.entries(m).sort((a,c)=>c[1]-a[1]).slice(0,n).map(([k,v])=>({k,v}))};
+    const lastP=x=>{const p=x.pages||[];return p.length?p[p.length-1].p:""},firstP=x=>{const p=x.pages||[];return p.length?p[0].p:""};
+    const inR=o=>list.includes(ist(Date.parse(o.t))),ordR=orders.filter(o=>inR(o)&&!o.cancelled),paid=ordR.filter(o=>o.paid);
+    const funnel={sessions:S.length,viewed:S.filter(x=>x.ev&&x.ev.v>0).length,cart:S.filter(x=>x.ev&&x.ev.c>0).length,checkout:S.filter(x=>x.ev&&x.ev.k>0).length,ordered:S.filter(x=>x.ev&&x.ev.o>0).length};
+    const prod={};S.forEach(x=>(x.acts||[]).forEach(a=>{if(a.a==="view"||a.a==="cart"){const p=prod[a.n]||(prod[a.n]={n:a.n,v:0,c:0});a.a==="view"?p.v++:p.c++}}));
+    const series=list.slice().reverse().map(d=>{const ss=S.filter(x=>ist(x.t0)===d);return{d,sessions:ss.length,visitors:new Set(ss.map(x=>x.vid)).size,orders:orders.filter(o=>!o.cancelled&&ist(Date.parse(o.t))===d).length,sales:orders.filter(o=>o.paid&&!o.cancelled&&ist(Date.parse(o.t))===d).reduce((a,o)=>a+o.total,0)}});
+    const hours=Array(24).fill(0);S.forEach(x=>hours[hourOf(x.t0)]++);
+    const durs=S.filter(x=>x.dur>0).map(x=>x.dur),now=Date.now();
+    const outcome=x=>x.ev&&x.ev.o>0?"Ordered":x.ev&&x.ev.k>0?"Reached checkout":x.ev&&x.ev.c>0?"Added to cart":x.ev&&x.ev.v>0?"Viewed a product":(x.pages||[]).length>1?"Browsed":"Left quickly";
+    return J({days,series,kpi:{sessions:S.length,visitors:new Set(S.map(x=>x.vid)).size,newV:S.filter(x=>x.nv).length,pageviews:S.reduce((a,x)=>a+(x.pages||[]).length,0),avgDur:durs.length?Math.round(durs.reduce((a,b)=>a+b,0)/durs.length):0,bounce:S.length?Math.round(100*S.filter(x=>(x.pages||[]).length<=1&&!(x.ev&&x.ev.c)).length/S.length):0,orders:ordR.length,paidOrders:paid.length,sales:paid.reduce((a,o)=>a+o.total,0),abandoned:S.filter(x=>x.ev&&x.ev.c>0&&!(x.ev.o>0)).length},
+      funnel,sources:top(S,x=>x.src),devices:top(S,x=>x.dev),browsers:top(S,x=>x.br),places:top(S,x=>x.loc),entry:top(S,firstP),exit:top(S,lastP),hours,
+      products:Object.values(prod).sort((a,b)=>(b.v+b.c*3)-(a.v+a.c*3)).slice(0,8),
+      live:S.filter(x=>now-x.t1<300000).map(x=>({loc:x.loc,dev:x.dev,page:lastP(x),src:x.src})),
+      recent:S.sort((a,b)=>b.t0-a.t0).slice(0,80).map(x=>({t:x.t0,loc:x.loc,dev:x.dev,br:x.br,src:x.src,nv:x.nv,dur:x.dur,pages:(x.pages||[]).map(p=>p.p),exit:lastP(x),acts:(x.acts||[]).filter(a=>a.a!=="view").map(a=>a.a+": "+String(a.n).replace(/^Product: /,"")).slice(0,6),out:outcome(x)}))});
   }
   if(path==="session"){
     const L=Array.isArray(b.log)?b.log.slice(0,60):[];
@@ -106,7 +158,9 @@ export default async(req,context)=>{
   }
   if(path==="admin"&&req.method==="GET"){
     if(!admin())return J({error:"Wrong password"},401);
-    return J({orders:await get("orders",[]),messages:await get("messages",[])});
+    const orders=await get("orders",[]);let mx=Math.max(1000,...orders.map(o=>o.no||0)),ch=false;
+    [...orders].reverse().forEach(o=>{if(!o.no){o.no=++mx;ch=true}if(!o.method)o.method=o.manual?"upi":"online"});if(ch)await db.setJSON("orders",orders);
+    return J({orders,messages:await get("messages",[])});
   }
   if(path==="event"){
     const L={open:"👀 Someone opened your store",view:"🛍️ Viewing: ",cart:"➕ Added to cart: ",buy:"💳 Going to pay: "};
@@ -134,7 +188,8 @@ export default async(req,context)=>{
     const o=await r.json();
     if(!r.ok)return J({error:"Could not start payment. Try again."},502);
     const orders=await get("orders",[]);
-    orders.unshift({id:o.id,lines,total,paid:false,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)});
+    const mx=Math.max(1000,...orders.map(x=>x.no||0));
+    orders.unshift({id:o.id,no:mx+1,method:"online",ev:[{a:"placed",t:new Date().toISOString()}],lines,total,paid:false,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)});
     await db.setJSON("orders",orders.slice(0,500));
     return J({order:o.id,amount:o.amount,key:E.RAZORPAY_KEY_ID});
   }
@@ -142,7 +197,7 @@ export default async(req,context)=>{
     const sig=crypto.createHmac("sha256",E.RAZORPAY_KEY_SECRET||"").update(b.order_id+"|"+b.payment_id).digest("hex");
     if(sig!==b.signature)return J({error:"Payment could not be verified."},400);
     const orders=await get("orders",[]),o=orders.find(x=>x.id===b.order_id);
-    if(o&&!o.paid){o.paid=true;o.pay=cut(b.payment_id,40);await db.setJSON("orders",orders);
+    if(o&&!o.paid){o.paid=true;o.pay=cut(b.payment_id,40);(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});await db.setJSON("orders",orders);
       await notify(`✅ PAID ₹${o.total}\n${o.lines.join("\n")}\n\n${o.name}\n${o.phone}\n${o.address}`,true);}
     return J({ok:1});
   }
