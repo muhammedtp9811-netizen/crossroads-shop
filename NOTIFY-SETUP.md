@@ -72,6 +72,20 @@ The key is stored on the server and never returned by the public API.
 Netlify variables `RESEND_API_KEY` and `ALERT_EMAIL` still work and override the
 saved values.
 
+### Customer order confirmation
+
+If the customer typed an email at checkout, they automatically get:
+
+- **Order #1042 received** the moment they place a UPI order, and
+- **Order #1042 confirmed — payment received** when you mark it paid or when an
+  online payment clears.
+
+This needs a **verified domain** in Resend (`resend.com → Domains`). With the free
+`onboarding@resend.dev` sender Resend only delivers to the address that owns the
+Resend account, so customer emails are silently dropped. After verifying a domain,
+set **Send from** in the admin email settings, for example
+`Crossroads <orders@yourdomain.com>`.
+
 ---
 
 ## 3. Telegram (free) — fastest and most reliable

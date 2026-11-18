@@ -136,7 +136,39 @@ export default async(req,context)=>{
     }
     return changed}
   const allow=async()=>{const h=new Date().toISOString().slice(0,13),rl=await get("rl",{h:"",n:0});if(rl.h!==h){rl.h=h;rl.n=0}if(rl.n>=80)return false;rl.n++;await db.setJSON("rl",rl);return true};
-  const mail=(subject,text,cred)=>fetch("https://api.resend.com/emails",{method:"POST",headers:{authorization:"Bearer "+((cred&&cred.key)||E.RESEND_API_KEY),"content-type":"application/json"},body:JSON.stringify({from:"Crossroads <onboarding@resend.dev>",to:[(cred&&cred.to)||E.ALERT_EMAIL||"producingmj@gmail.com"],subject:cut(subject,80),text})});
+  const mail=(subject,text,cred)=>fetch("https://api.resend.com/emails",{method:"POST",headers:{authorization:"Bearer "+((cred&&cred.key)||E.RESEND_API_KEY),"content-type":"application/json"},body:JSON.stringify({from:(cred&&cred.from)||E.MAIL_FROM||"Crossroads <onboarding@resend.dev>",to:[(cred&&cred.to)||E.ALERT_EMAIL||"producingmj@gmail.com"],subject:cut(subject,80),text})});
+  const custMail=async(o,kind)=>{
+    const email=String(o&&o.email||"").trim().toLowerCase();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return;
+    const st=await cfg().catch(()=>({})),key=E.RESEND_API_KEY||st.rsKey||"";
+    if(!key)return;
+    const from=E.MAIL_FROM||st.rsFrom||"Crossroads <onboarding@resend.dev>";
+    const when=(()=>{try{return new Date(o.t||Date.now()).toLocaleString("en-IN",{timeZone:"Asia/Kolkata",day:"numeric",month:"short",year:"numeric",hour:"numeric",minute:"2-digit"})}catch(e){return""}})();
+    const body=
+`Hi ${o.name||"there"},
+
+Thank you for shopping with Crossroads Shopping. We have received your order.
+
+Order #${o.no||""}  ·  ${when} IST
+
+${(o.lines||[]).join("\n")}
+
+Total: ${inr(o.total)}
+
+${kind==="paid"
+  ? "Payment received. We are packing your order and will send you the tracking details shortly."
+  : "We are checking your UPI payment now. You will get another email as soon as it is confirmed."}
+
+Delivering to:
+${o.name||""}
+${o.address||""}
+${o.phone||""}
+
+Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
+
+— Crossroads Shopping`;
+    await mail(kind==="paid"?"Order #"+(o.no||"")+" confirmed — payment received":"Order #"+(o.no||"")+" received",body,{key,to:email,from}).catch(()=>{});
+  };
   const tgCreds=async()=>{const s=await cfg().catch(()=>({}));return{tok:E.TELEGRAM_BOT_TOKEN||s.tgToken||"",chat:String(E.TELEGRAM_CHAT_ID||s.tgChat||"").trim()}};
   async function tgSend(t,cred){
     const c=cred||await tgCreds();
@@ -151,14 +183,14 @@ export default async(req,context)=>{
     skip=skip||{};
     const st=await cfg().catch(()=>({})),waKey=E.CALLMEBOT_KEY||st.waKey||"",waPhone=String(E.WA_NUMBER||st.waPhone||WA).replace(/\D/g,"");
     const tgTok=E.TELEGRAM_BOT_TOKEN||st.tgToken||"",tgChat=E.TELEGRAM_CHAT_ID||st.tgChat||"";
-    const rsKey=E.RESEND_API_KEY||st.rsKey||"",rsTo=E.ALERT_EMAIL||st.rsTo||"producingmj@gmail.com";
+    const rsKey=E.RESEND_API_KEY||st.rsKey||"",rsTo=E.ALERT_EMAIL||st.rsTo||"producingmj@gmail.com",rsFrom=E.MAIL_FROM||st.rsFrom||"";
     if(!waKey&&!E.DISCORD_WEBHOOK&&!E.FAST2SMS_KEY&&!E.NTFY_TOPIC&&!rsKey&&!(tgTok&&tgChat))return;
     if(!imp&&!await allow())return;
     if(waKey&&!skipWa)await fetch(`https://api.callmebot.com/whatsapp.php?phone=${waPhone}&apikey=${encodeURIComponent(waKey)}&text=${encodeURIComponent(t)}`).catch(()=>{});
     if(imp&&E.FAST2SMS_KEY&&!skip.sms)await fetch("https://www.fast2sms.com/dev/bulkV2?"+new URLSearchParams({authorization:E.FAST2SMS_KEY,route:"q",message:t.replace(/[^\x20-\x7E\n]/g,"").slice(0,150),flash:"0",numbers:E.SMS_TO||"8281036836"})).catch(()=>{});
     if(E.DISCORD_WEBHOOK&&!skip.discord)await fetch(E.DISCORD_WEBHOOK,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({content:t})}).catch(()=>{});
     if(E.NTFY_TOPIC&&!skip.ntfy)await fetch("https://ntfy.sh/"+encodeURIComponent(E.NTFY_TOPIC),{method:"POST",headers:{Title:"Crossroads"},body:t}).catch(()=>{});
-    if(imp&&rsKey&&!skip.email)await mail(t.split("\n").filter(Boolean)[0],t,{key:rsKey,to:rsTo}).catch(()=>{});
+    if(imp&&rsKey&&!skip.email)await mail(t.split("\n").filter(Boolean)[0],t,{key:rsKey,to:rsTo,from:rsFrom}).catch(()=>{});
     if(tgTok&&tgChat&&!skip.tg)await tgSend(t,{tok:tgTok,chat:tgChat});
   }
   if(path==="test"){
@@ -184,13 +216,14 @@ export default async(req,context)=>{
     if(b.tgChat!==undefined)nxt.tgChat=cut(String(b.tgChat).trim(),40);
     if(b.rsKey!==undefined)nxt.rsKey=cut(String(b.rsKey).trim(),90);
     if(b.rsTo!==undefined)nxt.rsTo=cut(String(b.rsTo).trim().toLowerCase(),120);
+    if(b.rsFrom!==undefined)nxt.rsFrom=cut(String(b.rsFrom).trim(),120);
     await db.setJSON("settings",nxt);cfgCache={t:0,v:null};return J({ok:1});
   }
   if(path==="notify"&&req.method==="GET"){
     if(!admin())return J({error:"Wrong password"},401);
     const s=await get("settings",{}),tgTok=E.TELEGRAM_BOT_TOKEN||s.tgToken||"",tgChat=E.TELEGRAM_CHAT_ID||s.tgChat||"";
     return J({whatsapp:!!(E.CALLMEBOT_KEY||s.waKey),whatsapp_number:String(E.WA_NUMBER||s.waPhone||WA).replace(/\D/g,""),
-      email:!!(E.RESEND_API_KEY||s.rsKey),email_to:E.ALERT_EMAIL||s.rsTo||"producingmj@gmail.com",email_saved:!!s.rsKey,
+      email:!!(E.RESEND_API_KEY||s.rsKey),email_to:E.ALERT_EMAIL||s.rsTo||"producingmj@gmail.com",email_saved:!!s.rsKey,email_from:E.MAIL_FROM||s.rsFrom||"",
       telegram:!!(tgTok&&tgChat),telegram_saved:!!s.tgToken,telegram_chat:tgChat,
       ntfy:!!E.NTFY_TOPIC,discord:!!E.DISCORD_WEBHOOK,sms:!!E.FAST2SMS_KEY});
   }
@@ -222,11 +255,12 @@ export default async(req,context)=>{
     if(!admin())return J({error:"Wrong password"},401);
     const cur=await get("settings",{}),key=String(b.key||cur.rsKey||E.RESEND_API_KEY||"").trim();
     const to=String(b.to||cur.rsTo||E.ALERT_EMAIL||"producingmj@gmail.com").trim().toLowerCase();
+    const from=String(b.from||cur.rsFrom||E.MAIL_FROM||"").trim();
     if(!key)return J({error:"Paste your Resend API key first (resend.com → API Keys)."},400);
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))return J({error:"That email address does not look right."},400);
     let r,d={};
     try{
-      r=await mail("Test alert from Crossroads Shopping","🔔 Test alert from Crossroads Shopping\nIf you can read this, order alerts are working.\n"+DASH,{key,to});
+      r=await mail("Test alert from Crossroads Shopping","🔔 Test alert from Crossroads Shopping\nIf you can read this, order alerts are working.\n"+DASH,{key,to,from});
       d=await r.json().catch(()=>({}));
     }catch(e){return J({error:"Could not reach Resend. Check your internet and try again."},400)}
     if(!r.ok){
@@ -235,14 +269,15 @@ export default async(req,context)=>{
       if(/invalid|not authorized|unauthorized/i.test(m))return J({error:"Resend says the API key is invalid. Copy it again from resend.com → API Keys."},400);
       return J({error:"Resend refused the email: "+(m||("status "+r.status))},400);
     }
-    await db.setJSON("settings",{...cur,rsKey:cut(key,90),rsTo:cut(to,120)});cfgCache={t:0,v:null};
-    return J({ok:1,to});
+    await db.setJSON("settings",{...cur,rsKey:cut(key,90),rsTo:cut(to,120),rsFrom:cut(from,120)});cfgCache={t:0,v:null};
+    return J({ok:1,to,from});
   }
   if(path==="notify/test"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
     const st=await cfg().catch(()=>({})),waKey=E.CALLMEBOT_KEY||st.waKey||"",waPhone=normPhone(E.WA_NUMBER||st.waPhone||WA);
     const tgTok=E.TELEGRAM_BOT_TOKEN||st.tgToken||"",tgChat=E.TELEGRAM_CHAT_ID||st.tgChat||"";
-    const other=E.RESEND_API_KEY||st.rsKey||E.NTFY_TOPIC||E.DISCORD_WEBHOOK||(tgTok&&tgChat);
+    const rsKey=E.RESEND_API_KEY||st.rsKey||"",rsTo=E.ALERT_EMAIL||st.rsTo||"producingmj@gmail.com",rsFrom=E.MAIL_FROM||st.rsFrom||"";
+    const other=rsKey||E.NTFY_TOPIC||E.DISCORD_WEBHOOK||(tgTok&&tgChat);
     if(!waKey&&!other)return J({error:"No alert channel is set up yet."},400);
     const msg="🔔 Test alert from Crossroads Shopping\nIf you can read this, order alerts are working.\n"+DASH;
     let wa="",waOk=false;
@@ -261,7 +296,7 @@ export default async(req,context)=>{
     let em="";
     if(rsKey){
       try{
-        const x=await mail("Test alert from Crossroads Shopping",msg,{key:rsKey,to:rsTo});
+        const x=await mail("Test alert from Crossroads Shopping",msg,{key:rsKey,to:rsTo,from:rsFrom});
         if(!x.ok){const d=await x.json().catch(()=>({}));em=String(d.message||("status "+x.status)).slice(0,160)}
       }catch(e){em="Could not reach Resend."}
     }
@@ -283,18 +318,19 @@ export default async(req,context)=>{
     orders.unshift({id:"upi"+Date.now(),no:mx+1,method:"upi",ev:[{a:"placed",t:new Date().toISOString()}],lines,total,paid:false,manual:true,utr,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)});
     await db.setJSON("orders",orders.slice(0,500));
     await notify(orderText(orders[0],"🛒 New order — UPI payment claimed. Check your bank app, then mark it paid."),true);
+    await custMail(orders[0],"received");
     return J({ok:1});
   }
   if(path==="orders/paid"){
     if(!admin())return J({error:"Wrong password"},401);
     const orders=await get("orders",[]),o=orders.find(x=>x.id===b.id);
-    if(o&&!o.paid){o.paid=true;(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});await db.setJSON("orders",orders)}return J({ok:1});
+    if(o&&!o.paid){o.paid=true;(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});await db.setJSON("orders",orders);await custMail(o,"paid")}return J({ok:1});
   }
   if(path==="orders/update"){
     if(!admin())return J({error:"Wrong password"},401);
     const orders=await get("orders",[]),o=orders.find(x=>x.id===b.id);
-    if(o){for(const k of ["paid","shipped","delivered","cancelled"])if(typeof b[k]==="boolean"&&o[k]!==b[k]){o[k]=b[k];if(b[k])(o.ev=o.ev||[]).push({a:k==="cancelled"?"cancelled":k,t:new Date().toISOString()})}
-      if(b.track!==undefined)o.track=cut(b.track,120);if(b.note!==undefined)o.note=cut(b.note,500);await db.setJSON("orders",orders)}
+    if(o){let justPaid=false;for(const k of ["paid","shipped","delivered","cancelled"])if(typeof b[k]==="boolean"&&o[k]!==b[k]){o[k]=b[k];if(b[k])(o.ev=o.ev||[]).push({a:k==="cancelled"?"cancelled":k,t:new Date().toISOString()});if(k==="paid"&&b[k])justPaid=true}
+      if(b.track!==undefined)o.track=cut(b.track,120);if(b.note!==undefined)o.note=cut(b.note,500);await db.setJSON("orders",orders);if(justPaid)await custMail(o,"paid")}
     return J({ok:1});
   }
   if(path==="orders/delete"){
@@ -406,7 +442,8 @@ export default async(req,context)=>{
     if(sig!==b.signature)return J({error:"Payment could not be verified."},400);
     const orders=await get("orders",[]),o=orders.find(x=>x.id===b.order_id);
     if(o&&!o.paid){o.paid=true;o.pay=cut(b.payment_id,40);(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});await db.setJSON("orders",orders);
-      await notify(orderText(o,"✅ PAID order — ready to ship"),true);}
+      await notify(orderText(o,"✅ PAID order — ready to ship"),true);
+      await custMail(o,"paid");}
     return J({ok:1});
   }
   if(path==="chat"&&req.method==="POST"){
