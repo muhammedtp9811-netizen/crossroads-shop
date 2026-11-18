@@ -10,7 +10,7 @@ const imgs=p=>p.images&&p.images.length?p.images:(p.imgs&&p.imgs.length?p.imgs:(
 let PW=sessionStorage.getItem("cr_pw")||"",root=null,draft=[];
 const H=()=>({"x-admin":PW,"content-type":"application/json"});
 async function api(p,b){const o=b===undefined?{headers:H()}:{method:"POST",headers:H(),body:JSON.stringify(b)};try{const r=await fetch("/api/"+p,o);let d={};try{d=await r.json()}catch(e){}return{ok:r.ok,s:r.status,d}}catch(e){return{ok:false,s:0,d:{error:"No connection"}}}}
-const S={orders:[],messages:[],products:[],settings:{},known:new Set(),seen:new Set(),range:7,of:"all",oq:"",pq:"",pf:"all",vf:"all",poll:null};
+const S={orders:[],messages:[],products:[],settings:{},notify:{},known:new Set(),seen:new Set(),range:7,of:"all",oq:"",pq:"",pf:"all",vf:"all",poll:null};
 try{S.seen=new Set(JSON.parse(localStorage.getItem("cr_seen")||"[]"))}catch(e){}
 const say=m=>{if(window.toast)window.toast(m);else alert(m)};
 const ic=d=>`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
@@ -68,10 +68,10 @@ function shell(){root.innerHTML=`<div class="ad"><nav class="ads" id="ads"><div 
  $("adc").onclick=onClick;$("adc").oninput=onInput;$("adc").onchange=onChange;$("adc").onsubmit=onSubmit}
 
 /* ---------- data ---------- */
-async function loadAll(){const[a,p,s]=await Promise.all([api("admin"),api("products"),fetch("/api/settings").then(r=>r.json()).catch(()=>({}))]);
+async function loadAll(){const[a,p,s,n]=await Promise.all([api("admin"),api("products"),fetch("/api/settings").then(r=>r.json()).catch(()=>({})),api("notify")]);
  if(a.s===401){PW="";sessionStorage.removeItem("cr_pw");return false}
  if(a.ok){S.orders=a.d.orders||[];S.messages=a.d.messages||[];S.known=new Set(S.orders.map(o=>o.id))}
- if(p.ok&&Array.isArray(p.d))S.products=p.d;S.settings=s||{};badge();return true}
+ if(p.ok&&Array.isArray(p.d))S.products=p.d;S.settings=s||{};if(n.ok)S.notify=n.d;badge();return true}
 function startPoll(){if(S.poll)return;S.poll=setInterval(async()=>{if(!location.hash.startsWith("#admin")||document.hidden||!PW)return;const a=await api("admin");if(!a.ok)return;
  const nw=(a.d.orders||[]).filter(o=>!S.known.has(o.id));S.orders=a.d.orders||[];S.messages=a.d.messages||[];S.known=new Set(S.orders.map(o=>o.id));badge();
  if(nw.length){say("New order #"+nw[0].no+" · "+money(nw[0].total));beep();const[p,i]=where();if((p==="orders"&&!i)||p==="home")render(true)}},30000)}
@@ -139,10 +139,19 @@ function pCustomers(){const m={};S.orders.forEach(o=>{const k=String(o.phone||""
  const L=Object.values(m).sort((a,b)=>b.spent-a.spent||(b.last>a.last?1:-1));
  return L.length?`<div class="cd sc"><table><tr><th>Customer</th><th>Orders</th><th>Spent</th><th>Last order</th><th></th></tr>${L.map(c=>`<tr><td><b>${esc(c.name)}</b><br><span class="muted">${esc(c.phone)}${c.email?" · "+esc(c.email):""}</span></td><td>${c.n}</td><td>${money(c.spent)}</td><td>${esc(dt(c.last))}</td><td><button class="link" data-act="cview" data-q="${esc(String(c.phone||c.name).replace(/\D/g,"").slice(-10)||c.name)}">Orders</button></td></tr>`).join("")}</table></div>`:'<div class="empty2">Customers appear here after their first order.</div>'}
 function pMessages(){return S.messages.length?S.messages.map(m=>{const c=String(m.contact||""),ph=c.replace(/\D/g,"");return`<div class="cd" style="margin-bottom:10px"><p><b>${esc(m.name||"Visitor")}</b> · <span class="muted">${esc(m.contact)}</span></p><p class="muted" style="font-size:.82rem">${esc(dt(m.t))}</p><p style="white-space:pre-line;overflow-wrap:anywhere;margin:8px 0">${esc(m.text)}</p><p>${ph.length>=10?`<a class="link" href="https://wa.me/91${ph.slice(-10)}" target="_blank" rel="noopener">Reply on WhatsApp</a>`:""}${/@/.test(c)?`<a class="link" href="mailto:${esc(c)}">Reply by email</a>`:""}<button class="link" data-act="mdel" data-t="${esc(m.t)}">Delete</button></p></div>`}).join(""):'<div class="empty2">No messages yet.</div>'}
-function pSettings(){const s=S.settings||{},own=(()=>{try{return localStorage.getItem("cr_owner")==="1"}catch(e){return false}})(),snd=localStorage.getItem("cr_snd")!=="0";
+function pSettings(){const s=S.settings||{},n=S.notify||{},own=(()=>{try{return localStorage.getItem("cr_owner")==="1"}catch(e){return false}})(),snd=localStorage.getItem("cr_snd")!=="0";
+ const onAlert=ok=>`<span class="tg ${ok?"g":"r"}">${ok?"On":"Off"}</span>`;
+ const alertLine=(label,ok,extra="")=>`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><span>${label}${extra?` <span class="muted" style="font-size:.82rem">${extra}</span>`:""}</span>${onAlert(ok)}</div>`;
  return`<div class="cd"><h3>Payments (UPI QR)</h3><form id="sf" class="fl" novalidate><label>Your UPI ID (like name@bank)<input id="su" value="${esc(s.upi)}"></label><label>Name shown to customers<input id="sn" value="${esc(s.name)}"></label><label>QR code image (a screenshot of your UPI QR)<input id="sq" type="file" accept="image/*"></label>${s.qr?`<img src="${esc(s.qr)}" alt="Current QR" style="width:140px;border-radius:8px">`:""}<div class="err" id="sfe"></div><button class="btn sm" type="submit">Save payment settings</button></form></div>
+<div class="cd" style="margin-top:14px"><h3>Order alerts</h3><p class="muted" style="font-size:.9rem;margin-bottom:12px">Get every order on your phone with the items, total, phone number and address.</p>
+<div style="display:grid;gap:8px;margin-bottom:16px">${alertLine("WhatsApp",n.whatsapp,n.whatsapp_number?"+"+esc(n.whatsapp_number):"")}${alertLine("Email",n.email,n.email_to?esc(n.email_to):"")}${alertLine("Telegram",n.telegram)}${alertLine("Push (ntfy)",n.ntfy)}</div>
+<form id="nf" class="fl" novalidate><label>WhatsApp number with country code<input id="nw" inputmode="tel" placeholder="918281036836" value="${esc(n.whatsapp_number||"")}"></label>
+<label>CallMeBot API key (free)<input id="nk" type="password" autocomplete="new-password" placeholder="${n.whatsapp?"Saved. Leave empty to keep it":"Paste the key the bot sent you"}"></label>
+<div class="err" id="nfe"></div><button class="btn sm" type="submit">Save WhatsApp alerts</button></form>
+<p class="muted" style="font-size:.84rem;margin-top:10px;line-height:1.7"><b>How to get the free key:</b> save <b>+34 644 41 87 20</b> as a contact on WhatsApp, send it the message <b>I allow callmebot to send me messages</b>, then paste the key it replies with here.</p>
+<button class="btn sm alt" type="button" data-act="ntest" style="margin-top:12px">Send a test alert</button></div>
 <div class="cd" style="margin-top:14px"><h3>This device</h3><label class="chk"><input type="checkbox" id="sown" ${own?"checked":""}>Do not count my visits on this device in analytics</label><p class="muted" style="font-size:.85rem;margin-top:8px">Switch this on for your iPhone and your laptop, so only real customers are counted. It turns on automatically when you log in.</p><label class="chk" style="margin-top:10px"><input type="checkbox" id="ssnd" ${snd?"checked":""}>Play a sound when a new order arrives</label></div>
-<div class="cd" style="margin-top:14px"><h3>Good to know</h3><p class="muted" style="font-size:.9rem">Your admin password is the ADMIN_PASSWORD setting in Netlify. To change it, edit it there and deploy again. Alerts (Gmail, ntfy and others) are set in Netlify under Environment variables.</p></div>`}
+<div class="cd" style="margin-top:14px"><h3>Good to know</h3><p class="muted" style="font-size:.9rem">Your admin password is the ADMIN_PASSWORD setting in Netlify. To change it, edit it there and deploy again. Email, Telegram and phone push alerts are switched on with Netlify environment variables, explained in <b>NOTIFY-SETUP.md</b> in your repository. WhatsApp works right here with the free CallMeBot key above.</p></div>`}
 
 /* ---------- routing + render ---------- */
 const TITLES={home:"Home",orders:"Orders",products:"Products",customers:"Customers",analytics:"Analytics",messages:"Messages",settings:"Settings"};
@@ -164,6 +173,7 @@ async function onClick(e){const b=e.target.closest("[data-act],[data-of],[data-p
  if(d.of){S.of=d.of;render(true);return}if(d.pf){S.pf=d.pf;render(true);return}if(d.vf){S.vf=d.vf;render();return}
  const a=d.act,id=d.id,[,oid]=where(),o=S.orders.find(x=>x.id===(a&&a[0]==="o"?(id||oid):oid)),i=S.products.findIndex(p=>String(p.id)===id);
  if(a==="oview"){location.hash="#admin/orders/"+id;return}
+ if(a==="ntest"){const el=$("nfe");if(el){el.className="";el.textContent="Sending..."}const r=await api("notify/test",{});const m=r.ok?("Test sent."+(r.d.whatsapp_reply?" WhatsApp reply: "+r.d.whatsapp_reply:"")):(r.d.error||"Could not send the test.");if(el){el.className=r.ok?"ok":"err";el.textContent=m}else say(m);return}
  if(a==="cview"){S.oq=d.q||"";S.of="all";location.hash="#admin/orders";return}
  if(a==="opaid")return upd(oid,{paid:true});
  if(a==="oship"){const t=prompt("Tracking number or courier note (optional)");if(t===null)return;return upd(oid,{shipped:true,track:t})}
@@ -186,6 +196,7 @@ function onChange(e){if(e.target.id==="rg"){S.range=+e.target.value;render()}
  if(e.target.id==="ssnd"){try{localStorage.setItem("cr_snd",e.target.checked?"1":"0")}catch(x){}}}
 async function onSubmit(e){e.preventDefault();
  if(e.target.id==="sf"){const f=$("sq").files[0],qr=f?await shrink(f,800):(S.settings.qr||""),u=$("su").value.trim(),nm=$("sn").value.trim(),r=await api("settings",{upi:u,name:nm,qr});$("sfe").className=r.ok?"ok":"err";$("sfe").textContent=r.ok?"Saved.":(r.d.error||"Could not save.");if(r.ok)Object.assign(S.settings,{upi:u,name:nm,qr});return}
+ if(e.target.id==="nf"){const ph=$("nw").value.replace(/\D/g,""),k=$("nk").value.trim(),body={waPhone:ph};if(k)body.waKey=k;const r=await api("settings",body);if(r.ok){say("WhatsApp alerts saved");render()}else{$("nfe").className="err";$("nfe").textContent=r.d.error||"Could not save."}return}
  if(e.target.id==="pf"){const[,id]=where(),old=id==="new"?{}:S.products.find(p=>String(p.id)===id)||{},n=$("pn").value.trim(),pr=+$("pp").value;if(!n||!pr){$("pfe").className="err";$("pfe").textContent="Enter a name and a price.";return}
   const o={id:old.id||Date.now(),n,c:$("pc").value.trim()||"Fashion",p:pr,o:+$("po").value||0,s:$("ps").value.split(",").map(s=>s.trim()).filter(Boolean),d:$("pdsc").value.trim(),sold:$("pso").checked,tr:$("ptr").checked,hid:$("phd").checked,images:draft.slice(),img:draft[0]||""};
   if(old.id)S.products=S.products.map(p=>p.id===old.id?o:p);else S.products.unshift(o);

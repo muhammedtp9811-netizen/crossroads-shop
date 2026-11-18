@@ -26,6 +26,12 @@ const STORE={ig:"crossroads_shopping",mail:"producingmj@gmail.com",
   hours:"We usually reply within a few hours, between 9 AM and 9 PM IST."};
 const inr=n=>"₹"+(+n||0).toLocaleString("en-IN");
 const shortN=(s,n=58)=>{s=String(s??"").replace(/\s+/g," ").trim();if(s.length<=n)return s;const c=s.slice(0,n),i=c.lastIndexOf(" ");return(i>20?c.slice(0,i):c)+"…"};
+const DASH="https://crossroads-shopping.netlify.app/#admin";
+let cfgCache={t:0,v:null};
+function orderText(o,head){
+  let when="";try{when=new Date(o.t||Date.now()).toLocaleString("en-IN",{timeZone:"Asia/Kolkata",day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})}catch(e){when=new Date(o.t||Date.now()).toISOString().slice(0,16).replace("T"," ")}
+  return `${head}\nOrder #${o.no||"—"} · ${inr(o.total)}\n${(o.lines||[]).join("\n")}\n\n${o.name}\n${o.phone}${o.email?" · "+o.email:""}\n${o.address}\n\n${o.method==="upi"?"UPI QR":o.method==="online"?"Online payment":"Payment"}${o.utr?" · UTR "+o.utr:""}${o.pay?" · Pay ID "+o.pay:""}${o.paid?" · PAID":""}\n${when} IST\n${DASH}`;
+}
 const STOP=new Set(("a an the and or of for with to in on is are be do does did you your i my me we our us can could would should please show some any what which how who when where have has it this that these those under below less upto max rs rupee rupees size sizes price cost costs buy get want need looking look find").split(" "));
 const SYN={headphones:"audio earphones earbuds headset",headphone:"audio earphones earbuds headset",earphones:"audio headphones",earbud:"audio headphones",earbuds:"audio headphones",speaker:"audio sound",music:"audio",shoes:"shoe sneakers footwear",shoe:"sneakers footwear",sneakers:"shoes footwear",shirt:"cotton fleece tee",tshirt:"cotton tee shirt",tee:"shirt cotton",hoodie:"fleece sweatshirt",sweatshirt:"fleece hoodie",mousepad:"mouse pad desk",mat:"mouse pad desk",desk:"mouse pad mat",bag:"backpack",backpack:"bag",watch:"watch",charger:"charger cable",mobile:"phone case"};
 const tk=s=>{const w=String(s??"").toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(x=>x.length>1&&!STOP.has(x)),out=new Set(w);
@@ -110,6 +116,7 @@ async function chatAI(messages,prods){
 export default async(req,context)=>{
   const db=getStore({name:"shop",consistency:"strong"}), path=new URL(req.url).pathname.replace(/^\/api\/?/,"");
   const get=async(k,d)=>(await db.get(k,{type:"json"}))??d;
+  const cfg=async()=>{if(cfgCache.v&&Date.now()-cfgCache.t<60000)return cfgCache.v;const s=await get("settings",{});cfgCache={t:Date.now(),v:s};return s};
   const admin=()=>E.ADMIN_PASSWORD&&req.headers.get("x-admin")===E.ADMIN_PASSWORD;
   const b=req.method==="POST"?await req.json().catch(()=>({})):{};
   const imgId=b=>crypto.createHash("sha1").update(b).digest("hex").slice(0,24);
@@ -129,14 +136,15 @@ export default async(req,context)=>{
     return changed}
   const allow=async()=>{const h=new Date().toISOString().slice(0,13),rl=await get("rl",{h:"",n:0});if(rl.h!==h){rl.h=h;rl.n=0}if(rl.n>=80)return false;rl.n++;await db.setJSON("rl",rl);return true};
   const mail=(subject,text)=>fetch("https://api.resend.com/emails",{method:"POST",headers:{authorization:"Bearer "+E.RESEND_API_KEY,"content-type":"application/json"},body:JSON.stringify({from:"Crossroads <onboarding@resend.dev>",to:[E.ALERT_EMAIL||"producingmj@gmail.com"],subject:cut(subject,80),text})}).catch(()=>{});
-  async function notify(t,imp){
-    if(!E.DISCORD_WEBHOOK&&!E.FAST2SMS_KEY&&!E.NTFY_TOPIC&&!E.RESEND_API_KEY&&!E.CALLMEBOT_KEY&&!(E.TELEGRAM_BOT_TOKEN&&E.TELEGRAM_CHAT_ID))return;
-    if(!await allow())return;
+  async function notify(t,imp,skipWa){
+    const st=await cfg().catch(()=>({})),waKey=E.CALLMEBOT_KEY||st.waKey||"",waPhone=String(E.WA_NUMBER||st.waPhone||WA).replace(/\D/g,"");
+    if(!waKey&&!E.DISCORD_WEBHOOK&&!E.FAST2SMS_KEY&&!E.NTFY_TOPIC&&!E.RESEND_API_KEY&&!(E.TELEGRAM_BOT_TOKEN&&E.TELEGRAM_CHAT_ID))return;
+    if(!imp&&!await allow())return;
+    if(waKey&&!skipWa)await fetch(`https://api.callmebot.com/whatsapp.php?phone=${waPhone}&apikey=${encodeURIComponent(waKey)}&text=${encodeURIComponent(t)}`).catch(()=>{});
     if(imp&&E.FAST2SMS_KEY)await fetch("https://www.fast2sms.com/dev/bulkV2?"+new URLSearchParams({authorization:E.FAST2SMS_KEY,route:"q",message:t.replace(/[^\x20-\x7E\n]/g,"").slice(0,150),flash:"0",numbers:E.SMS_TO||"8281036836"})).catch(()=>{});
     if(E.DISCORD_WEBHOOK)await fetch(E.DISCORD_WEBHOOK,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({content:t})}).catch(()=>{});
     if(E.NTFY_TOPIC)await fetch("https://ntfy.sh/"+encodeURIComponent(E.NTFY_TOPIC),{method:"POST",headers:{Title:"Crossroads"},body:t}).catch(()=>{});
     if(imp&&E.RESEND_API_KEY)await mail(t.split("\n").filter(Boolean)[0],t);
-    if(E.CALLMEBOT_KEY)await fetch(`https://api.callmebot.com/whatsapp.php?phone=${WA}&apikey=${E.CALLMEBOT_KEY}&text=${encodeURIComponent(t)}`).catch(()=>{});
     if(E.TELEGRAM_BOT_TOKEN&&E.TELEGRAM_CHAT_ID)await fetch(`https://api.telegram.org/bot${E.TELEGRAM_BOT_TOKEN}/sendMessage`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({chat_id:E.TELEGRAM_CHAT_ID,text:t})}).catch(()=>{});
   }
   if(path==="test"){
@@ -152,7 +160,36 @@ export default async(req,context)=>{
   if(path==="settings"&&req.method==="GET"){const t=await get("settings",{});return J({upi:t.upi||"",name:t.name||"",qr:t.qr||"",online:!!(E.RAZORPAY_KEY_ID&&E.RAZORPAY_KEY_SECRET)})}
   if(path==="settings"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
-    await db.setJSON("settings",{upi:cut(b.upi,80),name:cut(b.name,60),qr:cut(b.qr,400000)});return J({ok:1});
+    const cur=await get("settings",{}),nxt={...cur};
+    if(b.upi!==undefined)nxt.upi=cut(b.upi,80);
+    if(b.name!==undefined)nxt.name=cut(b.name,60);
+    if(b.qr!==undefined)nxt.qr=cut(b.qr,400000);
+    if(b.waPhone!==undefined)nxt.waPhone=String(b.waPhone).replace(/\D/g,"").slice(0,15);
+    if(b.waKey!==undefined)nxt.waKey=cut(String(b.waKey).trim(),90);
+    await db.setJSON("settings",nxt);cfgCache={t:0,v:null};return J({ok:1});
+  }
+  if(path==="notify"&&req.method==="GET"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const s=await get("settings",{});
+    return J({whatsapp:!!(E.CALLMEBOT_KEY||s.waKey),whatsapp_number:String(E.WA_NUMBER||s.waPhone||WA).replace(/\D/g,""),
+      email:!!E.RESEND_API_KEY,email_to:E.ALERT_EMAIL||"producingmj@gmail.com",
+      telegram:!!(E.TELEGRAM_BOT_TOKEN&&E.TELEGRAM_CHAT_ID),ntfy:!!E.NTFY_TOPIC,discord:!!E.DISCORD_WEBHOOK,sms:!!E.FAST2SMS_KEY});
+  }
+  if(path==="notify/test"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const st=await cfg().catch(()=>({})),waKey=E.CALLMEBOT_KEY||st.waKey||"",waPhone=String(E.WA_NUMBER||st.waPhone||WA).replace(/\D/g,"");
+    const other=E.RESEND_API_KEY||E.NTFY_TOPIC||E.DISCORD_WEBHOOK||(E.TELEGRAM_BOT_TOKEN&&E.TELEGRAM_CHAT_ID);
+    if(!waKey&&!other)return J({error:"No alert channel is set up yet."},400);
+    const msg="🔔 Test alert from Crossroads Shopping\nIf you can read this, order alerts are working.\n"+DASH;
+    let reply="";
+    if(waKey){
+      try{
+        const r=await fetch(`https://api.callmebot.com/whatsapp.php?phone=${waPhone}&apikey=${encodeURIComponent(waKey)}&text=${encodeURIComponent(msg)}`);
+        reply=cut(await r.text(),160).replace(/\s+/g," ").trim();
+      }catch(e){reply="Could not reach CallMeBot. Check the number and key."}
+    }
+    if(other)await notify(msg,true,true);
+    return J({ok:1,whatsapp:!!waKey,whatsapp_reply:reply});
   }
   if(path==="order/manual"){
     const prods=await get("products",[]),c=b.customer||{},lines=[];let total=0;
@@ -168,7 +205,7 @@ export default async(req,context)=>{
     const mx=Math.max(1000,...orders.map(o=>o.no||0));
     orders.unshift({id:"upi"+Date.now(),no:mx+1,method:"upi",ev:[{a:"placed",t:new Date().toISOString()}],lines,total,paid:false,manual:true,utr,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)});
     await db.setJSON("orders",orders.slice(0,500));
-    await notify(`💰 UPI payment claimed ₹${total}\nTxn ID: ${utr}\n${lines.join("\n")}\n\n${c.name}\n${c.phone}\n${c.address}\nCheck your bank app, then mark it paid in #admin.`,true);
+    await notify(orderText(orders[0],"🛒 New order — UPI payment claimed. Check your bank app, then mark it paid."),true);
     return J({ok:1});
   }
   if(path==="orders/paid"){
@@ -292,7 +329,7 @@ export default async(req,context)=>{
     if(sig!==b.signature)return J({error:"Payment could not be verified."},400);
     const orders=await get("orders",[]),o=orders.find(x=>x.id===b.order_id);
     if(o&&!o.paid){o.paid=true;o.pay=cut(b.payment_id,40);(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});await db.setJSON("orders",orders);
-      await notify(`✅ PAID ₹${o.total}\n${o.lines.join("\n")}\n\n${o.name}\n${o.phone}\n${o.address}`,true);}
+      await notify(orderText(o,"✅ PAID order — ready to ship"),true);}
     return J({ok:1});
   }
   if(path==="chat"&&req.method==="POST"){
