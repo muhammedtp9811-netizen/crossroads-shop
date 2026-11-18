@@ -13,6 +13,96 @@ function srcOf(ref,utm,ua,host){const x=String(utm||"").toLowerCase();if(x){if(/
   if(!h)return /Instagram/.test(ua)?"Instagram":"Direct";if(h===host)return"Direct";
   if(/instagram\.com$/.test(h))return"Instagram";if(/whatsapp|wa\.me$/.test(h))return"WhatsApp";if(/google\./.test(h))return"Google";if(/facebook\.com$|fb\.com$|l\.facebook/.test(h))return"Facebook";if(/youtube\.com$|youtu\.be$/.test(h))return"YouTube";if(/^t\.co$|twitter\.com$|x\.com$/.test(h))return"X (Twitter)";
   return cut(h,30)}
+
+/* ---------- Store assistant ----------
+   Facts shown to customers. Edit these lines to change the bot's answers.
+   Optional real AI: set AI_API_KEY (OpenAI-compatible) + AI_MODEL in Netlify
+   environment variables. Without a key the rule engine below answers. */
+const STORE={ig:"crossroads_shopping",mail:"producingmj@gmail.com",
+  delivery:"Most orders are dispatched within 24 hours and reach most pin codes in 3–7 working days. Remote areas can take up to 10 days.",
+  ship:"The delivery charge, if any, is shown at checkout before you pay.",
+  pay:"We accept UPI (scan the QR, then enter the UPI transaction ID from your payment app) and online payment by card, UPI or net banking. Cash on delivery is not available.",
+  returns:"If an item arrives damaged or in the wrong size, message us on Instagram within 48 hours with a photo and we will sort it out.",
+  hours:"We usually reply within a few hours, between 9 AM and 9 PM IST."};
+const inr=n=>"₹"+(+n||0).toLocaleString("en-IN");
+const shortN=(s,n=58)=>{s=String(s??"").replace(/\s+/g," ").trim();if(s.length<=n)return s;const c=s.slice(0,n),i=c.lastIndexOf(" ");return(i>20?c.slice(0,i):c)+"…"};
+const STOP=new Set(("a an the and or of for with to in on is are be do does did you your i my me we our us can could would should please show some any what which how who when where have has it this that these those under below less upto max rs rupee rupees size sizes price cost costs buy get want need looking look find").split(" "));
+const SYN={headphones:"audio earphones earbuds headset",headphone:"audio earphones earbuds headset",earphones:"audio headphones",earbud:"audio headphones",earbuds:"audio headphones",speaker:"audio sound",music:"audio",shoes:"shoe sneakers footwear",shoe:"sneakers footwear",sneakers:"shoes footwear",shirt:"cotton fleece tee",tshirt:"cotton tee shirt",tee:"shirt cotton",hoodie:"fleece sweatshirt",sweatshirt:"fleece hoodie",mousepad:"mouse pad desk",mat:"mouse pad desk",desk:"mouse pad mat",bag:"backpack",backpack:"bag",watch:"watch",charger:"charger cable",mobile:"phone case"};
+const tk=s=>{const w=String(s??"").toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(x=>x.length>1&&!STOP.has(x)),out=new Set(w);
+  for(const x of w){const e=SYN[x];if(e)e.split(" ").forEach(y=>out.add(y))}return[...out]};
+const cardsFor=list=>list.slice(0,4).map(p=>({id:p.id,n:shortN(p.n,58),p:+p.p||0,img:(p.images&&p.images[0])||p.img||""}));
+function matchProds(q,list){
+  const T=tk(q);if(!T.length)return[];
+  return list.map(p=>{const h=((p.n||"")+" "+(p.c||"")+" "+(p.d||"")).toLowerCase();let s=0;
+    for(const t of T)if(h.includes(t))s+=t.length>3?3:2;return{p,s}}).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,4).map(x=>x.p);
+}
+function chatRule(text,prods,cart){
+  const q=String(text||"").toLowerCase().trim(),live=prods.filter(p=>!p.hid),ok=re=>re.test(q);
+  const ig={l:"Message on Instagram",href:"https://ig.me/m/"+STORE.ig},shop={l:"Browse the shop",href:"./"};
+  if(ok(/^(thanks|thank you|thankyou|thx)\b/))return{text:"Happy to help! Anything else you'd like to know?",quick:[shop,ig]};
+  if(ok(/^(bye|goodbye|see you)\b/))return{text:"Thanks for stopping by — hope to see you at checkout soon!",quick:[shop]};
+  if(ok(/^(hi|hey|hello|hai|hiya|namaste|yo)\b/)||ok(/^good (morning|afternoon|evening)/))
+    return{text:"Hi! 👋 What are you looking for today? I can help with products, sizes, delivery or payment.",quick:[{l:"What's new?"},{l:"Delivery time"},ig]};
+  if(ok(/\b(human|agent|owner|real person|whatsapp|call|phone|contact|email|support)\b/)&&!ok(/\b(product|price|size|delivery)\b/))
+    return{text:`The fastest way to reach a person is Instagram — @${STORE.ig}. ${STORE.hours}\n\nYou can also email ${STORE.mail} or use the Contact page.`,quick:[ig,{l:"Contact page",href:"#contact"}]};
+  if(ok(/\b(track|tracking|order status|parcel|where is my|my order|order number)\b/))
+    return{text:"I can't see live order status from here yet. Send your order number to the owner on Instagram and they'll check it for you. You'll also be contacted once your parcel is shipped.",quick:[ig,{l:"Message form",href:"#contact"}]};
+  if(ok(/\b(deliver|delivery|shipping|ship|courier|how long|days|arrive|reach)\b/))
+    return{text:STORE.delivery+"\n\n"+STORE.ship,quick:[shop,ig]};
+  if(ok(/\b(pay|payment|upi|gpay|google pay|phonepe|paytm|razorpay|card|netbanking|net banking|cod|cash on delivery)\b/))
+    return{text:STORE.pay,quick:[shop,ig]};
+  if(ok(/\b(return|returns|exchange|refund|replace|damaged|broken|wrong size|defect)\b/))
+    return{text:STORE.returns,quick:[ig,{l:"Contact page",href:"#contact"}]};
+  if(ok(/\b(size|sizes|fit|fitting|measurement|measurements|xl|xxl|small|medium|large)\b/)){
+    const S=[...new Set(live.flatMap(p=>p.s||[]))];
+    return{text:"Sizes differ by product — the exact sizes in stock are shown on each product page"+(S.length?` (for example ${S.slice(0,6).join(", ")})`:"")+". If you're between two sizes, size up for a relaxed fit. Tell me the product name and I'll check what's available.",quick:[shop,ig]};
+  }
+  if(ok(/\b(cart|bag|basket)\b/)){
+    if(cart.length){const t=cart.reduce((a,i)=>a+(+i.p||0)*(+i.q||1),0);
+      return{text:`Your bag has ${cart.reduce((a,i)=>a+(+i.q||1),0)} item(s):\n`+cart.map(i=>`• ${shortN(i.n,40)} × ${+i.q||1} — ${inr((+i.p||0)*(+i.q||1))}`).join("\n")+`\n\nTotal: ${inr(t)}`,quick:[{l:"Go to checkout",href:"#checkout"},shop]};
+    }
+    return{text:"Your bag is empty right now. Everything in the shop is one tap away.",quick:[shop]};
+  }
+  if(ok(/\b(trending|popular|best ?seller|best selling|hot|most wanted)\b/)){
+    const T=live.filter(p=>p.tr),L=(T.length?T:live).slice(0,4);
+    return{text:L.length?"These are getting the most attention right now:":"Nothing is marked trending yet, but here's the newest stock:",products:cardsFor(L),quick:[shop]};
+  }
+  if(ok(/\b(new|newest|latest|arrival|arrivals|collection|drop|just in)\b/)){
+    const L=[...live].sort((a,b)=>(b.id||0)-(a.id||0)).slice(0,4);
+    return{text:L.length?"Fresh in the shop:":"New pieces are on the way. Message us on Instagram to ask what's coming.",products:cardsFor(L),quick:[shop,ig]};
+  }
+  if(ok(/\b(stock|available|sold out|in stock|restock)\b/)){
+    const sold=prods.filter(p=>p.sold&&!p.hid);
+    return{text:sold.length?`${sold.length===1?"One item is":"A few items are"} sold out right now (marked "Sold out" in the shop). Everything else listed is available.`:"Everything currently listed is in stock. Sold-out items are marked on the shop page.",quick:[shop]};
+  }
+  let lo=0,hi=0,m=/(?:between)\s*(\d{2,5})\s*(?:and|to|-)\s*(\d{2,5})/.exec(q);
+  if(m){lo=+m[1];hi=+m[2]}
+  if(!hi){m=/(?:under|below|less than|upto|up to|max)\s*(?:rs\.?|₹)?\s*(\d{2,5})/.exec(q);if(m)hi=+m[1]}
+  if(!hi&&ok(/\b(cheap|cheapest|lowest price|budget|affordable)\b/)&&live.length){hi=Math.min(...live.map(p=>+p.p||0))}
+  if(hi){
+    const L=live.filter(p=>(+p.p||0)>=lo&&(+p.p||0)<=hi).sort((a,b)=>a.p-b.p);
+    return{text:L.length?"Here's what's available in that range:":`Nothing sits in that range right now. The lowest price in the shop is ${inr(Math.min(...live.map(p=>+p.p||0)))}.`,products:cardsFor(L),quick:[shop,ig]};
+  }
+  const hits=matchProds(q,live);
+  if(hits.length)return{text:"Here's what I found:",products:cardsFor(hits),quick:[shop,ig]};
+  if(tk(q).length)
+    return{text:"I couldn't find that in the shop right now. New pieces are added regularly — here's the latest:",products:cardsFor([...live].sort((a,b)=>(b.id||0)-(a.id||0)).slice(0,3)),quick:[ig,shop]};
+  return{text:"I can help with products, prices, sizes, delivery, payment and orders. What would you like to know?",quick:[{l:"What's new?"},{l:"Delivery time"},ig]};
+}
+async function chatAI(messages,prods){
+  const key=E.AI_API_KEY||E.OPENAI_API_KEY||E.OPENROUTER_API_KEY;
+  if(!key)return null;
+  const url=E.AI_URL||"https://openrouter.ai/api/v1/chat/completions",model=E.AI_MODEL||"openai/gpt-4o-mini";
+  const list=prods.slice(0,30).map(p=>`- ${cut(p.n,70)} | ${p.c||"Other"} | ₹${p.p}${p.s&&p.s.length?" | sizes: "+p.s.join("/"):""}${p.sold?" | SOLD OUT":""}`).join("\n");
+  const sys=`You are the shopping assistant for Crossroads Shopping, a small online store in India. Reply in the customer's language, warmly, in at most 60 words. Use only the facts below. Never invent prices, stock, delivery times or policies. If you don't know, point them to Instagram @${STORE.ig} or the Contact page.\nStore facts:\n${STORE.delivery}\n${STORE.ship}\n${STORE.pay}\n${STORE.returns}\nSupport hours: ${STORE.hours}\nProducts:\n${list}\nWhen suggesting products, give the name and price only.`;
+  try{
+    const r=await fetch(url,{method:"POST",headers:{"content-type":"application/json",authorization:"Bearer "+key},
+      body:JSON.stringify({model,messages:[{role:"system",content:sys},...messages.slice(-8)],max_tokens:220,temperature:0.4}),signal:AbortSignal.timeout(9000)});
+    if(!r.ok)return null;
+    const d=await r.json(),t=d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content;
+    return cut(t,700).trim()||null;
+  }catch(e){return null}
+}
 export default async(req,context)=>{
   const db=getStore({name:"shop",consistency:"strong"}), path=new URL(req.url).pathname.replace(/^\/api\/?/,"");
   const get=async(k,d)=>(await db.get(k,{type:"json"}))??d;
@@ -200,6 +290,18 @@ export default async(req,context)=>{
     if(o&&!o.paid){o.paid=true;o.pay=cut(b.payment_id,40);(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});await db.setJSON("orders",orders);
       await notify(`✅ PAID ₹${o.total}\n${o.lines.join("\n")}\n\n${o.name}\n${o.phone}\n${o.address}`,true);}
     return J({ok:1});
+  }
+  if(path==="chat"&&req.method==="POST"){
+    const prods=(await get("products",[])).filter(p=>!p.hid);
+    const hist=Array.isArray(b.messages)?b.messages.slice(-10):[];
+    const last=[...hist].reverse().find(x=>x&&x.role==="user");
+    const text=cut(last&&last.text,400).trim();
+    if(!text)return J({error:"Type a question first."},400);
+    const cart=Array.isArray(b.cart)?b.cart.slice(0,10):[];
+    let answer=null;
+    try{answer=await chatAI(hist.map(x=>({role:x.role==="user"?"user":"assistant",content:cut(x.text,400)})),prods)}catch(e){}
+    if(answer)return J({text:answer,quick:[{l:"Message on Instagram",href:"https://ig.me/m/"+STORE.ig},{l:"Browse the shop",href:"./"}]});
+    return J(chatRule(text,prods,cart));
   }
   return J({error:"Not found"},404);
 };
