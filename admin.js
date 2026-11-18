@@ -10,11 +10,11 @@ const imgs=p=>p.images&&p.images.length?p.images:(p.imgs&&p.imgs.length?p.imgs:(
 let PW=sessionStorage.getItem("cr_pw")||"",root=null,draft=[];
 const H=()=>({"x-admin":PW,"content-type":"application/json"});
 async function api(p,b){const o=b===undefined?{headers:H()}:{method:"POST",headers:H(),body:JSON.stringify(b)};try{const r=await fetch("/api/"+p,o);let d={};try{d=await r.json()}catch(e){}return{ok:r.ok,s:r.status,d}}catch(e){return{ok:false,s:0,d:{error:"No connection"}}}}
-const S={orders:[],messages:[],products:[],settings:{},notify:{},known:new Set(),seen:new Set(),range:7,of:"all",oq:"",pq:"",pf:"all",vf:"all",poll:null};
+const S={orders:[],messages:[],products:[],feedback:[],settings:{},notify:{},known:new Set(),seen:new Set(),range:7,of:"all",oq:"",pq:"",pf:"all",vf:"all",poll:null};
 try{S.seen=new Set(JSON.parse(localStorage.getItem("cr_seen")||"[]"))}catch(e){}
 const say=m=>{if(window.toast)window.toast(m);else alert(m)};
 const ic=d=>`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
-const NAV=[["home","Home","M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"],["orders","Orders","M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"],["products","Products","M3 12l9-9h8v8l-9 9zM15 8h.01"],["customers","Customers","M16 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0zM4 21a8 8 0 0 1 16 0"],["analytics","Analytics","M4 20V10M10 20V4M16 20v-8M22 20H2"],["messages","Messages","M4 5h16v11H9l-5 4z"],["settings","Settings","M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"]];
+const NAV=[["home","Home","M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"],["orders","Orders","M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"],["products","Products","M3 12l9-9h8v8l-9 9zM15 8h.01"],["customers","Customers","M16 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0zM4 21a8 8 0 0 1 16 0"],["analytics","Analytics","M4 20V10M10 20V4M16 20v-8M22 20H2"],["messages","Messages","M4 5h16v11H9l-5 4z"],["feedback","Feedback","M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8.5 10h.01M12 10h.01M15.5 10h.01M8 15h8"],["settings","Settings","M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"]];
 const css=`.ad{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh;background:var(--bg);color:var(--ink)}
 .ad *{box-sizing:border-box}.ad form{padding:0}.ad h2,.ad h3{margin:0}
 .ads{position:sticky;top:0;height:100vh;overflow:auto;background:var(--card);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:4px}
@@ -68,9 +68,10 @@ function shell(){root.innerHTML=`<div class="ad"><nav class="ads" id="ads"><div 
  $("adc").onclick=onClick;$("adc").oninput=onInput;$("adc").onchange=onChange;$("adc").onsubmit=onSubmit}
 
 /* ---------- data ---------- */
-async function loadAll(){const[a,p,s,n]=await Promise.all([api("admin"),api("products"),fetch("/api/settings").then(r=>r.json()).catch(()=>({})),api("notify")]);
+async function loadAll(){const[a,p,s,n,f]=await Promise.all([api("admin"),api("products"),fetch("/api/settings").then(r=>r.json()).catch(()=>({})),api("notify"),api("feedback")]);
  if(a.s===401){PW="";sessionStorage.removeItem("cr_pw");return false}
  if(a.ok){S.orders=a.d.orders||[];S.messages=a.d.messages||[];S.known=new Set(S.orders.map(o=>o.id))}
+ if(f.ok&&f.d&&Array.isArray(f.d.feedback))S.feedback=f.d.feedback;
  if(p.ok&&Array.isArray(p.d))S.products=p.d;S.settings=s||{};if(n.ok)S.notify=n.d;badge();return true}
 function startPoll(){if(S.poll)return;S.poll=setInterval(async()=>{if(!location.hash.startsWith("#admin")||document.hidden||!PW)return;const a=await api("admin");if(!a.ok)return;
  const nw=(a.d.orders||[]).filter(o=>!S.known.has(o.id));S.orders=a.d.orders||[];S.messages=a.d.messages||[];S.known=new Set(S.orders.map(o=>o.id));badge();
@@ -139,6 +140,10 @@ function pCustomers(){const m={};S.orders.forEach(o=>{const k=String(o.phone||""
  const L=Object.values(m).sort((a,b)=>b.spent-a.spent||(b.last>a.last?1:-1));
  return L.length?`<div class="cd sc"><table><tr><th>Customer</th><th>Orders</th><th>Spent</th><th>Last order</th><th></th></tr>${L.map(c=>`<tr><td><b>${esc(c.name)}</b><br><span class="muted">${esc(c.phone)}${c.email?" · "+esc(c.email):""}</span></td><td>${c.n}</td><td>${money(c.spent)}</td><td>${esc(dt(c.last))}</td><td><button class="link" data-act="cview" data-q="${esc(String(c.phone||c.name).replace(/\D/g,"").slice(-10)||c.name)}">Orders</button></td></tr>`).join("")}</table></div>`:'<div class="empty2">Customers appear here after their first order.</div>'}
 function pMessages(){return S.messages.length?S.messages.map(m=>{const c=String(m.contact||""),ph=c.replace(/\D/g,"");return`<div class="cd" style="margin-bottom:10px"><p><b>${esc(m.name||"Visitor")}</b> · <span class="muted">${esc(m.contact)}</span></p><p class="muted" style="font-size:.82rem">${esc(dt(m.t))}</p><p style="white-space:pre-line;overflow-wrap:anywhere;margin:8px 0">${esc(m.text)}</p><p>${ph.length>=10?`<a class="link" href="https://wa.me/91${ph.slice(-10)}" target="_blank" rel="noopener">Reply on WhatsApp</a>`:""}${/@/.test(c)?`<a class="link" href="mailto:${esc(c)}">Reply by email</a>`:""}<button class="link" data-act="mdel" data-t="${esc(m.t)}">Delete</button></p></div>`}).join(""):'<div class="empty2">No messages yet.</div>'}
+function pFeedback(){const L=S.feedback||[];
+ if(!L.length)return '<div class="empty2">No feedback yet. When a visitor looks like they are leaving, the site asks them what to improve, and their answer shows up here and on WhatsApp plus email.</div>';
+ return `<p class="muted" style="margin-bottom:12px">${L.length} message${L.length===1?"":"s"}, newest first. Every one also arrives on WhatsApp, Telegram and email.</p>`+L.map(f=>{const c=String(f.contact||""),ph=c.replace(/\D/g,"");const meta=[f.name,f.contact].filter(Boolean).join(" · ")||"Anonymous visitor";
+ return `<div class="cd" style="margin-bottom:10px">${f.topic?`<span class="tg b">${esc(f.topic)}</span> `:""}<p style="white-space:pre-line;overflow-wrap:anywhere;margin:8px 0">${esc(f.text)}</p><p class="muted" style="font-size:.82rem">${esc(meta)} · ${esc(f.page||"/")}${f.device?" · "+esc(f.device):""} · ${esc(dt(f.t))}</p><p>${ph.length>=10?`<a class="link" href="https://wa.me/91${ph.slice(-10)}" target="_blank" rel="noopener">Reply on WhatsApp</a>`:""}${/@/.test(c)?`<a class="link" href="mailto:${esc(c)}">Reply by email</a>`:""}<button class="link" data-act="fdel" data-t="${esc(f.t)}">Delete</button></p></div>`}).join("")}
 function pSettings(){const s=S.settings||{},n=S.notify||{},own=(()=>{try{return localStorage.getItem("cr_owner")==="1"}catch(e){return false}})(),snd=localStorage.getItem("cr_snd")!=="0";
  const onAlert=ok=>`<span class="tg ${ok?"g":"r"}">${ok?"On":"Off"}</span>`;
  const alertLine=(label,ok,extra="")=>`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><span>${label}${extra?` <span class="muted" style="font-size:.82rem">${extra}</span>`:""}</span>${onAlert(ok)}</div>`;
@@ -165,12 +170,12 @@ function pSettings(){const s=S.settings||{},n=S.notify||{},own=(()=>{try{return 
 <div class="cd" style="margin-top:14px"><h3>Good to know</h3><p class="muted" style="font-size:.9rem">Your admin password is the ADMIN_PASSWORD setting in Netlify. To change it, edit it there and deploy again. Email, ntfy push and SMS alerts are switched on with Netlify environment variables, explained in <b>NOTIFY-SETUP.md</b> in your repository. WhatsApp and Telegram work right here, no redeploy needed.</p></div>`}
 
 /* ---------- routing + render ---------- */
-const TITLES={home:"Home",orders:"Orders",products:"Products",customers:"Customers",analytics:"Analytics",messages:"Messages",settings:"Settings"};
+const TITLES={home:"Home",orders:"Orders",products:"Products",customers:"Customers",analytics:"Analytics",messages:"Messages",feedback:"Feedback",settings:"Settings"};
 async function render(silent){const[p,i]=where(),c=$("adc");if(!c)return;
  document.querySelectorAll("#ads a.nv").forEach(a=>a.classList.toggle("on",a.dataset.nv===p));$("adT").textContent=TITLES[p]||"Home";
  if(!silent)c.innerHTML='<p class="muted">Loading...</p>';
  if(!silent||p==="orders"||p==="home"){if(!await loadAll()){root.dataset.ready="";CRAdmin.open(root);return}}
- let h="";try{h=p==="orders"?pOrders(i):p==="products"?pProducts(i):p==="customers"?pCustomers():p==="messages"?pMessages():p==="settings"?pSettings():p==="analytics"?await pAnalytics():await pHome()}catch(e){h='<div class="empty2">Something went wrong. Refresh and try again.</div>'}
+ let h="";try{h=p==="orders"?pOrders(i):p==="products"?pProducts(i):p==="customers"?pCustomers():p==="messages"?pMessages():p==="feedback"?pFeedback():p==="settings"?pSettings():p==="analytics"?await pAnalytics():await pHome()}catch(e){h='<div class="empty2">Something went wrong. Refresh and try again.</div>'}
  if(where().join("/")!==[p,i].join("/"))return;c.innerHTML=h;if(p==="products"&&i)bindForm();if(!silent)scrollTo({top:0,behavior:"instant"})}
 function bindForm(){const g=()=>{const x=$("igm");if(x)x.innerHTML=draft.map((s,k)=>`<div class="igi"><img src="${esc(s)}" alt="">${k?"":"<i>Main</i>"}<div>${k?`<button type="button" class="link" data-m="${k}">Make main</button>`:"<span></span>"}<button type="button" class="link" data-r="${k}">Remove</button></div></div>`).join("")};g();
  $("igm").onclick=x=>{const b=x.target.closest("button");if(!b)return;if(b.dataset.r!==undefined)draft.splice(+b.dataset.r,1);if(b.dataset.m!==undefined){const[s]=draft.splice(+b.dataset.m,1);draft.unshift(s)}g()};
@@ -186,6 +191,7 @@ async function onClick(e){const b=e.target.closest("[data-act],[data-of],[data-p
  if(a==="oview"){location.hash="#admin/orders/"+id;return}
  if(a==="ntest"){const el=$("ntxt");if(el){el.className="muted";el.textContent="Sending…"}const r=await api("notify/test",{});let m=r.ok?"Test sent.":(r.d.error||"Could not send the test.");if(r.ok&&r.d.whatsapp)m+=" WhatsApp: "+(r.d.whatsapp_ok?"sent — check your phone.":(r.d.whatsapp_reply||"sent, but check your phone."));if(r.ok&&r.d.telegram)m+=" Telegram: "+(r.d.telegram_error||"sent — check your phone.");if(r.ok&&r.d.email)m+=" Email: "+(r.d.email_error||"sent to "+r.d.email_to+".");if(el){el.className=r.ok?"ok":"err";el.textContent=m}else say(m);return}
  if(a==="cview"){S.oq=d.q||"";S.of="all";location.hash="#admin/orders";return}
+ if(a==="fdel"){if(confirm("Delete this feedback?")){await api("feedback/delete",{t:d.t});S.feedback=(S.feedback||[]).filter(x=>x.t!==d.t);render()}return}
  if(a==="opaid")return upd(oid,{paid:true});
  if(a==="oship"){const t=prompt("Tracking number or courier note (optional)");if(t===null)return;return upd(oid,{shipped:true,track:t})}
  if(a==="odeliv")return upd(oid,{delivered:true});

@@ -417,6 +417,26 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const all=await get("messages",[]);all.unshift(m);await db.setJSON("messages",all.slice(0,200));
     await notify(`✉️ New message\n${m.name} (${m.contact})\n${m.text}`,true);return J({ok:1});
   }
+  if(path==="feedback"&&req.method==="POST"){
+    const f={topic:cut(b.topic,40),text:cut(b.text,900),name:cut(b.name,60),contact:cut(b.contact,80),page:cut(b.page,120),device:cut(b.device,40),t:new Date().toISOString()};
+    if(!f.text||f.text.length<3)return J({error:"Tell us what to improve first."},400);
+    const hk=new Date().toISOString().slice(0,13),rl=await get("rlf",{h:"",n:0});
+    if(rl.h!==hk){rl.h=hk;rl.n=0}
+    if(rl.n>=30)return J({error:"Too many messages just now. Try again in a while."},429);
+    rl.n++;await db.setJSON("rlf",rl);
+    const all=await get("feedback",[]);all.unshift(f);await db.setJSON("feedback",all.slice(0,400));
+    const who=[f.name,f.contact].filter(Boolean).join(" · ")||"Anonymous visitor";
+    await notify(`💬 New shop feedback\n${f.topic?f.topic+" — ":""}${f.text}\n\n${who}\nPage: ${f.page||"/"}${f.device?" · "+f.device:""}`,true);
+    return J({ok:1});
+  }
+  if(path==="feedback"&&req.method==="GET"){
+    if(!admin())return J({error:"Wrong password"},401);
+    return J({feedback:await get("feedback",[])});
+  }
+  if(path==="feedback/delete"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    await db.setJSON("feedback",(await get("feedback",[])).filter(x=>x.t!==b.t));return J({ok:1});
+  }
   if(path==="pay/create"){
     if(!E.RAZORPAY_KEY_ID||!E.RAZORPAY_KEY_SECRET)return J({error:"Online payment isn't switched on yet."},503);
     const prods=await get("products",[]),c=b.customer||{},lines=[];let total=0;
