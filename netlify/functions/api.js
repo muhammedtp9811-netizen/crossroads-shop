@@ -185,7 +185,7 @@ export default async(req,context)=>{
     if(waKey){
       try{
         const r=await fetch(`https://api.callmebot.com/whatsapp.php?phone=${waPhone}&apikey=${encodeURIComponent(waKey)}&text=${encodeURIComponent(msg)}`);
-        reply=cut(await r.text(),160).replace(/\s+/g," ").trim();
+        reply=cut(await r.text(),400).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim().slice(0,170);
       }catch(e){reply="Could not reach CallMeBot. Check the number and key."}
     }
     if(other)await notify(msg,true,true);
