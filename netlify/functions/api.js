@@ -27,6 +27,7 @@ const STORE={ig:"crossroads_shopping",mail:"producingmj@gmail.com",
 const inr=n=>"₹"+(+n||0).toLocaleString("en-IN");
 const shortN=(s,n=58)=>{s=String(s??"").replace(/\s+/g," ").trim();if(s.length<=n)return s;const c=s.slice(0,n),i=c.lastIndexOf(" ");return(i>20?c.slice(0,i):c)+"…"};
 const DASH="https://crossroads-shopping.netlify.app/#admin";
+const normPhone=v=>String(v??"").replace(/\D/g,"").replace(/^00+/,"").slice(0,15);
 let cfgCache={t:0,v:null};
 function orderText(o,head){
   let when="";try{when=new Date(o.t||Date.now()).toLocaleString("en-IN",{timeZone:"Asia/Kolkata",day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})}catch(e){when=new Date(o.t||Date.now()).toISOString().slice(0,16).replace("T"," ")}
@@ -136,16 +137,27 @@ export default async(req,context)=>{
     return changed}
   const allow=async()=>{const h=new Date().toISOString().slice(0,13),rl=await get("rl",{h:"",n:0});if(rl.h!==h){rl.h=h;rl.n=0}if(rl.n>=80)return false;rl.n++;await db.setJSON("rl",rl);return true};
   const mail=(subject,text)=>fetch("https://api.resend.com/emails",{method:"POST",headers:{authorization:"Bearer "+E.RESEND_API_KEY,"content-type":"application/json"},body:JSON.stringify({from:"Crossroads <onboarding@resend.dev>",to:[E.ALERT_EMAIL||"producingmj@gmail.com"],subject:cut(subject,80),text})}).catch(()=>{});
+  const tgCreds=async()=>{const s=await cfg().catch(()=>({}));return{tok:E.TELEGRAM_BOT_TOKEN||s.tgToken||"",chat:String(E.TELEGRAM_CHAT_ID||s.tgChat||"").trim()}};
+  async function tgSend(t,cred){
+    const c=cred||await tgCreds();
+    if(!c.tok||!c.chat)return "";
+    try{
+      const r=await fetch(`https://api.telegram.org/bot${c.tok}/sendMessage`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({chat_id:c.chat,text:t,disable_web_page_preview:true})});
+      const d=await r.json().catch(()=>({}));
+      return d.ok?"" : (d.description||"Telegram refused the message.");
+    }catch(e){return "Could not reach Telegram."}
+  }
   async function notify(t,imp,skipWa){
     const st=await cfg().catch(()=>({})),waKey=E.CALLMEBOT_KEY||st.waKey||"",waPhone=String(E.WA_NUMBER||st.waPhone||WA).replace(/\D/g,"");
-    if(!waKey&&!E.DISCORD_WEBHOOK&&!E.FAST2SMS_KEY&&!E.NTFY_TOPIC&&!E.RESEND_API_KEY&&!(E.TELEGRAM_BOT_TOKEN&&E.TELEGRAM_CHAT_ID))return;
+    const tgTok=E.TELEGRAM_BOT_TOKEN||st.tgToken||"",tgChat=E.TELEGRAM_CHAT_ID||st.tgChat||"";
+    if(!waKey&&!E.DISCORD_WEBHOOK&&!E.FAST2SMS_KEY&&!E.NTFY_TOPIC&&!E.RESEND_API_KEY&&!(tgTok&&tgChat))return;
     if(!imp&&!await allow())return;
     if(waKey&&!skipWa)await fetch(`https://api.callmebot.com/whatsapp.php?phone=${waPhone}&apikey=${encodeURIComponent(waKey)}&text=${encodeURIComponent(t)}`).catch(()=>{});
     if(imp&&E.FAST2SMS_KEY)await fetch("https://www.fast2sms.com/dev/bulkV2?"+new URLSearchParams({authorization:E.FAST2SMS_KEY,route:"q",message:t.replace(/[^\x20-\x7E\n]/g,"").slice(0,150),flash:"0",numbers:E.SMS_TO||"8281036836"})).catch(()=>{});
     if(E.DISCORD_WEBHOOK)await fetch(E.DISCORD_WEBHOOK,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({content:t})}).catch(()=>{});
     if(E.NTFY_TOPIC)await fetch("https://ntfy.sh/"+encodeURIComponent(E.NTFY_TOPIC),{method:"POST",headers:{Title:"Crossroads"},body:t}).catch(()=>{});
     if(imp&&E.RESEND_API_KEY)await mail(t.split("\n").filter(Boolean)[0],t);
-    if(E.TELEGRAM_BOT_TOKEN&&E.TELEGRAM_CHAT_ID)await fetch(`https://api.telegram.org/bot${E.TELEGRAM_BOT_TOKEN}/sendMessage`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({chat_id:E.TELEGRAM_CHAT_ID,text:t})}).catch(()=>{});
+    if(tgTok&&tgChat)await tgSend(t,{tok:tgTok,chat:tgChat});
   }
   if(path==="test"){
     const k=new URL(req.url).searchParams.get("k");
@@ -164,32 +176,66 @@ export default async(req,context)=>{
     if(b.upi!==undefined)nxt.upi=cut(b.upi,80);
     if(b.name!==undefined)nxt.name=cut(b.name,60);
     if(b.qr!==undefined)nxt.qr=cut(b.qr,400000);
-    if(b.waPhone!==undefined)nxt.waPhone=String(b.waPhone).replace(/\D/g,"").slice(0,15);
+    if(b.waPhone!==undefined)nxt.waPhone=normPhone(b.waPhone);
     if(b.waKey!==undefined)nxt.waKey=cut(String(b.waKey).trim(),90);
+    if(b.tgToken!==undefined)nxt.tgToken=cut(String(b.tgToken).trim(),120);
+    if(b.tgChat!==undefined)nxt.tgChat=cut(String(b.tgChat).trim(),40);
     await db.setJSON("settings",nxt);cfgCache={t:0,v:null};return J({ok:1});
   }
   if(path==="notify"&&req.method==="GET"){
     if(!admin())return J({error:"Wrong password"},401);
-    const s=await get("settings",{});
+    const s=await get("settings",{}),tgTok=E.TELEGRAM_BOT_TOKEN||s.tgToken||"",tgChat=E.TELEGRAM_CHAT_ID||s.tgChat||"";
     return J({whatsapp:!!(E.CALLMEBOT_KEY||s.waKey),whatsapp_number:String(E.WA_NUMBER||s.waPhone||WA).replace(/\D/g,""),
       email:!!E.RESEND_API_KEY,email_to:E.ALERT_EMAIL||"producingmj@gmail.com",
-      telegram:!!(E.TELEGRAM_BOT_TOKEN&&E.TELEGRAM_CHAT_ID),ntfy:!!E.NTFY_TOPIC,discord:!!E.DISCORD_WEBHOOK,sms:!!E.FAST2SMS_KEY});
+      telegram:!!(tgTok&&tgChat),telegram_saved:!!s.tgToken,telegram_chat:tgChat,
+      ntfy:!!E.NTFY_TOPIC,discord:!!E.DISCORD_WEBHOOK,sms:!!E.FAST2SMS_KEY});
+  }
+  if(path==="notify/telegram"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const cur=await get("settings",{}),tok=String(b.token||cur.tgToken||E.TELEGRAM_BOT_TOKEN||"").trim();
+    if(!tok)return J({error:"Paste the bot token from @BotFather first."},400);
+    let me;
+    try{me=await (await fetch(`https://api.telegram.org/bot${tok}/getMe`)).json()}catch(e){return J({error:"Could not reach Telegram. Check your internet and try again."},400)}
+    if(!me.ok)return J({error:"That token is not valid. Copy it again from @BotFather (it looks like 123456789:ABCdef...)."},400);
+    let chat=String(cur.tgChat||"").trim(),who="";
+    if(!chat){
+      let up={};
+      try{up=await (await fetch(`https://api.telegram.org/bot${tok}/getUpdates?limit=20`)).json()}catch(e){}
+      const list=(up.result||[]).slice().reverse();
+      for(const u of list){
+        const c=u.message&&u.message.chat||u.channel_post&&u.channel_post.chat||u.my_chat_member&&u.my_chat_member.chat;
+        if(c&&c.id){chat=String(c.id);who=[c.first_name,c.last_name].filter(Boolean).join(" ")||c.title||c.username||"";break}
+      }
+      if(!chat)return J({error:`Token is good (@${me.result.username}). Now open Telegram, find @${me.result.username}, tap Start (or send "hi"), then press Connect again.`},400);
+    }
+    const nxt={...cur,tgToken:cut(tok,120),tgChat:cut(chat,40)};
+    await db.setJSON("settings",nxt);cfgCache={t:0,v:null};
+    const err=await tgSend("✅ Telegram alerts are connected to Crossroads Shopping.\nYou will get every new order here.\n"+DASH,{tok,chat});
+    if(err)return J({error:"Saved, but Telegram said: "+err},400);
+    return J({ok:1,bot:me.result.username,chat,who});
   }
   if(path==="notify/test"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
-    const st=await cfg().catch(()=>({})),waKey=E.CALLMEBOT_KEY||st.waKey||"",waPhone=String(E.WA_NUMBER||st.waPhone||WA).replace(/\D/g,"");
-    const other=E.RESEND_API_KEY||E.NTFY_TOPIC||E.DISCORD_WEBHOOK||(E.TELEGRAM_BOT_TOKEN&&E.TELEGRAM_CHAT_ID);
+    const st=await cfg().catch(()=>({})),waKey=E.CALLMEBOT_KEY||st.waKey||"",waPhone=normPhone(E.WA_NUMBER||st.waPhone||WA);
+    const tgTok=E.TELEGRAM_BOT_TOKEN||st.tgToken||"",tgChat=E.TELEGRAM_CHAT_ID||st.tgChat||"";
+    const other=E.RESEND_API_KEY||E.NTFY_TOPIC||E.DISCORD_WEBHOOK||(tgTok&&tgChat);
     if(!waKey&&!other)return J({error:"No alert channel is set up yet."},400);
     const msg="🔔 Test alert from Crossroads Shopping\nIf you can read this, order alerts are working.\n"+DASH;
-    let reply="";
+    let wa="",waOk=false;
     if(waKey){
       try{
         const r=await fetch(`https://api.callmebot.com/whatsapp.php?phone=${waPhone}&apikey=${encodeURIComponent(waKey)}&text=${encodeURIComponent(msg)}`);
-        reply=cut(await r.text(),400).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim().slice(0,170);
-      }catch(e){reply="Could not reach CallMeBot. Check the number and key."}
+        const raw=await r.text();
+        wa=cut(raw,400).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim().slice(0,200);
+        waOk=/Message (queued|sent)/i.test(raw)||!/(invalid|error|not valid)/i.test(raw);
+        if(/apikey is invalid/i.test(raw))wa="CallMeBot says the key is invalid. Send the bot a WhatsApp message: Recover APIKey";
+        else if(/not valid|invalid phone/i.test(raw))wa="CallMeBot says the number is wrong. Use country code, no + and no spaces.";
+      }catch(e){wa="Could not reach CallMeBot. Try again in a minute."}
     }
+    let tg="";
+    if(tgTok&&tgChat)tg=await tgSend(msg,{tok:tgTok,chat:tgChat});
     if(other)await notify(msg,true,true);
-    return J({ok:1,whatsapp:!!waKey,whatsapp_reply:reply});
+    return J({ok:1,whatsapp:!!waKey,whatsapp_ok:waOk,whatsapp_reply:wa,telegram:!!(tgTok&&tgChat),telegram_error:tg});
   }
   if(path==="order/manual"){
     const prods=await get("products",[]),c=b.customer||{},lines=[];let total=0;

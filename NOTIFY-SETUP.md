@@ -41,6 +41,18 @@ You should get the test on WhatsApp immediately. If not, check the number and ke
 > for a small shop. If you ever need guaranteed delivery to many people, use
 > WhatsApp Cloud API or Twilio — both are paid.
 
+### If the bot does not reply
+
+This is a CallMeBot problem, not your website. Try in this order:
+
+1. Confirm the contact is **+34 644 41 87 20** exactly (a Spain number).
+2. Send only: `I allow callmebot to send me messages` — no extra words, no emoji.
+3. Wait 2 minutes. Still nothing? Send: `Recover APIKey`.
+4. CallMeBot limits how often one number can ask. If both fail, wait 24 hours and
+   repeat step 2.
+5. Nothing after 24 hours means that number cannot use the free service. Use
+   **Telegram** below instead — it is free, instant and has no such limit.
+
 ---
 
 ## 2. Email (free) — good backup
@@ -60,14 +72,21 @@ address that owns the Resend account.
 
 ## 3. Telegram (free) — fastest and most reliable
 
-1. In Telegram, message **@BotFather**, send `/newbot`, choose a name.
-   It replies with a token like `123456:ABC-DEF...`.
-2. Send any message to your new bot.
-3. Message **@userinfobot** to get your numeric chat id.
-4. Netlify environment variables:
-   - `TELEGRAM_BOT_TOKEN` = the token
-   - `TELEGRAM_CHAT_ID` = your numeric id
-5. Redeploy.
+No Netlify settings needed; do it inside your admin panel.
+
+1. In Telegram, message **@BotFather** and send `/newbot`, pick a name.
+   It replies with a token like `123456789:ABCdef...`.
+2. Open the store admin → **Settings → Order alerts → Telegram**, paste the token,
+   tap **Connect Telegram**.
+3. It replies "Token is good (@yourbot). Now open Telegram, find @yourbot, tap Start…"
+   if it needs you to start the chat. Do that, then tap **Connect Telegram** again.
+4. A test message arrives in Telegram. Done.
+
+The admin finds your chat id automatically. The token is stored on the server and
+is never returned by the public API.
+
+If you prefer Netlify variables: `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` also work
+and override the saved values.
 
 ---
 
