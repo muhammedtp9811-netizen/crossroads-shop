@@ -57,16 +57,20 @@ This is a CallMeBot problem, not your website. Try in this order:
 
 ## 2. Email (free) — good backup
 
-Resend gives 3,000 free emails a month.
+No Netlify settings needed; do it inside your admin panel.
 
-1. Create an account at https://resend.com and copy an API key.
-2. Netlify → your project → **Project configuration → Environment variables**:
-   - `RESEND_API_KEY` = your key
-   - `ALERT_EMAIL` = the Gmail address that should receive orders
-3. Redeploy (see the note at the bottom).
+1. Create an account at https://resend.com and copy an API key (starts with `re_`).
+2. Open the store admin → **Settings → Order alerts → Email**, enter the address
+   that should receive orders, paste the key, tap **Save and send test email**.
+3. A test email arrives. Done.
 
-Note: with the free `onboarding@resend.dev` sender you can only send to the email
-address that owns the Resend account.
+The key is stored on the server and never returned by the public API.
+
+> Resend's free `onboarding@resend.dev` sender can only send to the address that
+> owns the Resend account. Use that same Gmail address here.
+
+Netlify variables `RESEND_API_KEY` and `ALERT_EMAIL` still work and override the
+saved values.
 
 ---
 

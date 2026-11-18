@@ -136,7 +136,7 @@ export default async(req,context)=>{
     }
     return changed}
   const allow=async()=>{const h=new Date().toISOString().slice(0,13),rl=await get("rl",{h:"",n:0});if(rl.h!==h){rl.h=h;rl.n=0}if(rl.n>=80)return false;rl.n++;await db.setJSON("rl",rl);return true};
-  const mail=(subject,text)=>fetch("https://api.resend.com/emails",{method:"POST",headers:{authorization:"Bearer "+E.RESEND_API_KEY,"content-type":"application/json"},body:JSON.stringify({from:"Crossroads <onboarding@resend.dev>",to:[E.ALERT_EMAIL||"producingmj@gmail.com"],subject:cut(subject,80),text})}).catch(()=>{});
+  const mail=(subject,text,cred)=>fetch("https://api.resend.com/emails",{method:"POST",headers:{authorization:"Bearer "+((cred&&cred.key)||E.RESEND_API_KEY),"content-type":"application/json"},body:JSON.stringify({from:"Crossroads <onboarding@resend.dev>",to:[(cred&&cred.to)||E.ALERT_EMAIL||"producingmj@gmail.com"],subject:cut(subject,80),text})});
   const tgCreds=async()=>{const s=await cfg().catch(()=>({}));return{tok:E.TELEGRAM_BOT_TOKEN||s.tgToken||"",chat:String(E.TELEGRAM_CHAT_ID||s.tgChat||"").trim()}};
   async function tgSend(t,cred){
     const c=cred||await tgCreds();
@@ -147,17 +147,19 @@ export default async(req,context)=>{
       return d.ok?"" : (d.description||"Telegram refused the message.");
     }catch(e){return "Could not reach Telegram."}
   }
-  async function notify(t,imp,skipWa){
+  async function notify(t,imp,skipWa,skip){
+    skip=skip||{};
     const st=await cfg().catch(()=>({})),waKey=E.CALLMEBOT_KEY||st.waKey||"",waPhone=String(E.WA_NUMBER||st.waPhone||WA).replace(/\D/g,"");
     const tgTok=E.TELEGRAM_BOT_TOKEN||st.tgToken||"",tgChat=E.TELEGRAM_CHAT_ID||st.tgChat||"";
-    if(!waKey&&!E.DISCORD_WEBHOOK&&!E.FAST2SMS_KEY&&!E.NTFY_TOPIC&&!E.RESEND_API_KEY&&!(tgTok&&tgChat))return;
+    const rsKey=E.RESEND_API_KEY||st.rsKey||"",rsTo=E.ALERT_EMAIL||st.rsTo||"producingmj@gmail.com";
+    if(!waKey&&!E.DISCORD_WEBHOOK&&!E.FAST2SMS_KEY&&!E.NTFY_TOPIC&&!rsKey&&!(tgTok&&tgChat))return;
     if(!imp&&!await allow())return;
     if(waKey&&!skipWa)await fetch(`https://api.callmebot.com/whatsapp.php?phone=${waPhone}&apikey=${encodeURIComponent(waKey)}&text=${encodeURIComponent(t)}`).catch(()=>{});
-    if(imp&&E.FAST2SMS_KEY)await fetch("https://www.fast2sms.com/dev/bulkV2?"+new URLSearchParams({authorization:E.FAST2SMS_KEY,route:"q",message:t.replace(/[^\x20-\x7E\n]/g,"").slice(0,150),flash:"0",numbers:E.SMS_TO||"8281036836"})).catch(()=>{});
-    if(E.DISCORD_WEBHOOK)await fetch(E.DISCORD_WEBHOOK,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({content:t})}).catch(()=>{});
-    if(E.NTFY_TOPIC)await fetch("https://ntfy.sh/"+encodeURIComponent(E.NTFY_TOPIC),{method:"POST",headers:{Title:"Crossroads"},body:t}).catch(()=>{});
-    if(imp&&E.RESEND_API_KEY)await mail(t.split("\n").filter(Boolean)[0],t);
-    if(tgTok&&tgChat)await tgSend(t,{tok:tgTok,chat:tgChat});
+    if(imp&&E.FAST2SMS_KEY&&!skip.sms)await fetch("https://www.fast2sms.com/dev/bulkV2?"+new URLSearchParams({authorization:E.FAST2SMS_KEY,route:"q",message:t.replace(/[^\x20-\x7E\n]/g,"").slice(0,150),flash:"0",numbers:E.SMS_TO||"8281036836"})).catch(()=>{});
+    if(E.DISCORD_WEBHOOK&&!skip.discord)await fetch(E.DISCORD_WEBHOOK,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({content:t})}).catch(()=>{});
+    if(E.NTFY_TOPIC&&!skip.ntfy)await fetch("https://ntfy.sh/"+encodeURIComponent(E.NTFY_TOPIC),{method:"POST",headers:{Title:"Crossroads"},body:t}).catch(()=>{});
+    if(imp&&rsKey&&!skip.email)await mail(t.split("\n").filter(Boolean)[0],t,{key:rsKey,to:rsTo}).catch(()=>{});
+    if(tgTok&&tgChat&&!skip.tg)await tgSend(t,{tok:tgTok,chat:tgChat});
   }
   if(path==="test"){
     const k=new URL(req.url).searchParams.get("k");
@@ -180,13 +182,15 @@ export default async(req,context)=>{
     if(b.waKey!==undefined)nxt.waKey=cut(String(b.waKey).trim(),90);
     if(b.tgToken!==undefined)nxt.tgToken=cut(String(b.tgToken).trim(),120);
     if(b.tgChat!==undefined)nxt.tgChat=cut(String(b.tgChat).trim(),40);
+    if(b.rsKey!==undefined)nxt.rsKey=cut(String(b.rsKey).trim(),90);
+    if(b.rsTo!==undefined)nxt.rsTo=cut(String(b.rsTo).trim().toLowerCase(),120);
     await db.setJSON("settings",nxt);cfgCache={t:0,v:null};return J({ok:1});
   }
   if(path==="notify"&&req.method==="GET"){
     if(!admin())return J({error:"Wrong password"},401);
     const s=await get("settings",{}),tgTok=E.TELEGRAM_BOT_TOKEN||s.tgToken||"",tgChat=E.TELEGRAM_CHAT_ID||s.tgChat||"";
     return J({whatsapp:!!(E.CALLMEBOT_KEY||s.waKey),whatsapp_number:String(E.WA_NUMBER||s.waPhone||WA).replace(/\D/g,""),
-      email:!!E.RESEND_API_KEY,email_to:E.ALERT_EMAIL||"producingmj@gmail.com",
+      email:!!(E.RESEND_API_KEY||s.rsKey),email_to:E.ALERT_EMAIL||s.rsTo||"producingmj@gmail.com",email_saved:!!s.rsKey,
       telegram:!!(tgTok&&tgChat),telegram_saved:!!s.tgToken,telegram_chat:tgChat,
       ntfy:!!E.NTFY_TOPIC,discord:!!E.DISCORD_WEBHOOK,sms:!!E.FAST2SMS_KEY});
   }
@@ -214,11 +218,31 @@ export default async(req,context)=>{
     if(err)return J({error:"Saved, but Telegram said: "+err},400);
     return J({ok:1,bot:me.result.username,chat,who});
   }
+  if(path==="notify/email"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const cur=await get("settings",{}),key=String(b.key||cur.rsKey||E.RESEND_API_KEY||"").trim();
+    const to=String(b.to||cur.rsTo||E.ALERT_EMAIL||"producingmj@gmail.com").trim().toLowerCase();
+    if(!key)return J({error:"Paste your Resend API key first (resend.com → API Keys)."},400);
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))return J({error:"That email address does not look right."},400);
+    let r,d={};
+    try{
+      r=await mail("Test alert from Crossroads Shopping","🔔 Test alert from Crossroads Shopping\nIf you can read this, order alerts are working.\n"+DASH,{key,to});
+      d=await r.json().catch(()=>({}));
+    }catch(e){return J({error:"Could not reach Resend. Check your internet and try again."},400)}
+    if(!r.ok){
+      const m=String(d.message||d.error||"").trim();
+      if(/only send testing emails/i.test(m))return J({error:"Resend blocked this: the free sender can only email the address that owns the Resend account. Use that same address here."},400);
+      if(/invalid|not authorized|unauthorized/i.test(m))return J({error:"Resend says the API key is invalid. Copy it again from resend.com → API Keys."},400);
+      return J({error:"Resend refused the email: "+(m||("status "+r.status))},400);
+    }
+    await db.setJSON("settings",{...cur,rsKey:cut(key,90),rsTo:cut(to,120)});cfgCache={t:0,v:null};
+    return J({ok:1,to});
+  }
   if(path==="notify/test"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
     const st=await cfg().catch(()=>({})),waKey=E.CALLMEBOT_KEY||st.waKey||"",waPhone=normPhone(E.WA_NUMBER||st.waPhone||WA);
     const tgTok=E.TELEGRAM_BOT_TOKEN||st.tgToken||"",tgChat=E.TELEGRAM_CHAT_ID||st.tgChat||"";
-    const other=E.RESEND_API_KEY||E.NTFY_TOPIC||E.DISCORD_WEBHOOK||(tgTok&&tgChat);
+    const other=E.RESEND_API_KEY||st.rsKey||E.NTFY_TOPIC||E.DISCORD_WEBHOOK||(tgTok&&tgChat);
     if(!waKey&&!other)return J({error:"No alert channel is set up yet."},400);
     const msg="🔔 Test alert from Crossroads Shopping\nIf you can read this, order alerts are working.\n"+DASH;
     let wa="",waOk=false;
@@ -234,8 +258,15 @@ export default async(req,context)=>{
     }
     let tg="";
     if(tgTok&&tgChat)tg=await tgSend(msg,{tok:tgTok,chat:tgChat});
-    if(other)await notify(msg,true,true);
-    return J({ok:1,whatsapp:!!waKey,whatsapp_ok:waOk,whatsapp_reply:wa,telegram:!!(tgTok&&tgChat),telegram_error:tg});
+    let em="";
+    if(rsKey){
+      try{
+        const x=await mail("Test alert from Crossroads Shopping",msg,{key:rsKey,to:rsTo});
+        if(!x.ok){const d=await x.json().catch(()=>({}));em=String(d.message||("status "+x.status)).slice(0,160)}
+      }catch(e){em="Could not reach Resend."}
+    }
+    if(other)await notify(msg,true,true,{tg:true,email:true});
+    return J({ok:1,whatsapp:!!waKey,whatsapp_ok:waOk,whatsapp_reply:wa,telegram:!!(tgTok&&tgChat),telegram_error:tg,email:!!rsKey,email_to:rsTo,email_error:em});
   }
   if(path==="order/manual"){
     const prods=await get("products",[]),c=b.customer||{},lines=[];let total=0;
@@ -319,7 +350,7 @@ export default async(req,context)=>{
     if(L.length&&E.RESEND_API_KEY&&await allow()){
       const g=(context&&context.geo)||{},where=[g.city,g.subdivision&&g.subdivision.name,g.country&&g.country.name].filter(Boolean).join(", ")||"unknown place";
       const dev=/iphone|ipad/i.test(b.ua||"")?"iPhone":/android/i.test(b.ua||"")?"Android phone":"Computer";
-      await mail("Visitor: "+L.length+" actions",`Visitor summary\nFrom: ${where}\nDevice: ${dev}\nCame from: ${cut(b.ref,120)||"direct link"}\n\n`+L.map(x=>cut(x.t,8)+"  "+cut(x.x,100)).join("\n"));
+      await mail("Visitor: "+L.length+" actions",`Visitor summary\nFrom: ${where}\nDevice: ${dev}\nCame from: ${cut(b.ref,120)||"direct link"}\n\n`+L.map(x=>cut(x.t,8)+"  "+cut(x.x,100)).join("\n")).catch(()=>{});
     }
     return J({ok:1});
   }
