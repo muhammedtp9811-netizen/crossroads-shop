@@ -80,8 +80,12 @@ function chatRule(text,prods,cart){
   if(!hi){m=/(?:under|below|less than|upto|up to|max)\s*(?:rs\.?|₹)?\s*(\d{2,5})/.exec(q);if(m)hi=+m[1]}
   if(!hi&&ok(/\b(cheap|cheapest|lowest price|budget|affordable)\b/)&&live.length){hi=Math.min(...live.map(p=>+p.p||0))}
   if(hi){
-    const L=live.filter(p=>(+p.p||0)>=lo&&(+p.p||0)<=hi).sort((a,b)=>a.p-b.p);
-    return{text:L.length?"Here's what's available in that range:":`Nothing sits in that range right now. The lowest price in the shop is ${inr(Math.min(...live.map(p=>+p.p||0)))}.`,products:cardsFor(L),quick:[shop,ig]};
+    let L=live.filter(p=>(+p.p||0)>=lo&&(+p.p||0)<=hi);
+    const hitsB=matchProds(q,live);
+    if(hitsB.length){const X=L.filter(p=>hitsB.includes(p));if(X.length)L=X}
+    L=[...L].sort((a,b)=>a.p-b.p);
+    const only=hitsB.length&&L.length&&L.every(p=>hitsB.includes(p));
+    return{text:L.length?(only?"Here's what matches:":"Here's what's available in that range:"):"Nothing sits in that range right now."+(live.length?` The lowest price in the shop is ${inr(Math.min(...live.map(p=>+p.p||0)))}.`:""),products:cardsFor(L),quick:[shop,ig]};
   }
   const hits=matchProds(q,live);
   if(hits.length)return{text:"Here's what I found:",products:cardsFor(hits),quick:[shop,ig]};
