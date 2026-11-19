@@ -28,6 +28,10 @@ const inr=n=>"₹"+(+n||0).toLocaleString("en-IN");
 const shortN=(s,n=58)=>{s=String(s??"").replace(/\s+/g," ").trim();if(s.length<=n)return s;const c=s.slice(0,n),i=c.lastIndexOf(" ");return(i>20?c.slice(0,i):c)+"…"};
 const DASH="https://crossroads-shopping.netlify.app/#admin";
 const normPhone=v=>String(v??"").replace(/\D/g,"").replace(/^00+/,"").slice(0,15);
+const last10=v=>String(v??"").replace(/\D/g,"").slice(-10);
+const CODE_CHARS="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const newCode=()=>"CR-"+Array.from({length:6},()=>CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)]).join("");
+const CODE_OFF=30;
 let cfgCache={t:0,v:null};
 function orderText(o,head){
   let when="";try{when=new Date(o.t||Date.now()).toLocaleString("en-IN",{timeZone:"Asia/Kolkata",day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})}catch(e){when=new Date(o.t||Date.now()).toISOString().slice(0,16).replace("T"," ")}
@@ -158,7 +162,10 @@ Total: ${inr(o.total)}
 ${kind==="paid"
   ? "Payment received. We are packing your order and will send you the tracking details shortly."
   : "We are checking your UPI payment now. You will get another email as soon as it is confirmed."}
-
+${o.next?`
+Your code for the next order: ${o.next}
+Use it at checkout for a discount. It works with this phone number only.
+`:""}
 Delivering to:
 ${o.name||""}
 ${o.address||""}
@@ -169,6 +176,32 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
 — Crossroads Shopping`;
     await mail(kind==="paid"?"Order #"+(o.no||"")+" confirmed — payment received":"Order #"+(o.no||"")+" received",body,{key,to:email,from}).catch(()=>{});
   };
+  const codeNorm=v=>String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+  const getCodes=()=>get("codes",[]);
+  const liveCode=async(phone)=>{
+    const ph=last10(phone);if(ph.length<10)return null;
+    const list=await getCodes();
+    return list.find(k=>k.ph===ph&&!k.used)||null;
+  };
+  async function issueCode(phone){
+    const ph=last10(phone);if(ph.length<10)return "";
+    const list=await getCodes(),have=list.find(k=>k.ph===ph&&!k.used);
+    if(have)return have.c;
+    let c="";do{c=newCode()}while(list.some(k=>k.c===c));
+    list.unshift({c,ph,used:false,t:new Date().toISOString()});
+    await db.setJSON("codes",list.slice(0,3000));
+    return c;
+  }
+  async function checkCode(raw,phone,consume){
+    const c=codeNorm(raw);
+    if(!c)return{off:0};
+    const ph=last10(phone),list=await getCodes(),x=list.find(k=>codeNorm(k.c)===c);
+    if(!x||x.used)return{off:0,err:"That code has already been used."};
+    if(x.ph!==ph)return{off:0,err:"That code belongs to a different phone number."};
+    if(consume){x.used=true;x.ut=new Date().toISOString();x.no=x.no||0;await db.setJSON("codes",list)}
+    return{off:CODE_OFF,code:x.c};
+  }
+  const applyOff=(total,off)=>Math.max(1,total-Math.min(off||0,total-1));
   const tgCreds=async()=>{const s=await cfg().catch(()=>({}));return{tok:E.TELEGRAM_BOT_TOKEN||s.tgToken||"",chat:String(E.TELEGRAM_CHAT_ID||s.tgChat||"").trim()}};
   async function tgSend(t,cred){
     const c=cred||await tgCreds();
@@ -314,12 +347,19 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(!lines.length||!c.name||!c.phone||!c.address||utr.length<8)return J({error:"Fill in your details and the UPI transaction ID."},400);
     const orders=await get("orders",[]);
     if(orders.some(x=>x.utr===utr))return J({error:"This transaction ID was already used."},400);
+    const cc=await checkCode(b.code,c.phone,true);
+    if(cc.err)return J({error:cc.err},400);
+    total=applyOff(total,cc.off);
+    const first=!orders.some(x=>last10(x.phone)===last10(c.phone));
     const mx=Math.max(1000,...orders.map(o=>o.no||0));
-    orders.unshift({id:"upi"+Date.now(),no:mx+1,method:"upi",ev:[{a:"placed",t:new Date().toISOString()}],lines,total,paid:false,manual:true,utr,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)});
+    const o={id:"upi"+Date.now(),no:mx+1,method:"upi",ev:[{a:"placed",t:new Date().toISOString()}],lines,total,paid:false,manual:true,utr,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)};
+    if(cc.off)o.disc={code:cc.code,off:cc.off};
+    if(first){const nc=await issueCode(c.phone);if(nc)o.next=nc}
+    orders.unshift(o);
     await db.setJSON("orders",orders.slice(0,500));
-    await notify(orderText(orders[0],"🛒 New order — UPI payment claimed. Check your bank app, then mark it paid."),true);
-    await custMail(orders[0],"received");
-    return J({ok:1});
+    await notify(orderText(o,"🛒 New order — UPI payment claimed. Check your bank app, then mark it paid.")+(cc.off?`\nDiscount code used: ${cc.code}`:""),true);
+    await custMail(o,"received");
+    return J({ok:1,next:o.next||""});
   }
   if(path==="orders/paid"){
     if(!admin())return J({error:"Wrong password"},401);
@@ -437,6 +477,16 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(!admin())return J({error:"Wrong password"},401);
     await db.setJSON("feedback",(await get("feedback",[])).filter(x=>x.t!==b.t));return J({ok:1});
   }
+  if(path==="code/check"&&req.method==="POST"){
+    const r=await checkCode(b.code,b.phone,false);
+    if(r.err)return J({error:r.err},400);
+    if(!r.off)return J({error:"Enter a valid code."},400);
+    return J({ok:1,off:r.off});
+  }
+  if(path==="codes"&&req.method==="GET"){
+    if(!admin())return J({error:"Wrong password"},401);
+    return J({codes:(await getCodes()).slice(0,300)});
+  }
   if(path==="pay/create"){
     if(!E.RAZORPAY_KEY_ID||!E.RAZORPAY_KEY_SECRET)return J({error:"Online payment isn't switched on yet."},503);
     const prods=await get("products",[]),c=b.customer||{},lines=[];let total=0;
@@ -446,6 +496,9 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       lines.push(`${p.n} (${cut(i.size,20)}) x${q}`);total+=p.p*q;
     }
     if(!lines.length||!c.name||!c.phone||!c.address)return J({error:"Fill in your details."},400);
+    const cc=await checkCode(b.code,c.phone,false);
+    if(cc.err)return J({error:cc.err},400);
+    total=applyOff(total,cc.off);
     const r=await fetch("https://api.razorpay.com/v1/orders",{method:"POST",
       headers:{"content-type":"application/json",authorization:"Basic "+Buffer.from(E.RAZORPAY_KEY_ID+":"+E.RAZORPAY_KEY_SECRET).toString("base64")},
       body:JSON.stringify({amount:Math.round(total*100),currency:"INR",receipt:"cr"+Date.now()})});
@@ -453,7 +506,9 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(!r.ok)return J({error:"Could not start payment. Try again."},502);
     const orders=await get("orders",[]);
     const mx=Math.max(1000,...orders.map(x=>x.no||0));
-    orders.unshift({id:o.id,no:mx+1,method:"online",ev:[{a:"placed",t:new Date().toISOString()}],lines,total,paid:false,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)});
+    const ord={id:o.id,no:mx+1,method:"online",ev:[{a:"placed",t:new Date().toISOString()}],lines,total,paid:false,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)};
+    if(cc.off){ord.code=cc.code;ord.disc={code:cc.code,off:cc.off}}
+    orders.unshift(ord);
     await db.setJSON("orders",orders.slice(0,500));
     return J({order:o.id,amount:o.amount,key:E.RAZORPAY_KEY_ID});
   }
@@ -461,9 +516,16 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const sig=crypto.createHmac("sha256",E.RAZORPAY_KEY_SECRET||"").update(b.order_id+"|"+b.payment_id).digest("hex");
     if(sig!==b.signature)return J({error:"Payment could not be verified."},400);
     const orders=await get("orders",[]),o=orders.find(x=>x.id===b.order_id);
-    if(o&&!o.paid){o.paid=true;o.pay=cut(b.payment_id,40);(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});await db.setJSON("orders",orders);
-      await notify(orderText(o,"✅ PAID order — ready to ship"),true);
-      await custMail(o,"paid");}
+    if(o&&!o.paid){
+      o.paid=true;o.pay=cut(b.payment_id,40);(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});
+      if(o.code)await checkCode(o.code,o.phone,true);
+      const first=!orders.some(x=>x.id!==o.id&&x.paid&&last10(x.phone)===last10(o.phone));
+      if(first){const nc=await issueCode(o.phone);if(nc)o.next=nc}
+      await db.setJSON("orders",orders);
+      await notify(orderText(o,"✅ PAID order — ready to ship")+(o.disc?`\nDiscount code used: ${o.disc.code}`:""),true);
+      await custMail(o,"paid");
+      return J({ok:1,next:o.next||""});
+    }
     return J({ok:1});
   }
   if(path==="chat"&&req.method==="POST"){

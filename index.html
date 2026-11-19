@@ -330,7 +330,7 @@ $("fIg").href=$("cIg").href=$("aIg").href="https://ig.me/m/"+IG;
 document.querySelectorAll(".ig-t").forEach(e=>e.textContent="@"+IG);document.querySelectorAll(".mail-t").forEach(e=>e.textContent=MAIL);
 $("host").textContent=location.host||"crossroadsshoppings.in";$("yr").textContent=new Date().getFullYear();
 
-let P=[],cat="All",cart=[],cur=null,size=null,Q="",SO="n",ST={upi:"",name:"",qr:"",online:false},wasAdmin=false,loading=true;
+let P=[],cat="All",cart=[],cur=null,size=null,Q="",SO="n",ST={upi:"",name:"",qr:"",online:false},DISC={code:"",off:0},wasAdmin=false,loading=true;
 try{cart=JSON.parse(localStorage.getItem("cr_cart")||"[]")}catch(e){}
 const save=()=>{try{localStorage.setItem("cr_cart",JSON.stringify(cart))}catch(e){}};
 const imgs=p=>p.images&&p.images.length?p.images:(p.imgs&&p.imgs.length?p.imgs:(p.img?[p.img]:[]));
@@ -395,7 +395,7 @@ $("product").onclick=e=>{
  const c=e.target.closest(".card");if(c){location.hash="#p/"+c.dataset.id;return}
  const n=e.target.closest("[data-nav]");if(n){e.preventDefault();cat=n.dataset.nav||"All";history.pushState(null,"",location.pathname);route()}};
 
-const total=()=>cart.reduce((a,i)=>a+i.p*i.q,0);
+const total=()=>cart.reduce((a,i)=>a+i.p*i.q,0);const payable=()=>Math.max(1,total()-(DISC.off||0));
 function render(){const c=cart.reduce((a,i)=>a+i.q,0);$("cnt").textContent=c;$("cnt").hidden=!c;
  if($("sumc"))$("sumc").innerHTML=sumHTML();
  if(!cart.length){$("items").innerHTML=`<div class="cempty">Your bag is empty.<br>Add a product to get started.</div>`;$("co").innerHTML="";return}
@@ -411,8 +411,8 @@ $("bCart").onclick=openCart;$("cx").onclick=closeCart;$("ov").onclick=closeCart;
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeCart()});
 
 function loadRzp(){return new Promise((ok,no)=>{if(window.Razorpay)return ok();const s=document.createElement("script");s.src="https://checkout.razorpay.com/v1/checkout.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
-function sumHTML(){return cart.map(i=>{const p=P.find(x=>x.id===i.id),m=p?imgs(p):[];return `<div class="sr"><div class="t0">${m[0]?`<img src="${m[0]}" alt="">`:""}</div><div><b>${esc(i.n)}</b><small>Size: ${esc(i.s)} · Qty: ${i.q}</small></div><b>${money(i.p*i.q)}</b></div>`}).join("")+`<div class="total" style="padding:14px 0 0"><span>Total</span><span>${money(total())}</span></div>`}
-function upiHTML(){const amt=total(),link="upi://pay?pa="+encodeURIComponent(ST.upi)+"&pn="+encodeURIComponent(ST.name||"Crossroads")+"&am="+amt+"&cu=INR&tn="+encodeURIComponent("Crossroads order");
+function sumHTML(){return cart.map(i=>{const p=P.find(x=>x.id===i.id),m=p?imgs(p):[];return `<div class="sr"><div class="t0">${m[0]?`<img src="${m[0]}" alt="">`:""}</div><div><b>${esc(i.n)}</b><small>Size: ${esc(i.s)} · Qty: ${i.q}</small></div><b>${money(i.p*i.q)}</b></div>`}).join("")+`<div class="total" style="padding:14px 0 0"><span>Total${DISC.off?' <small class="ok" style="font-size:.8rem;font-weight:600">code applied</small>':""}</span><span>${money(payable())}</span></div>`}
+function upiHTML(){const amt=payable(),link="upi://pay?pa="+encodeURIComponent(ST.upi)+"&pn="+encodeURIComponent(ST.name||"Crossroads")+"&am="+amt+"&cu=INR&tn="+encodeURIComponent("Crossroads order");
  return `<div class="upi">${ST.qr?`<img src="${ST.qr}" alt="UPI QR code">`:""}<p>UPI ID: <b>${esc(ST.upi)}</b></p><a class="btn alt" href="${link}">Open my UPI app</a><p class="sub">Pay exactly ${money(amt)}, then enter the UPI transaction ID (UTR) shown in your payment app.</p><label>UPI transaction ID<input id="ut" inputmode="numeric" autocomplete="off"></label></div>`}
 function renderCheckout(){const el=$("checkout");
  if(!cart.length){el.innerHTML=`<div class="wrap narrow"><h1>Your bag is empty</h1><p>Add something you like, then come back to check out.</p><p style="margin-top:16px"><a class="btn" href="./" data-nav="" style="max-width:240px">Continue shopping</a></p></div>`;return}
@@ -425,29 +425,33 @@ function renderCheckout(){const el=$("checkout");
  ${ST.online?`<label class="pmo"><input type="radio" name="pm" value="online" ${first==="online"?"checked":""}><span>Pay online<small>Cards, UPI and net banking</small></span></label>`:""}
  ${ST.upi?`<label class="pmo"><input type="radio" name="pm" value="upi" ${first==="upi"?"checked":""}><span>Pay by UPI QR<small>Scan, pay, then enter your transaction ID</small></span></label>`:""}
  ${!first?'<div class="err">Payment is not available yet. Message us on Instagram to order.</div>':""}
+ <h2 class="fh" style="margin-top:10px">Discount code</h2><div style="display:flex;gap:8px"><input id="dc" placeholder="Enter your code" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase"><button class="btn alt sm" id="dcb" type="button" style="flex:none;white-space:nowrap">Apply</button></div><div class="err" id="dcm"></div>
  <div id="upip" ${first==="upi"?"":"hidden"}></div><div class="err" id="fr" role="alert"></div>
  ${first?`<button class="btn" id="pay" type="submit">${first==="upi"?"I have paid, place order":"Pay securely"}</button>`:""}</form>
  <div class="sum cardx"><h2 class="fh">Order summary</h2><div id="sumc">${sumHTML()}</div></div></div></div>`;
  if(first==="upi")$("upip").innerHTML=upiHTML();
+ $("dcb").onclick=async()=>{const code=$("dc").value.trim().toUpperCase(),ph=$("fp").value.replace(/\D/g,""),m=$("dcm");if(!code){m.className="err";m.textContent="Type your code first.";return}if(ph.length<10){m.className="err";m.textContent="Enter your phone number above first.";return}m.className="";m.textContent="Checking…";const r=await post("code/check",{code,phone:ph}).catch(()=>({ok:false,d:{}}));if(r.ok){DISC={code,off:+r.d.off||0};m.className="ok";m.textContent="Code applied.";$("sumc").innerHTML=sumHTML();if(!$("upip").hidden)$("upip").innerHTML=upiHTML()}else{m.className="err";m.textContent=r.d.error||"That code did not work."}};
  $("f").onsubmit=e=>{e.preventDefault();place()};
  $("f").onchange=e=>{if(e.target.name==="pm"){const u=e.target.value==="upi";$("upip").hidden=!u;if(u)$("upip").innerHTML=upiHTML();$("pay").textContent=u?"I have paid, place order":"Pay securely"}}}
 $("checkout").onclick=e=>{const n=e.target.closest("[data-nav]");if(n){e.preventDefault();cat=n.dataset.nav||"All";history.pushState(null,"",location.pathname);route()}};
 function cust(){const n=$("fn").value.trim(),ph=$("fp").value.replace(/\D/g,""),em=$("fe").value.trim(),ad=$("fa").value.trim();
  if(!n||ph.length<10||ad.length<10){$("fr").textContent="Enter your name, a 10-digit phone number and your full address.";return null}
  $("fr").textContent="";return{n,ph,em,ad}}
-function done(a,b,amt){EC.o++;OV+=+amt||0;AC.push({a:"order",n:money(+amt||0)});jstore();sync();cart=[];save();render();$("checkout").innerHTML=`<div class="wrap narrow" style="text-align:center;padding:50px 0"><h1 class="ok">${a}</h1><p>${b}</p><p style="margin-top:22px"><a class="btn" href="./" data-nav="" style="max-width:240px;margin:0 auto">Continue shopping</a></p></div>`;scrollTo(0,0)}
-async function place(){const d=cust();if(!d)return;const tot=total();const r=document.querySelector("input[name=pm]:checked"),er=$("fr");if(!r){er.textContent="Choose a payment method.";return}
- const items=cart.map(i=>({id:i.id,size:i.s,q:i.q})),customer={name:d.n,phone:d.ph,email:d.em,address:d.ad};ev("buy","Pay "+money(total()));$("pay").disabled=true;
+function done(a,b,amt,next){EC.o++;OV+=+amt||0;AC.push({a:"order",n:money(+amt||0)});jstore();sync();cart=[];DISC={code:"",off:0};save();render();
+ const nb=next?`<div class="cardx" style="max-width:460px;margin:26px auto 0;text-align:center"><p class="muted" style="font-size:.85rem;margin:0 0 6px">Your code for the next order</p><b style="font-size:1.4rem;letter-spacing:.09em;display:block">${esc(next)}</b><p class="muted" style="font-size:.82rem;margin-top:8px">Use it at checkout next time. It works with this phone number only.</p></div>`:"";
+ $("checkout").innerHTML=`<div class="wrap narrow" style="text-align:center;padding:50px 0"><h1 class="ok">${a}</h1><p>${b}</p>${nb}<p style="margin-top:22px"><a class="btn" href="./" data-nav="" style="max-width:240px;margin:0 auto">Continue shopping</a></p></div>`;scrollTo(0,0)}
+async function place(){const d=cust();if(!d)return;const tot=payable();const r=document.querySelector("input[name=pm]:checked"),er=$("fr");if(!r){er.textContent="Choose a payment method.";return}
+ const items=cart.map(i=>({id:i.id,size:i.s,q:i.q})),customer={name:d.n,phone:d.ph,email:d.em,address:d.ad},code=DISC.code||"";ev("buy","Pay "+money(payable()));$("pay").disabled=true;
  if(r.value==="upi"){const ut=$("ut").value.trim();if(ut.replace(/\W/g,"").length<8){er.textContent="Enter the UPI transaction ID from your payment app.";$("pay").disabled=false;return}
-  const x=await post("order/manual",{items,customer,utr:ut}).catch(()=>({ok:false,d:{}}));
-  if(x.ok)done("Order received. Thank you!","We will check your payment and contact you to confirm delivery.",tot);else{er.textContent=x.d.error||"Something went wrong. Try again.";$("pay").disabled=false}return}
- try{const x=await post("pay/create",{items,customer});
+  const x=await post("order/manual",{items,customer,utr:ut,code}).catch(()=>({ok:false,d:{}}));
+  if(x.ok)done("Order received. Thank you!","We will check your payment and contact you to confirm delivery.",tot,x.d.next);else{er.textContent=x.d.error||"Something went wrong. Try again.";$("pay").disabled=false}return}
+ try{const x=await post("pay/create",{items,customer,code});
   if(!x.ok){er.textContent=x.d.error||"Something went wrong. Try again.";$("pay").disabled=false;return}
   await loadRzp();
   new Razorpay({key:x.d.key,amount:x.d.amount,currency:"INR",order_id:x.d.order,name:"Crossroads Shopping",prefill:{name:d.n,contact:d.ph,email:d.em},theme:{color:"#2548E6"},
    modal:{ondismiss:()=>{$("pay").disabled=false}},
    handler:async y=>{const v=await post("pay/verify",{order_id:y.razorpay_order_id,payment_id:y.razorpay_payment_id,signature:y.razorpay_signature});
-    if(v.ok)done("Payment received. Thank you!","We will contact you soon to confirm your delivery.",tot);
+    if(v.ok)done("Payment received. Thank you!","We will contact you soon to confirm your delivery.",tot,v.d.next);
     else{er.textContent="Payment went through but could not be confirmed. Message us on Instagram with your payment ID: "+y.razorpay_payment_id;$("pay").disabled=false}}}).open()
  }catch(e){er.textContent="Could not open payment. Check your connection and try again.";$("pay").disabled=false}}
 
@@ -484,7 +488,7 @@ async function hero3d(){const c=$("c3d");if(!c)return;
 /* ---------- Owner admin: open yourwebsite/#admin (code loads from /admin.js only when needed) ---------- */
 async function adm(){const A=$("admin");
  if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
-  try{await new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=6";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
+  try{await new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=7";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
   catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
  window.CRAdmin.open(A)}
 
