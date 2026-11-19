@@ -502,9 +502,10 @@ addEventListener("hashchange",route);addEventListener("popstate",route);
  if(view()==="admin"){await route();return}
  try{const c=JSON.parse(localStorage.getItem("cr_pc")||"[]");if(Array.isArray(c)&&c.length){P=c;loading=false}}catch(e){}
  render();const first=route();
- const st=fetch("/api/settings").then(r=>r.json()).then(x=>{ST=x}).catch(()=>{});
+ let stOk=false;
+ const st=fetch("/api/settings").then(r=>r.json()).then(x=>{ST=x;stOk=true}).catch(()=>{});
  const ch=await loadP();await st;const was=loading;loading=false;
- if(view()!=="admin"&&(ch||was)){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout()}
+ if(view()!=="admin"&&(ch||was||stOk)){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout()}
  await first;if(view()!=="admin"){ev("open","",1);sync()}})();
 window.CRShop={get products(){return P},get cart(){return cart}};
 </script>
