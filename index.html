@@ -90,6 +90,7 @@ dialog[open]{animation:pop .25s ease}
 .act{display:grid;gap:10px}
 .tr{list-style:none;padding:0;color:var(--mut);font-size:.88rem;display:grid;gap:4px}
 .tr li:before{content:"✓";color:var(--acc);margin-right:8px;font-weight:700}
+.pl{margin:0 0 0 20px;color:var(--mut);display:grid;gap:6px;font-size:.95rem}
 .ov{position:fixed;inset:0;background:rgba(8,10,28,.55);z-index:30;opacity:0;pointer-events:none;transition:opacity .25s}.ov.on{opacity:1;pointer-events:auto}
 aside{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--card);z-index:31;transform:translateX(100%);transition:transform .3s ease;overflow-y:auto;box-shadow:var(--sh)}
 aside.on{transform:none}
@@ -214,7 +215,7 @@ details{border-top:1px solid var(--line);padding:14px 0}details:last-of-type{bor
 </style>
 </head>
 <body>
-<div class="ann" id="ann">Delivered to your door<span class="hm"> &nbsp;·&nbsp; Pay by UPI &nbsp;·&nbsp; Questions? Message us on Instagram</span></div>
+<div class="ann" id="ann">Free shipping across India<span class="hm"> &nbsp;·&nbsp; Delivered in about 5 days &nbsp;·&nbsp; Pay by UPI or online</span></div>
 <header id="hd">
 <div class="wrap hr">
 <a class="logo" href="./" id="logo">Crossroads<span>Shopping</span></a>
@@ -243,7 +244,7 @@ details{border-top:1px solid var(--line);padding:14px 0}details:last-of-type{bor
 <h2>What you can shop</h2>
 <p>Use the menu at the top of every page to browse each category, like Fashion, Trending and Shoes. New items are added regularly.</p>
 <h2>How ordering works</h2>
-<ol class="stp"><li><b>Pick your product.</b> Choose your size and add it to your bag.</li><li><b>Pay securely.</b> Pay by UPI or online payment and enter your delivery address.</li><li><b>We confirm and ship.</b> We check your order and send it to your door. Message us any time if you need help.</li></ol>
+<ol class="stp"><li><b>Pick your product.</b> Choose your size and add it to your bag.</li><li><b>Pay securely.</b> Pay by UPI or online payment and enter your delivery address.</li><li><b>We confirm and ship.</b> We check your order and dispatch it within 24 hours. Delivery takes about 5 days, and never more than 2 weeks. Message us any time if you need help.</li></ol>
 <h2>Website details</h2>
 <div class="cardx"><table class="info">
 <tr><th>Store name</th><td>Crossroads Shopping</td></tr>
@@ -251,6 +252,8 @@ details{border-top:1px solid var(--line);padding:14px 0}details:last-of-type{bor
 <tr><th>Instagram</th><td><a id="aIg" target="_blank" rel="noopener" class="ig-t"></a></td></tr>
 <tr><th>Email</th><td><a id="aMail" class="mail-t"></a></td></tr>
 <tr><th>Payments</th><td>UPI and online payment</td></tr>
+<tr><th>Shipping</th><td>Free, across India</td></tr>
+<tr><th>Delivery time</th><td>About 5 days, and never more than 2 weeks</td></tr>
 <tr><th>Customer support</th><td>Instagram message, email, or the message form on the Contact page</td></tr>
 </table></div>
 <div class="cta"><a class="btn" href="./" id="goShop">Browse products</a><a class="btn alt" href="#contact">Contact us</a></div>
@@ -274,6 +277,95 @@ details{border-top:1px solid var(--line);padding:14px 0}details:last-of-type{bor
 </form>
 </div></section>
 
+<section class="pg" id="delivery" hidden><div class="wrap narrow">
+<h1>Delivery</h1>
+<p class="lead">Free shipping across India, delivered in about 5 days.</p>
+
+<div class="cardx" style="padding:20px;margin-bottom:20px">
+<h2 style="margin-top:0">Your delivery timeline</h2>
+<ol class="stp">
+<li><b>You place the order.</b> Pay by UPI QR or online payment at checkout.</li>
+<li><b>We confirm it the same day.</b> We check your items and the address you gave us.</li>
+<li><b>Dispatched within 24 hours.</b> Monday to Saturday, excluding public holidays.</li>
+<li><b>Delivered in about 5 days.</b> Usually sooner. The maximum for any pin code in India is 2 weeks.</li>
+</ol>
+</div>
+
+<h2>Good to know</h2>
+<ul class="pl">
+<li>Shipping is free. The price you see at checkout is the final price.</li>
+<li>We deliver to serviceable pin codes across India. Very remote areas can take closer to the 2-week limit.</li>
+<li>Sale weeks, festivals and bad weather can add a few days. If your order is affected, we message you.</li>
+<li>We do not offer cash on delivery. Orders are dispatched after payment is confirmed.</li>
+<li>Please double-check your phone number and full address with pin code before placing the order.</li>
+</ul>
+
+<h2>Tracking your order</h2>
+<p>We do not use a public tracking page yet. When your order is dispatched we update it in our system and send you a confirmation. To ask where your parcel is, message us on Instagram <a class="ig-t" target="_blank" rel="noopener"></a> or email <a class="mail-t"></a> with your order number. We reply the same day in most cases.</p>
+
+<h2>If your parcel is late</h2>
+<p>Most parcels arrive in about 5 days. If yours has not arrived within 2 weeks of dispatch, message us with your order number and we will trace it and sort it out. You will never be asked to wait without an answer.</p>
+
+<h2>Wrong or incomplete address</h2>
+<p>If you notice a mistake after ordering, contact us straight away. If the parcel has not been dispatched, we can usually correct the address. If it has already gone out, we will help you arrange redelivery where the courier allows it.</p>
+
+<h2>Store details</h2>
+<div class="cardx"><table class="info">
+<tr><th>Store name</th><td>Crossroads Shopping</td></tr>
+<tr><th>Website</th><td class="host-t"></td></tr>
+<tr><th>Instagram</th><td><a class="ig-t" target="_blank" rel="noopener"></a></td></tr>
+<tr><th>Email</th><td><a class="mail-t"></a></td></tr>
+<tr><th>Shipping</th><td>Free, across India</td></tr>
+<tr><th>Delivery time</th><td>About 5 days, and never more than 2 weeks</td></tr>
+<tr><th>Support hours</th><td>9 AM to 9 PM IST, every day</td></tr>
+</table></div>
+<div class="cta"><a class="btn" href="./" id="dGoShop">Browse products</a><a class="btn alt" href="#contact">Contact us</a></div>
+</div></section>
+
+<section class="pg" id="policy" hidden><div class="wrap narrow">
+<h1>Store policy</h1>
+<p class="lead">Clear, simple terms for shopping with Crossroads Shopping.</p>
+<p class="muted" style="margin-top:-8px">Last updated 19 November 2026</p>
+
+<h2>Orders and payment</h2>
+<p>You can pay by UPI QR or by online payment at checkout. We do not offer cash on delivery. An order is confirmed once we can see your payment, and we begin packing it the same day. Prices are in Indian Rupees and include everything: there are no hidden charges.</p>
+
+<h2>Pricing and shipping</h2>
+<p>Shipping is free on every order. The total shown at checkout is the amount you pay. If a price looks wrong on the site, message us before paying and we will correct it.</p>
+
+<h2>Delivery time</h2>
+<p>Orders are dispatched within 24 hours on working days and delivered in about 5 days. The maximum for any pin code in India is 2 weeks. Remote areas, sale weeks, festivals and bad weather can push an order towards that limit. See the <a href="#delivery">Delivery page</a> for the full timeline.</p>
+
+<h2>Returns, exchanges and damaged items</h2>
+<ul class="pl">
+<li>Check your parcel as soon as it arrives.</li>
+<li>If an item is damaged, missing, or not what you ordered, message us within 48 hours with a photo or short video of the item and the parcel. We will replace it, exchange it, or refund it.</li>
+<li>To exchange for a different size, contact us within 48 hours. Exchanges depend on available stock, and the item must be unused, unwashed and have its original tags.</li>
+<li>Please contact us before sending anything back. Returns sent without a message cannot be traced to your order.</li>
+<li>For hygiene reasons we cannot accept returns on innerwear, cosmetics, or pierced jewellery unless the item arrived damaged or faulty.</li>
+</ul>
+
+<h2>Cancellations and refunds</h2>
+<p>You can cancel an order any time before it is dispatched. Message us with your order number and we will cancel it and refund you. Once an order has been dispatched it cannot be cancelled, but our damaged or wrong item policy still applies. Approved refunds go back to the original payment method, usually within 3 to 7 working days.</p>
+
+<h2>Product details</h2>
+<p>We describe every product as accurately as we can. Sizes follow the size chart on the product page. Colours can look slightly different from one screen to another. If you are unsure about a size or fit, message us before ordering and we will help you choose.</p>
+
+<h2>Privacy</h2>
+<p>We use your name, phone number, email and address only to process and deliver your order and to answer your messages. We do not sell your details. Payment information is handled by our payment provider; we never see or store your card or UPI PIN.</p>
+
+<h2>Contact us</h2>
+<p>For anything about an order, a return or a product, reach us here. Please include your order number so we can help faster.</p>
+<div class="cardx"><table class="info">
+<tr><th>Store name</th><td>Crossroads Shopping</td></tr>
+<tr><th>Instagram</th><td><a class="ig-t" target="_blank" rel="noopener"></a></td></tr>
+<tr><th>Email</th><td><a class="mail-t"></a></td></tr>
+<tr><th>Website</th><td class="host-t"></td></tr>
+<tr><th>Support hours</th><td>9 AM to 9 PM IST, every day</td></tr>
+</table></div>
+<div class="cta"><a class="btn" href="./" id="pGoShop">Browse products</a><a class="btn alt" href="#contact">Contact us</a></div>
+</div></section>
+
 <section class="pg" id="product" hidden></section>
 <section class="pg" id="checkout" hidden></section>
 
@@ -282,7 +374,7 @@ details{border-top:1px solid var(--line);padding:14px 0}details:last-of-type{bor
 <footer id="foot"><div class="wrap">
 <div class="fg">
 <div><div class="lg">Crossroads Shopping</div><p>Your next favourite find is here.</p></div>
-<div><h4>Explore</h4><a href="./" id="fHome">Shop</a><a href="#about">About us</a><a href="#contact">Contact</a></div>
+<div><h4>Explore</h4><a href="./" id="fHome">Shop</a><a href="#about">About us</a><a href="#delivery">Delivery</a><a href="#policy">Store policy</a><a href="#contact">Contact</a></div>
 <div><h4>Get in touch</h4><a id="fIg" target="_blank" rel="noopener" class="ig-t"></a><a id="fMail" class="mail-t"></a></div>
 </div>
 <small>© <span id="yr"></span> Crossroads Shopping. All rights reserved.</small>
@@ -316,7 +408,7 @@ try{VID=localStorage.getItem("cr_vid")||"";if(!VID){VID=Math.random().toString(3
 const jstore=()=>{try{sessionStorage.setItem("cr_j",JSON.stringify({JR:JR.slice(-40),AC:AC.slice(-30),EC,OV}))}catch(e){}};
 let jt=null;function jp(n){if(!n||(JR.length&&JR[JR.length-1].p===n))return;JR.push({p:n,t:Math.round((Date.now()-T0)/1000)});jstore();clearTimeout(jt);jt=setTimeout(()=>sync(),1500)}
 function pageName(){const v=view();if(v==="product"){const p=P.find(x=>String(x.id)===location.hash.slice(3));return"Product: "+(p?String(p.n).slice(0,50):"item")}
- return v==="shop"?(cat==="All"?"Home":"Category: "+cat):v==="about"?"About":v==="contact"?"Contact":v==="checkout"?"Checkout":""}
+ return v==="shop"?(cat==="All"?"Home":"Category: "+cat):v==="about"?"About":v==="contact"?"Contact":v==="policy"?"Policy":v==="delivery"?"Delivery":v==="checkout"?"Checkout":""}
 function sync(final){if(own()||!VID||!SID||location.hash.startsWith("#admin"))return;
  const body=JSON.stringify({vid:VID,sid:SID,t0:T0,nv:NV,ref:document.referrer,utm:new URLSearchParams(location.search).get("utm_source")||"",w:innerWidth,pages:JR.slice(-40),acts:AC.slice(-30),ev:EC,ov:OV,dur:Math.round((Date.now()-T0)/1000)});
  try{fetch("/api/track",{method:"POST",headers:{"content-type":"application/json"},body,keepalive:true}).catch(()=>{})}catch(e){}if(final)try{navigator.sendBeacon&&navigator.sendBeacon("/api/track",new Blob([body],{type:"application/json"}))}catch(e){}}
@@ -327,14 +419,16 @@ $("bTheme").onclick=()=>{const t=document.documentElement.getAttribute("data-the
 $("heroCta").onclick=()=>$("grid").scrollIntoView({behavior:"smooth",block:"start"});
 $("fIg").href=$("cIg").href=$("aIg").href="https://ig.me/m/"+IG;
 ["fMail","cMail","aMail"].forEach(i=>$(i).href="mailto:"+MAIL);
+document.querySelectorAll("a.ig-t").forEach(e=>e.href="https://ig.me/m/"+IG);
+document.querySelectorAll("a.mail-t").forEach(e=>e.href="mailto:"+MAIL);
 document.querySelectorAll(".ig-t").forEach(e=>e.textContent="@"+IG);document.querySelectorAll(".mail-t").forEach(e=>e.textContent=MAIL);
-$("host").textContent=location.host||"crossroadsshoppings.in";$("yr").textContent=new Date().getFullYear();
+$("host").textContent=location.host||"crossroadsshoppings.in";document.querySelectorAll(".host-t").forEach(e=>e.textContent=location.host||"crossroadsshoppings.in");$("yr").textContent=new Date().getFullYear();
 
 let P=[],cat="All",cart=[],cur=null,size=null,Q="",SO="n",ST={upi:"",name:"",qr:"",online:false},ST_READY=false,DISC={code:"",off:0},wasAdmin=false,loading=true;
 try{cart=JSON.parse(localStorage.getItem("cr_cart")||"[]")}catch(e){}
 const save=()=>{try{localStorage.setItem("cr_cart",JSON.stringify(cart))}catch(e){}};
 const imgs=p=>p.images&&p.images.length?p.images:(p.imgs&&p.imgs.length?p.imgs:(p.img?[p.img]:[]));
-const view=()=>{const x=location.hash;return x==="#about"?"about":x==="#contact"?"contact":x.startsWith("#admin")?"admin":x==="#checkout"?"checkout":x.startsWith("#p/")?"product":"shop"};
+const view=()=>{const x=location.hash;return x==="#about"?"about":x==="#contact"?"contact":x==="#policy"?"policy":x==="#delivery"?"delivery":x.startsWith("#admin")?"admin":x==="#checkout"?"checkout":x.startsWith("#p/")?"product":"shop"};
 function toast(t){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.h);toast.h=setTimeout(()=>e.classList.remove("on"),1900)}
 const ph=p=>`<span class="ph" style="background:linear-gradient(135deg,hsl(${p.id%360} 25% 32%),hsl(${(p.id+40)%360} 30% 22%))">${esc((p.n||"").trim().charAt(0).toUpperCase())}</span>`;
 
@@ -345,7 +439,7 @@ async function loadP(){let ok=true;try{const r=await fetch("/api/products");P=aw
  return true}
 
 function cats(){const V=P.filter(p=>!p.hid),c=["All",...(V.some(p=>p.tr)?["Trending"]:[]),...new Set(V.map(p=>p.c).filter(Boolean))],v=view();
- $("cats").innerHTML=c.map(x=>`<button data-c="${esc(x)}" aria-current="${v==="shop"&&x===cat}">${esc(x)}</button>`).join("")+`<a href="#about" aria-current="${v==="about"?"page":"false"}">About</a><a href="#contact" aria-current="${v==="contact"?"page":"false"}">Contact</a>`}
+ $("cats").innerHTML=c.map(x=>`<button data-c="${esc(x)}" aria-current="${v==="shop"&&x===cat}">${esc(x)}</button>`).join("")+`<a href="#about" aria-current="${v==="about"?"page":"false"}">About</a><a href="#delivery" aria-current="${v==="delivery"?"page":"false"}">Delivery</a><a href="#policy" aria-current="${v==="policy"?"page":"false"}">Policy</a><a href="#contact" aria-current="${v==="contact"?"page":"false"}">Contact</a>`}
 function list(){let L=P.filter(p=>!p.hid&&(cat==="All"||(cat==="Trending"?p.tr:p.c===cat))&&(!Q||((p.n||"")+" "+(p.c||"")).toLowerCase().includes(Q)));
  if(SO==="l")L=[...L].sort((a,b)=>a.p-b.p);else if(SO==="h")L=[...L].sort((a,b)=>b.p-a.p);return L}
 function card(p,i){const m=imgs(p),dc=+p.o>p.p?Math.round((1-p.p/p.o)*100):0;
@@ -374,8 +468,8 @@ function renderProduct(id){
  <div><b>${S.length===1?"Size":"Select size"}</b><div class="sizes" id="sz">${S.map(s=>`<button type="button" data-s="${esc(s)}" aria-pressed="${s===size}">${esc(s)}</button>`).join("")}</div></div>
  <div><b>Quantity</b><div class="qty"><button type="button" data-q="-1" aria-label="Less">−</button><b id="qv">1</b><button type="button" data-q="1" aria-label="More">+</button></div></div>
  <div class="acts">${btns}</div>
- <ul class="tr"><li>Pay by UPI or online payment</li><li>Delivered to your door</li><li>Questions? Message us on Instagram</li></ul>
- <details><summary>Delivery and payment</summary><p>Pay by UPI or online payment at checkout. We confirm your order and send it to your door.</p></details>
+ <ul class="tr"><li>Free delivery across India</li><li>Delivered in about 5 days</li><li>Questions? Message us on Instagram</li></ul>
+ <details><summary>Delivery and payment</summary><p>Shipping is free. Pay by UPI or online payment at checkout. We confirm your order the same day, dispatch within 24 hours, and deliver in about 5 days — never more than 2 weeks. <a href="#delivery">See delivery details</a>.</p></details>
  <details><summary>Need help?</summary><p>Message us on <a href="https://ig.me/m/${IG}" target="_blank" rel="noopener">Instagram</a> or email <a href="mailto:${MAIL}">${MAIL}</a>.</p></details></div></div>
  ${rel.length?`<h2 class="rh">You may also like</h2><div class="grid" id="rel">${rel.map(card).join("")}</div>`:""}</div><div class="pbar">${btns}</div>`;
  reveal();startAuto(2500);
@@ -425,6 +519,7 @@ function renderCheckout(){const el=$("checkout");
  ${ST.online?`<label class="pmo"><input type="radio" name="pm" value="online" ${first==="online"?"checked":""}><span>Pay online<small>Cards, UPI and net banking</small></span></label>`:""}
  ${ST.upi?`<label class="pmo"><input type="radio" name="pm" value="upi" ${first==="upi"?"checked":""}><span>Pay by UPI QR<small>Scan, pay, then enter your transaction ID</small></span></label>`:""}
  ${!first?(ST_READY?'<div class="err">Payment is not available yet. Message us on Instagram to order.</div>':'<div class="muted">Loading payment options…</div>'):""}
+ <p class="muted" style="font-size:.88rem;margin-top:6px">Shipping is free. Orders are dispatched within 24 hours and delivered in about 5 days — never more than 2 weeks. <a href="#delivery">Delivery details</a>.</p>
  <h2 class="fh" style="margin-top:10px">Discount code</h2><div style="display:flex;gap:8px"><input id="dc" placeholder="Enter your code" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase"><button class="btn alt sm" id="dcb" type="button" style="flex:none;white-space:nowrap">Apply</button></div><div class="err" id="dcm"></div>
  <div id="upip" ${first==="upi"?"":"hidden"}></div><div class="err" id="fr" role="alert"></div>
  ${first?`<button class="btn" id="pay" type="submit">${first==="upi"?"I have paid, place order":"Pay securely"}</button>`:""}</form>
@@ -444,14 +539,14 @@ async function place(){const d=cust();if(!d)return;const tot=payable();const r=d
  const items=cart.map(i=>({id:i.id,size:i.s,q:i.q})),customer={name:d.n,phone:d.ph,email:d.em,address:d.ad},code=DISC.code||"";ev("buy","Pay "+money(payable()));$("pay").disabled=true;
  if(r.value==="upi"){const ut=$("ut").value.trim();if(ut.replace(/\W/g,"").length<8){er.textContent="Enter the UPI transaction ID from your payment app.";$("pay").disabled=false;return}
   const x=await post("order/manual",{items,customer,utr:ut,code}).catch(()=>({ok:false,d:{}}));
-  if(x.ok)done("Order received. Thank you!","We will check your payment and contact you to confirm delivery.",tot,x.d.next);else{er.textContent=x.d.error||"Something went wrong. Try again.";$("pay").disabled=false}return}
+  if(x.ok)done("Order received. Thank you!","We will check your payment and start packing. Delivery takes about 5 days, and never more than 2 weeks.",tot,x.d.next);else{er.textContent=x.d.error||"Something went wrong. Try again.";$("pay").disabled=false}return}
  try{const x=await post("pay/create",{items,customer,code});
   if(!x.ok){er.textContent=x.d.error||"Something went wrong. Try again.";$("pay").disabled=false;return}
   await loadRzp();
   new Razorpay({key:x.d.key,amount:x.d.amount,currency:"INR",order_id:x.d.order,name:"Crossroads Shopping",prefill:{name:d.n,contact:d.ph,email:d.em},theme:{color:"#2548E6"},
    modal:{ondismiss:()=>{$("pay").disabled=false}},
    handler:async y=>{const v=await post("pay/verify",{order_id:y.razorpay_order_id,payment_id:y.razorpay_payment_id,signature:y.razorpay_signature});
-    if(v.ok)done("Payment received. Thank you!","We will contact you soon to confirm your delivery.",tot,v.d.next);
+    if(v.ok)done("Payment received. Thank you!","We are packing your order. Delivery takes about 5 days, and never more than 2 weeks.",tot,v.d.next);
     else{er.textContent="Payment went through but could not be confirmed. Message us on Instagram with your payment ID: "+y.razorpay_payment_id;$("pay").disabled=false}}}).open()
  }catch(e){er.textContent="Could not open payment. Check your connection and try again.";$("pay").disabled=false}}
 
@@ -488,11 +583,11 @@ async function hero3d(){const c=$("c3d");if(!c)return;
 /* ---------- Owner admin: open yourwebsite/#admin (code loads from /admin.js only when needed) ---------- */
 async function adm(){const A=$("admin");
  if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
-  try{await new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=8";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
+  try{await new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=9";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
   catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
  window.CRAdmin.open(A)}
 
-async function route(){stopAuto();document.title="Crossroads Shopping";const v=view();["shop","about","contact","product","checkout","admin"].forEach(k=>$(k).hidden=v!==k);$("foot").hidden=$("hd").hidden=$("ann").hidden=v==="admin";
+async function route(){stopAuto();document.title="Crossroads Shopping";const v=view();["shop","about","contact","policy","delivery","product","checkout","admin"].forEach(k=>$(k).hidden=v!==k);$("foot").hidden=$("hd").hidden=$("ann").hidden=v==="admin";
  if(v==="admin"){wasAdmin=true;await adm();return}
  if(wasAdmin){wasAdmin=false;await loadP()}
  jp(pageName());cats();if(v==="shop"){grid();maybeHero()}if(v==="product")renderProduct(location.hash.slice(3));if(v==="checkout")renderCheckout();

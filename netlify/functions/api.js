@@ -19,8 +19,8 @@ function srcOf(ref,utm,ua,host){const x=String(utm||"").toLowerCase();if(x){if(/
    Optional real AI: set AI_API_KEY (OpenAI-compatible) + AI_MODEL in Netlify
    environment variables. Without a key the rule engine below answers. */
 const STORE={ig:"crossroads_shopping",mail:"producingmj@gmail.com",
-  delivery:"Most orders are dispatched within 24 hours and reach most pin codes in 3–7 working days. Remote areas can take up to 10 days.",
-  ship:"The delivery charge, if any, is shown at checkout before you pay.",
+  delivery:"Most orders are dispatched within 24 hours and delivered in about 5 days. The maximum for any pin code is 2 weeks.",
+  ship:"Shipping is free. The price you see at checkout is the final price.",
   pay:"We accept UPI (scan the QR, then enter the UPI transaction ID from your payment app) and online payment by card, UPI or net banking. Cash on delivery is not available.",
   returns:"If an item arrives damaged or in the wrong size, message us on Instagram within 48 hours with a photo and we will sort it out.",
   hours:"We usually reply within a few hours, between 9 AM and 9 PM IST."};
@@ -160,7 +160,7 @@ ${(o.lines||[]).join("\n")}
 Total: ${inr(o.total)}
 
 ${kind==="paid"
-  ? "Payment received. We are packing your order and will send you the tracking details shortly."
+  ? "Payment received. We are packing your order and will dispatch it within 24 hours. Delivery takes about 5 days, and never more than 2 weeks."
   : "We are checking your UPI payment now. You will get another email as soon as it is confirmed."}
 ${o.next?`
 Your code for the next order: ${o.next}
@@ -244,6 +244,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(b.upi!==undefined)nxt.upi=cut(b.upi,80);
     if(b.name!==undefined)nxt.name=cut(b.name,60);
     if(b.qr!==undefined)nxt.qr=cut(b.qr,400000);
+    if(b.brand!==undefined){const x=b.brand&&typeof b.brand==="object"?b.brand:null;nxt.brand=x?{name:cut(x.name,40)||"Crossroads Shopping",tag:cut(x.tag,70),mono:cut(x.mono,3)||"CS",bg:/^#[0-9a-f]{3,8}$/i.test(x.bg||"")?x.bg:"#111318",fg:/^#[0-9a-f]{3,8}$/i.test(x.fg||"")?x.fg:"#ffffff",ac:/^#[0-9a-f]{3,8}$/i.test(x.ac||"")?x.ac:"#c9a227",shape:["rounded","circle","square"].includes(x.shape)?x.shape:"rounded"}:null;}
     if(b.waPhone!==undefined)nxt.waPhone=normPhone(b.waPhone);
     if(b.waKey!==undefined)nxt.waKey=cut(String(b.waKey).trim(),90);
     if(b.tgToken!==undefined)nxt.tgToken=cut(String(b.tgToken).trim(),120);
@@ -338,11 +339,11 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     return J({ok:1,whatsapp:!!waKey,whatsapp_ok:waOk,whatsapp_reply:wa,telegram:!!(tgTok&&tgChat),telegram_error:tg,email:!!rsKey,email_to:rsTo,email_error:em});
   }
   if(path==="order/manual"){
-    const prods=await get("products",[]),c=b.customer||{},lines=[];let total=0;
+    const prods=await get("products",[]),c=b.customer||{},lines=[],its=[];let total=0;
     for(const i of b.items||[]){
       const p=prods.find(x=>x.id===i.id),q=Math.max(1,Math.min(10,+i.q||1));
       if(!p||p.sold)return J({error:"An item in your cart is no longer available."},400);
-      lines.push(`${p.n} (${cut(i.size,20)}) x${q}`);total+=p.p*q;
+      lines.push(`${p.n} (${cut(i.size,20)}) x${q}`);its.push({n:shortN(p.n,90),s:cut(i.size,20),q,p:p.p});total+=p.p*q;
     }
     const utr=String(b.utr||"").replace(/\W/g,"").slice(0,30);
     if(!lines.length||!c.name||!c.phone||!c.address||utr.length<8)return J({error:"Fill in your details and the UPI transaction ID."},400);
@@ -354,7 +355,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     total=applyOff(total,cc.off);
     const first=!orders.some(x=>!x.cancelled&&last10(x.phone)===last10(c.phone));
     const mx=Math.max(1000,...orders.map(o=>o.no||0));
-    const o={id,no:mx+1,method:"upi",ev:[{a:"placed",t:new Date().toISOString()}],lines,total,paid:false,manual:true,utr,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)};
+    const o={id,no:mx+1,method:"upi",ev:[{a:"placed",t:new Date().toISOString()}],lines,it:its,total,paid:false,manual:true,utr,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)};
     if(cc.off)o.disc={code:cc.code,off:cc.off};
     if(first){const nc=await issueCode(c.phone);if(nc)o.next=nc}
     orders.unshift(o);
@@ -449,6 +450,20 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(!admin())return J({error:"Wrong password"},401);
     const list=Array.isArray(b.products)?b.products:[];await pack(list);await db.setJSON("products",list);return J({ok:1});
   }
+  if(path==="admin/boot"&&req.method==="GET"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const [orders,messages,products,settings,feedback,codes]=await Promise.all([get("orders",[]),get("messages",[]),get("products",[]),get("settings",{}),get("feedback",[]),get("codes",[])]);
+    let mx=Math.max(1000,...orders.map(o=>o.no||0)),ch=false;
+    [...orders].reverse().forEach(o=>{if(!o.no){o.no=++mx;ch=true}if(!o.method)o.method=o.manual?"upi":"online"});
+    if(ch)await db.setJSON("orders",orders);
+    const tgTok=E.TELEGRAM_BOT_TOKEN||settings.tgToken||"",tgChat=E.TELEGRAM_CHAT_ID||settings.tgChat||"";
+    const safe={upi:settings.upi||"",name:settings.name||"",qr:settings.qr||"",brand:settings.brand||null};
+    return J({orders,messages,products,settings:safe,feedback,codes,
+      notify:{whatsapp:!!(E.CALLMEBOT_KEY||settings.waKey),whatsapp_number:String(E.WA_NUMBER||settings.waPhone||WA).replace(/\D/g,""),
+      email:!!(E.RESEND_API_KEY||settings.rsKey),email_to:E.ALERT_EMAIL||settings.rsTo||"producingmj@gmail.com",email_saved:!!settings.rsKey,email_from:E.MAIL_FROM||settings.rsFrom||"",
+      telegram:!!(tgTok&&tgChat),telegram_saved:!!settings.tgToken,telegram_chat:tgChat,
+      ntfy:!!E.NTFY_TOPIC,discord:!!E.DISCORD_WEBHOOK,sms:!!E.FAST2SMS_KEY}});
+  }
   if(path==="admin"&&req.method==="GET"){
     if(!admin())return J({error:"Wrong password"},401);
     const orders=await get("orders",[]);let mx=Math.max(1000,...orders.map(o=>o.no||0)),ch=false;
@@ -503,11 +518,11 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
   }
   if(path==="pay/create"){
     if(!E.RAZORPAY_KEY_ID||!E.RAZORPAY_KEY_SECRET)return J({error:"Online payment isn't switched on yet."},503);
-    const prods=await get("products",[]),c=b.customer||{},lines=[];let total=0;
+    const prods=await get("products",[]),c=b.customer||{},lines=[],its=[];let total=0;
     for(const i of b.items||[]){
       const p=prods.find(x=>x.id===i.id);const q=Math.max(1,Math.min(10,+i.q||1));
       if(!p||p.sold)return J({error:"An item in your cart is no longer available."},400);
-      lines.push(`${p.n} (${cut(i.size,20)}) x${q}`);total+=p.p*q;
+      lines.push(`${p.n} (${cut(i.size,20)}) x${q}`);its.push({n:shortN(p.n,90),s:cut(i.size,20),q,p:p.p});total+=p.p*q;
     }
     if(!lines.length||!c.name||!c.phone||!c.address)return J({error:"Fill in your details."},400);
     const cc=await checkCode(b.code,c.phone,false);
@@ -520,7 +535,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(!r.ok)return J({error:"Could not start payment. Try again."},502);
     const orders=await get("orders",[]);
     const mx=Math.max(1000,...orders.map(x=>x.no||0));
-    const ord={id:o.id,no:mx+1,method:"online",ev:[{a:"placed",t:new Date().toISOString()}],lines,total,paid:false,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)};
+    const ord={id:o.id,no:mx+1,method:"online",ev:[{a:"placed",t:new Date().toISOString()}],lines,it:its,total,paid:false,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)};
     if(cc.off){ord.code=cc.code;ord.disc={code:cc.code,off:cc.off}}
     orders.unshift(ord);
     await db.setJSON("orders",orders.slice(0,500));
