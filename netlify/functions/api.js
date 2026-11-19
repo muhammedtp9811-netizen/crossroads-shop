@@ -178,11 +178,6 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
   };
   const codeNorm=v=>String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
   const getCodes=()=>get("codes",[]);
-  const liveCode=async(phone)=>{
-    const ph=last10(phone);if(ph.length<10)return null;
-    const list=await getCodes();
-    return list.find(k=>k.ph===ph&&!k.used)||null;
-  };
   async function issueCode(phone){
     const ph=last10(phone);if(ph.length<10)return "";
     const list=await getCodes(),have=list.find(k=>k.ph===ph&&!k.used);
@@ -192,14 +187,20 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     await db.setJSON("codes",list.slice(0,3000));
     return c;
   }
-  async function checkCode(raw,phone,consume){
+  async function checkCode(raw,phone,consume,ref){
     const c=codeNorm(raw);
     if(!c)return{off:0};
     const ph=last10(phone),list=await getCodes(),x=list.find(k=>codeNorm(k.c)===c);
-    if(!x||x.used)return{off:0,err:"That code has already been used."};
+    if(!x)return{off:0,err:"That code is not valid. Check the spelling."};
+    if(x.used)return{off:0,err:"That code has already been used."};
     if(x.ph!==ph)return{off:0,err:"That code belongs to a different phone number."};
-    if(consume){x.used=true;x.ut=new Date().toISOString();x.no=x.no||0;await db.setJSON("codes",list)}
+    if(consume){x.used=true;x.ut=new Date().toISOString();if(ref)x.ord=String(ref);await db.setJSON("codes",list)}
     return{off:CODE_OFF,code:x.c};
+  }
+  async function freeCode(raw){
+    const c=codeNorm(raw);if(!c)return;
+    const list=await getCodes(),x=list.find(k=>codeNorm(k.c)===c);
+    if(x&&x.used){x.used=false;delete x.ut;delete x.ord;await db.setJSON("codes",list)}
   }
   const applyOff=(total,off)=>Math.max(1,total-Math.min(off||0,total-1));
   const tgCreds=async()=>{const s=await cfg().catch(()=>({}));return{tok:E.TELEGRAM_BOT_TOKEN||s.tgToken||"",chat:String(E.TELEGRAM_CHAT_ID||s.tgChat||"").trim()}};
@@ -347,12 +348,13 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(!lines.length||!c.name||!c.phone||!c.address||utr.length<8)return J({error:"Fill in your details and the UPI transaction ID."},400);
     const orders=await get("orders",[]);
     if(orders.some(x=>x.utr===utr))return J({error:"This transaction ID was already used."},400);
-    const cc=await checkCode(b.code,c.phone,true);
+    const id="upi"+Date.now();
+    const cc=await checkCode(b.code,c.phone,true,id);
     if(cc.err)return J({error:cc.err},400);
     total=applyOff(total,cc.off);
-    const first=!orders.some(x=>last10(x.phone)===last10(c.phone));
+    const first=!orders.some(x=>!x.cancelled&&last10(x.phone)===last10(c.phone));
     const mx=Math.max(1000,...orders.map(o=>o.no||0));
-    const o={id:"upi"+Date.now(),no:mx+1,method:"upi",ev:[{a:"placed",t:new Date().toISOString()}],lines,total,paid:false,manual:true,utr,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)};
+    const o={id,no:mx+1,method:"upi",ev:[{a:"placed",t:new Date().toISOString()}],lines,total,paid:false,manual:true,utr,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)};
     if(cc.off)o.disc={code:cc.code,off:cc.off};
     if(first){const nc=await issueCode(c.phone);if(nc)o.next=nc}
     orders.unshift(o);
@@ -370,12 +372,17 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(!admin())return J({error:"Wrong password"},401);
     const orders=await get("orders",[]),o=orders.find(x=>x.id===b.id);
     if(o){let justPaid=false;for(const k of ["paid","shipped","delivered","cancelled"])if(typeof b[k]==="boolean"&&o[k]!==b[k]){o[k]=b[k];if(b[k])(o.ev=o.ev||[]).push({a:k==="cancelled"?"cancelled":k,t:new Date().toISOString()});if(k==="paid"&&b[k])justPaid=true}
-      if(b.track!==undefined)o.track=cut(b.track,120);if(b.note!==undefined)o.note=cut(b.note,500);await db.setJSON("orders",orders);if(justPaid)await custMail(o,"paid")}
+      if(b.track!==undefined)o.track=cut(b.track,120);if(b.note!==undefined)o.note=cut(b.note,500);await db.setJSON("orders",orders);
+      if(b.cancelled===true&&o.disc&&o.disc.code)await freeCode(o.disc.code);
+      if(justPaid)await custMail(o,"paid")}
     return J({ok:1});
   }
   if(path==="orders/delete"){
     if(!admin())return J({error:"Wrong password"},401);
-    await db.setJSON("orders",(await get("orders",[])).filter(x=>x.id!==b.id));return J({ok:1});
+    const all=await get("orders",[]),o=all.find(x=>x.id===b.id);
+    await db.setJSON("orders",all.filter(x=>x.id!==b.id));
+    if(o&&o.disc&&o.disc.code)await freeCode(o.disc.code);
+    return J({ok:1});
   }
   if(path==="messages/delete"){
     if(!admin())return J({error:"Wrong password"},401);
@@ -487,6 +494,11 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(!admin())return J({error:"Wrong password"},401);
     return J({codes:(await getCodes()).slice(0,300)});
   }
+  if(path==="codes/free"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    await freeCode(b.code);
+    return J({ok:1});
+  }
   if(path==="pay/create"){
     if(!E.RAZORPAY_KEY_ID||!E.RAZORPAY_KEY_SECRET)return J({error:"Online payment isn't switched on yet."},503);
     const prods=await get("products",[]),c=b.customer||{},lines=[];let total=0;
@@ -518,8 +530,8 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const orders=await get("orders",[]),o=orders.find(x=>x.id===b.order_id);
     if(o&&!o.paid){
       o.paid=true;o.pay=cut(b.payment_id,40);(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});
-      if(o.code)await checkCode(o.code,o.phone,true);
-      const first=!orders.some(x=>x.id!==o.id&&x.paid&&last10(x.phone)===last10(o.phone));
+      if(o.code)await checkCode(o.code,o.phone,true,o.id);
+      const first=!orders.some(x=>x.id!==o.id&&x.paid&&!x.cancelled&&last10(x.phone)===last10(o.phone));
       if(first){const nc=await issueCode(o.phone);if(nc)o.next=nc}
       await db.setJSON("orders",orders);
       await notify(orderText(o,"✅ PAID order — ready to ship")+(o.disc?`\nDiscount code used: ${o.disc.code}`:""),true);

@@ -10,7 +10,7 @@ const imgs=p=>p.images&&p.images.length?p.images:(p.imgs&&p.imgs.length?p.imgs:(
 let PW=sessionStorage.getItem("cr_pw")||"",root=null,draft=[];
 const H=()=>({"x-admin":PW,"content-type":"application/json"});
 async function api(p,b){const o=b===undefined?{headers:H()}:{method:"POST",headers:H(),body:JSON.stringify(b)};try{const r=await fetch("/api/"+p,o);let d={};try{d=await r.json()}catch(e){}return{ok:r.ok,s:r.status,d}}catch(e){return{ok:false,s:0,d:{error:"No connection"}}}}
-const S={orders:[],messages:[],products:[],feedback:[],settings:{},notify:{},known:new Set(),seen:new Set(),range:7,of:"all",oq:"",pq:"",pf:"all",vf:"all",poll:null};
+const S={orders:[],messages:[],products:[],feedback:[],codes:[],settings:{},notify:{},known:new Set(),seen:new Set(),range:7,of:"all",oq:"",pq:"",pf:"all",vf:"all",poll:null};
 try{S.seen=new Set(JSON.parse(localStorage.getItem("cr_seen")||"[]"))}catch(e){}
 const say=m=>{if(window.toast)window.toast(m);else alert(m)};
 const ic=d=>`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
@@ -68,10 +68,11 @@ function shell(){root.innerHTML=`<div class="ad"><nav class="ads" id="ads"><div 
  $("adc").onclick=onClick;$("adc").oninput=onInput;$("adc").onchange=onChange;$("adc").onsubmit=onSubmit}
 
 /* ---------- data ---------- */
-async function loadAll(){const[a,p,s,n,f]=await Promise.all([api("admin"),api("products"),fetch("/api/settings").then(r=>r.json()).catch(()=>({})),api("notify"),api("feedback")]);
+async function loadAll(){const[a,p,s,n,f,c]=await Promise.all([api("admin"),api("products"),fetch("/api/settings").then(r=>r.json()).catch(()=>({})),api("notify"),api("feedback"),api("codes")]);
  if(a.s===401){PW="";sessionStorage.removeItem("cr_pw");return false}
  if(a.ok){S.orders=a.d.orders||[];S.messages=a.d.messages||[];S.known=new Set(S.orders.map(o=>o.id))}
  if(f.ok&&f.d&&Array.isArray(f.d.feedback))S.feedback=f.d.feedback;
+ if(c&&c.ok&&c.d&&Array.isArray(c.d.codes))S.codes=c.d.codes;
  if(p.ok&&Array.isArray(p.d))S.products=p.d;S.settings=s||{};if(n.ok)S.notify=n.d;badge();return true}
 function startPoll(){if(S.poll)return;S.poll=setInterval(async()=>{if(!location.hash.startsWith("#admin")||document.hidden||!PW)return;const a=await api("admin");if(!a.ok)return;
  const nw=(a.d.orders||[]).filter(o=>!S.known.has(o.id));S.orders=a.d.orders||[];S.messages=a.d.messages||[];S.known=new Set(S.orders.map(o=>o.id));badge();
@@ -116,7 +117,12 @@ function pOrders(id){if(id)return pOrder(id);
  const f={all:()=>true,unpaid:o=>!o.paid&&!o.cancelled,toship:o=>o.paid&&!o.shipped&&!o.cancelled,shipped:o=>o.shipped&&!o.delivered&&!o.cancelled,delivered:o=>o.delivered&&!o.cancelled,cancelled:o=>o.cancelled},q=S.oq.toLowerCase();
  const cnt=k=>S.orders.filter(f[k]).length,L=S.orders.filter(f[S.of]).filter(o=>!q||[o.no,o.name,o.phone,o.email,o.address,(o.lines||[]).join(" ")].join(" ").toLowerCase().includes(q));
  return`<div class="tabs">${[["all","All"],["unpaid","Unpaid"],["toship","To ship"],["shipped","Shipped"],["delivered","Delivered"],["cancelled","Cancelled"]].map(([k,l])=>`<button data-of="${k}" class="${S.of===k?"on":""}">${l} ${cnt(k)}</button>`).join("")}</div>
-<input id="oq" placeholder="Search by order number, name, phone or item" value="${esc(S.oq)}" style="margin-bottom:12px"><div class="ol">${L.map(orderRow).join("")||'<div class="empty2">No orders here yet. New orders appear automatically with a sound.</div>'}</div>`}
+<input id="oq" placeholder="Search by order number, name, phone or item" value="${esc(S.oq)}" style="margin-bottom:12px"><div class="ol">${L.map(orderRow).join("")||'<div class="empty2">No orders here yet. New orders appear automatically with a sound.</div>'}</div>${codePanel()}`}
+function codePanel(){const L=S.codes||[],live=L.filter(k=>!k.used).length;
+ if(!L.length)return "";
+ return `<h3 style="margin:30px 0 8px">Discount codes <span class="tg g">${live} unused</span></h3>
+ <p class="muted" style="font-size:.85rem;margin:0 0 10px">Every first order earns the customer one code for their next order. It is worth up to ₹30, tied to their phone number and works once.</p>
+ <div class="ol">${L.slice(0,50).map(k=>`<div class="or" style="cursor:default;grid-template-columns:minmax(0,1fr) auto auto;align-items:center"><div><b style="letter-spacing:.08em">${esc(k.c)}</b><br><span class="muted" style="font-size:.85rem">${esc(k.ph)}${k.t?" · "+esc(dt(k.t)):""}</span></div><span class="tg ${k.used?"":"g"}">${k.used?"Used":"Unused"}</span><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-act="ccopy" data-c="${esc(k.c)}" type="button">Copy</button>${k.used?`<button class="btn sm" data-act="cfree" data-c="${esc(k.c)}" type="button">Re-enable</button>`:""}</div></div>`).join("")}</div>`}
 function tlist(o){const lab={placed:"Order placed",paid:"Payment received",shipped:"Marked as shipped",delivered:"Marked as delivered",cancelled:"Order cancelled"},ev=(o.ev&&o.ev.length?o.ev:[{a:"placed",t:o.t}]);
  return`<ul class="tl">${ev.map(e=>`<li>${lab[e.a]||esc(e.a)}${e.a==="shipped"&&o.track?` · Tracking: ${esc(o.track)}`:""}<small>${esc(dt(e.t))}</small></li>`).join("")}</ul>`}
 function pOrder(id){const o=S.orders.find(x=>x.id===id);if(!o)return`<div class="empty2">Order not found. <a href="#admin/orders">Back to orders</a></div>`;
@@ -188,6 +194,8 @@ function slip(o){const w=window.open("","_blank");if(!w)return say("Allow pop-up
 async function onClick(e){const b=e.target.closest("[data-act],[data-of],[data-pf],[data-vf]");if(!b)return;const d=b.dataset;
  if(d.of){S.of=d.of;render(true);return}if(d.pf){S.pf=d.pf;render(true);return}if(d.vf){S.vf=d.vf;render();return}
  const a=d.act,id=d.id,[,oid]=where(),o=S.orders.find(x=>x.id===(a&&a[0]==="o"?(id||oid):oid)),i=S.products.findIndex(p=>String(p.id)===id);
+ if(a==="ccopy"){try{await navigator.clipboard.writeText(d.c||"")}catch(e){}say("Discount code copied.");return}
+ if(a==="cfree"){const r=await api("codes/free",{code:d.c});if(r.ok){const k=(S.codes||[]).find(x=>x.c===d.c);if(k){k.used=false;delete k.ut;delete k.ord}render();say("That code can be used again.")}else say(r.d.error||"Could not re-enable that code.");return}
  if(a==="oview"){location.hash="#admin/orders/"+id;return}
  if(a==="ntest"){const el=$("ntxt");if(el){el.className="muted";el.textContent="Sending…"}const r=await api("notify/test",{});let m=r.ok?"Test sent.":(r.d.error||"Could not send the test.");if(r.ok&&r.d.whatsapp)m+=" WhatsApp: "+(r.d.whatsapp_ok?"sent — check your phone.":(r.d.whatsapp_reply||"sent, but check your phone."));if(r.ok&&r.d.telegram)m+=" Telegram: "+(r.d.telegram_error||"sent — check your phone.");if(r.ok&&r.d.email)m+=" Email: "+(r.d.email_error||"sent to "+r.d.email_to+".");if(el){el.className=r.ok?"ok":"err";el.textContent=m}else say(m);return}
  if(a==="cview"){S.oq=d.q||"";S.of="all";location.hash="#admin/orders";return}
