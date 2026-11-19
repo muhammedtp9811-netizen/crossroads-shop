@@ -330,7 +330,7 @@ $("fIg").href=$("cIg").href=$("aIg").href="https://ig.me/m/"+IG;
 document.querySelectorAll(".ig-t").forEach(e=>e.textContent="@"+IG);document.querySelectorAll(".mail-t").forEach(e=>e.textContent=MAIL);
 $("host").textContent=location.host||"crossroadsshoppings.in";$("yr").textContent=new Date().getFullYear();
 
-let P=[],cat="All",cart=[],cur=null,size=null,Q="",SO="n",ST={upi:"",name:"",qr:"",online:false},DISC={code:"",off:0},wasAdmin=false,loading=true;
+let P=[],cat="All",cart=[],cur=null,size=null,Q="",SO="n",ST={upi:"",name:"",qr:"",online:false},ST_READY=false,DISC={code:"",off:0},wasAdmin=false,loading=true;
 try{cart=JSON.parse(localStorage.getItem("cr_cart")||"[]")}catch(e){}
 const save=()=>{try{localStorage.setItem("cr_cart",JSON.stringify(cart))}catch(e){}};
 const imgs=p=>p.images&&p.images.length?p.images:(p.imgs&&p.imgs.length?p.imgs:(p.img?[p.img]:[]));
@@ -424,7 +424,7 @@ function renderCheckout(){const el=$("checkout");
  <h2 class="fh" style="margin-top:10px">Payment</h2>
  ${ST.online?`<label class="pmo"><input type="radio" name="pm" value="online" ${first==="online"?"checked":""}><span>Pay online<small>Cards, UPI and net banking</small></span></label>`:""}
  ${ST.upi?`<label class="pmo"><input type="radio" name="pm" value="upi" ${first==="upi"?"checked":""}><span>Pay by UPI QR<small>Scan, pay, then enter your transaction ID</small></span></label>`:""}
- ${!first?'<div class="err">Payment is not available yet. Message us on Instagram to order.</div>':""}
+ ${!first?(ST_READY?'<div class="err">Payment is not available yet. Message us on Instagram to order.</div>':'<div class="muted">Loading payment options…</div>'):""}
  <h2 class="fh" style="margin-top:10px">Discount code</h2><div style="display:flex;gap:8px"><input id="dc" placeholder="Enter your code" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase"><button class="btn alt sm" id="dcb" type="button" style="flex:none;white-space:nowrap">Apply</button></div><div class="err" id="dcm"></div>
  <div id="upip" ${first==="upi"?"":"hidden"}></div><div class="err" id="fr" role="alert"></div>
  ${first?`<button class="btn" id="pay" type="submit">${first==="upi"?"I have paid, place order":"Pay securely"}</button>`:""}</form>
@@ -503,7 +503,7 @@ addEventListener("hashchange",route);addEventListener("popstate",route);
  try{const c=JSON.parse(localStorage.getItem("cr_pc")||"[]");if(Array.isArray(c)&&c.length){P=c;loading=false}}catch(e){}
  render();const first=route();
  let stOk=false;
- const st=fetch("/api/settings").then(r=>r.json()).then(x=>{ST=x;stOk=true}).catch(()=>{});
+ const st=fetch("/api/settings").then(r=>r.json()).then(x=>{ST=x;ST_READY=true;stOk=true}).catch(()=>{ST_READY=true});
  const ch=await loadP();await st;const was=loading;loading=false;
  if(view()!=="admin"&&(ch||was||stOk)){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout()}
  await first;if(view()!=="admin"){ev("open","",1);sync()}})();
