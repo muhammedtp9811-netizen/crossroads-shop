@@ -212,7 +212,7 @@ async function render(silent,force){const[p,i]=where(),c=$("adc");if(!c)return;c
   c.innerHTML=h;if(p==="products"&&i)bindForm();if(p==="orders"&&!i)bindBrand();};
  const stale=force||!S.loaded||Date.now()-(S.t||0)>60000;
  if(!stale){await paint();return}
- if(S.hydrated&&!silent)await paint();
+ if(S.hydrated&&!silent&&p!=="home"&&p!=="analytics")await paint();
  const ok=await loadAll();
  if(seq!==renderSeq)return;
  if(!ok){if(!PW){root.dataset.ready="";CRAdmin.open(root);return}c.innerHTML='<div class="empty2">Could not load the dashboard. Check your connection and <button class="link" data-act="retry" type="button">try again</button>.</div>';return}

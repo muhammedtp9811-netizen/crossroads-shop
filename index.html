@@ -581,9 +581,11 @@ async function hero3d(){const c=$("c3d");if(!c)return;
   (function loop(){requestAnimationFrame(loop);if(!vis||document.hidden)return;if(c.clientWidth&&c.clientWidth!==lw)fit();const t=clock.getElapsedTime();knot.rotation.x=t*.25+my*.6;knot.rotation.y=t*.35+mx*.8;wire.rotation.y=-t*.12;pts.rotation.y=t*.05;g.position.y=Math.sin(t*.8)*.12;r.render(sc,cam)})();
  }catch(e){c.remove()}}
 /* ---------- Owner admin: open yourwebsite/#admin (code loads from /admin.js only when needed) ---------- */
+let admP=null;
 async function adm(){const A=$("admin");
  if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
-  try{await new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=9";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
+  if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=10";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
+  try{await admP}
   catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
  window.CRAdmin.open(A)}
 
