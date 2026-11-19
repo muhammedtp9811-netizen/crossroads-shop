@@ -366,13 +366,15 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
   if(path==="orders/paid"){
     if(!admin())return J({error:"Wrong password"},401);
     const orders=await get("orders",[]),o=orders.find(x=>x.id===b.id);
-    if(o&&!o.paid){o.paid=true;(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});await db.setJSON("orders",orders);await custMail(o,"paid")}return J({ok:1});
+    if(o&&!o.paid){o.paid=true;(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});if(!o.next&&!orders.some(x=>x.id!==o.id&&x.paid&&!x.cancelled&&last10(x.phone)===last10(o.phone))){const nc=await issueCode(o.phone);if(nc)o.next=nc}await db.setJSON("orders",orders);await custMail(o,"paid")}return J({ok:1});
   }
   if(path==="orders/update"){
     if(!admin())return J({error:"Wrong password"},401);
     const orders=await get("orders",[]),o=orders.find(x=>x.id===b.id);
     if(o){let justPaid=false;for(const k of ["paid","shipped","delivered","cancelled"])if(typeof b[k]==="boolean"&&o[k]!==b[k]){o[k]=b[k];if(b[k])(o.ev=o.ev||[]).push({a:k==="cancelled"?"cancelled":k,t:new Date().toISOString()});if(k==="paid"&&b[k])justPaid=true}
-      if(b.track!==undefined)o.track=cut(b.track,120);if(b.note!==undefined)o.note=cut(b.note,500);await db.setJSON("orders",orders);
+      if(b.track!==undefined)o.track=cut(b.track,120);if(b.note!==undefined)o.note=cut(b.note,500);
+      if(justPaid&&!o.next&&!orders.some(x=>x.id!==o.id&&x.paid&&!x.cancelled&&last10(x.phone)===last10(o.phone))){const nc=await issueCode(o.phone);if(nc)o.next=nc}
+      await db.setJSON("orders",orders);
       if(b.cancelled===true&&o.disc&&o.disc.code)await freeCode(o.disc.code);
       if(justPaid)await custMail(o,"paid")}
     return J({ok:1});
