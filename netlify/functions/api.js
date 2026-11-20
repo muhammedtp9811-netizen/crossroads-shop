@@ -604,7 +604,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const all=await getReviews();
     let when=new Date().toISOString();
     if(b.t){const d=new Date(b.t);if(!isNaN(d.getTime())&&d.getTime()<Date.now())when=d.toISOString()}
-    const rec={id:Date.now(),pid,pn:p?shortN(p.n,80):"",ph:"",nm:name,s:stars,x:text,t:when,v:false,src:"shop"};
+    const rec={id:Date.now(),pid,pn:p?shortN(p.sn||p.n,80):"",ph:"",nm:name,s:stars,x:text,t:when,v:false,src:"shop"};
     all.unshift(rec);await db.setJSON("reviews",all.slice(0,2000));
     return J({ok:1,review:rec});
   }
