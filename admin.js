@@ -10,16 +10,16 @@ const imgs=p=>p.images&&p.images.length?p.images:(p.imgs&&p.imgs.length?p.imgs:(
 let PW=sessionStorage.getItem("cr_pw")||"",root=null,draft=[];
 const H=()=>({"x-admin":PW,"content-type":"application/json"});
 async function api(p,b){const o=b===undefined?{headers:H()}:{method:"POST",headers:H(),body:JSON.stringify(b)};try{const r=await fetch("/api/"+p,o);let d={};try{d=await r.json()}catch(e){}return{ok:r.ok,s:r.status,d}}catch(e){return{ok:false,s:0,d:{error:"No connection"}}}}
-const S={orders:[],messages:[],products:[],feedback:[],codes:[],settings:{},notify:{},known:new Set(),seen:new Set(),range:7,of:"all",oq:"",pq:"",pf:"all",vf:"all",poll:null,loaded:false,t:0,hydrated:false,ana:null};
+const S={orders:[],messages:[],products:[],feedback:[],codes:[],settings:{},notify:{},known:new Set(),seen:new Set(),range:7,of:"all",oq:"",pq:"",pf:"all",vf:"all",poll:null,loaded:false,t:0,hydrated:false,ana:null,reviews:[]};
 try{S.seen=new Set(JSON.parse(localStorage.getItem("cr_seen")||"[]"))}catch(e){}
 const BRAND_DEF={name:"Crossroads Shopping",tag:"Your next favourite find is here.",mono:"CS",bg:"#111318",fg:"#ffffff",ac:"#c9a227",shape:"rounded"};
 let bDraft=null;
-function hydrate(){try{const c=JSON.parse(localStorage.getItem("cr_adm1")||"null");if(!c||c.v!==1)return;S.orders=c.o||[];S.messages=c.m||[];S.settings=c.s||{};S.notify=c.n||{};S.feedback=c.f||[];S.codes=c.c||[];S.known=new Set(S.orders.map(o=>o.id));S.hydrated=true}catch(e){}}
-function saveCache(){try{localStorage.setItem("cr_adm1",JSON.stringify({v:1,t:Date.now(),o:S.orders.slice(0,300),m:S.messages.slice(0,80),s:S.settings,n:S.notify,f:S.feedback.slice(0,80),c:S.codes.slice(0,300)}))}catch(e){}}
-function resetData(){S.orders=[];S.messages=[];S.products=[];S.feedback=[];S.codes=[];S.settings={};S.notify={};S.loaded=false;S.hydrated=false;S.t=0;bDraft=null;try{localStorage.removeItem("cr_adm1")}catch(e){}}
+function hydrate(){try{const c=JSON.parse(localStorage.getItem("cr_adm1")||"null");if(!c||c.v!==1)return;S.orders=c.o||[];S.messages=c.m||[];S.settings=c.s||{};S.notify=c.n||{};S.feedback=c.f||[];S.codes=c.c||[];S.reviews=c.rv||[];S.known=new Set(S.orders.map(o=>o.id));S.hydrated=true}catch(e){}}
+function saveCache(){try{localStorage.setItem("cr_adm1",JSON.stringify({v:1,t:Date.now(),o:S.orders.slice(0,300),m:S.messages.slice(0,80),s:S.settings,n:S.notify,f:S.feedback.slice(0,80),c:S.codes.slice(0,300),rv:(S.reviews||[]).slice(0,300)}))}catch(e){}}
+function resetData(){S.orders=[];S.messages=[];S.products=[];S.feedback=[];S.codes=[];S.reviews=[];S.settings={};S.notify={};S.loaded=false;S.hydrated=false;S.t=0;bDraft=null;try{localStorage.removeItem("cr_adm1")}catch(e){}}
 const say=m=>{if(window.toast)window.toast(m);else alert(m)};
 const ic=d=>`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
-const NAV=[["home","Home","M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"],["orders","Orders","M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"],["products","Products","M3 12l9-9h8v8l-9 9zM15 8h.01"],["customers","Customers","M16 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0zM4 21a8 8 0 0 1 16 0"],["analytics","Analytics","M4 20V10M10 20V4M16 20v-8M22 20H2"],["messages","Messages","M4 5h16v11H9l-5 4z"],["feedback","Feedback","M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8.5 10h.01M12 10h.01M15.5 10h.01M8 15h8"],["settings","Settings","M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"]];
+const NAV=[["home","Home","M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"],["orders","Orders","M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"],["products","Products","M3 12l9-9h8v8l-9 9zM15 8h.01"],["customers","Customers","M16 8a4 4 0 1 0-8 0 4 4 0 0 0 8 0zM4 21a8 8 0 0 1 16 0"],["analytics","Analytics","M4 20V10M10 20V4M16 20v-8M22 20H2"],["messages","Messages","M4 5h16v11H9l-5 4z"],["feedback","Feedback","M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8.5 10h.01M12 10h.01M15.5 10h.01M8 15h8"],["reviews","Reviews","M12 3l2.9 5.9 6.5.9-4.7 4.6 1.1 6.4-5.8-3-5.8 3 1.1-6.4L2.6 9.8l6.5-.9z"],["settings","Settings","M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"]];
 const css=`.ad{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh;background:var(--bg);color:var(--ink)}
 .ad *{box-sizing:border-box}.ad form{padding:0}.ad h2,.ad h3{margin:0}
 .ads{position:sticky;top:0;height:100vh;overflow:auto;background:var(--card);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:4px}
@@ -95,7 +95,7 @@ async function loadAll(){const r=await api("admin/boot");
  if(!r.ok){if(S.loaded||S.hydrated){say("Could not refresh — showing the last loaded data.");return true}return false}
  const d=r.d||{};
  S.orders=d.orders||[];S.messages=d.messages||[];S.products=d.products||[];S.settings=d.settings||{};S.notify=d.notify||{};
- S.feedback=Array.isArray(d.feedback)?d.feedback:[];S.codes=Array.isArray(d.codes)?d.codes:[];
+ S.feedback=Array.isArray(d.feedback)?d.feedback:[];S.codes=Array.isArray(d.codes)?d.codes:[];S.reviews=Array.isArray(d.reviews)?d.reviews:[];
  S.loaded=true;S.hydrated=true;S.t=Date.now();S.known=new Set(S.orders.map(o=>o.id));
  saveCache();badge();return true}
 function startPoll(){if(S.poll)return;S.poll=setInterval(async()=>{if(!location.hash.startsWith("#admin")||document.hidden||!PW)return;const a=await api("admin");if(!a.ok)return;
@@ -175,6 +175,12 @@ function pFeedback(){const L=S.feedback||[];
  if(!L.length)return '<div class="empty2">No feedback yet. When a visitor looks like they are leaving, the site asks them what to improve, and their answer shows up here and on WhatsApp plus email.</div>';
  return `<p class="muted" style="margin-bottom:12px">${L.length} message${L.length===1?"":"s"}, newest first. Every one also arrives on WhatsApp, Telegram and email.</p>`+L.map(f=>{const c=String(f.contact||""),ph=c.replace(/\D/g,"");const meta=[f.name,f.contact].filter(Boolean).join(" · ")||"Anonymous visitor";
  return `<div class="cd" style="margin-bottom:10px">${f.topic?`<span class="tg b">${esc(f.topic)}</span> `:""}<p style="white-space:pre-line;overflow-wrap:anywhere;margin:8px 0">${esc(f.text)}</p><p class="muted" style="font-size:.82rem">${esc(meta)} · ${esc(f.page||"/")}${f.device?" · "+esc(f.device):""} · ${esc(dt(f.t))}</p><p>${ph.length>=10?`<a class="link" href="https://wa.me/91${ph.slice(-10)}" target="_blank" rel="noopener">Reply on WhatsApp</a>`:""}${/@/.test(c)?`<a class="link" href="mailto:${esc(c)}">Reply by email</a>`:""}<button class="link" data-act="fdel" data-t="${esc(f.t)}">Delete</button></p></div>`}).join("")}
+function pReviews(){const L=[...(S.reviews||[])].sort((a,b)=>String(b.t||"").localeCompare(String(a.t||""))),P=S.products||[],opts=P.map(p=>`<option value="${p.id}">${esc(short(p.n,60))}</option>`).join("");
+ return `<div class="rowh"><h2 style="font:700 1.4rem 'Playfair Display',Georgia,serif">Reviews</h2></div>
+ <div class="cd"><h3>Add feedback you received</h3><p class="muted" style="font-size:.85rem;margin:0 0 10px">Paste what a customer told you on Instagram or WhatsApp. It shows on that product page with their name and stars.</p>
+ ${opts?`<form id="rvf" class="fl"><label>Product<select id="rvp">${opts}</select></label><div class="two"><label>Customer name<input id="rvn" maxlength="60" placeholder="Ayesha R."></label><label>Stars<select id="rvs">${[5,4,3,2,1].map(n=>`<option value="${n}">${"★".repeat(n)} ${n}</option>`).join("")}</select></label></div><label>What they said (optional)<textarea id="rvx" rows="3" maxlength="500"></textarea></label><div class="err" id="rve"></div><button class="btn" type="submit">Add review</button></form>`:'<p class="muted">Add a product first.</p>'}</div>
+ <h3 style="margin:26px 0 8px">${L.length} review${L.length===1?"":"s"}</h3>
+ ${L.length?L.map(r=>{const p=P.find(x=>String(x.id)===String(r.pid));return `<div class="cd" style="margin-bottom:10px"><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><b>${esc(r.nm||"Customer")}</b><span style="color:#d29a00;letter-spacing:1px">${"★".repeat(+r.s||0)}${"☆".repeat(5-(+r.s||0))}</span><span class="tg ${r.src==="shop"?"b":"g"}">${r.src==="shop"?"Added by you":"Customer"}</span>${r.v?'<span class="tg g">Verified</span>':""}<span class="muted" style="font-size:.8rem">${esc(dt(r.t))}</span></div><p class="muted" style="font-size:.82rem;margin:4px 0 0">${esc(p?p.n:"Product removed")}</p>${r.x?`<p style="margin:8px 0;white-space:pre-line;overflow-wrap:anywhere">${esc(r.x)}</p>`:""}<button class="link" data-act="rvdel" data-id="${esc(r.id)}">Delete</button></div>`}).join(""):'<div class="empty2">No reviews yet. Customers can rate products on the product page, or you can add feedback you received.</div>'}`}
 function pSettings(){const s=S.settings||{},n=S.notify||{},own=(()=>{try{return localStorage.getItem("cr_owner")==="1"}catch(e){return false}})(),snd=localStorage.getItem("cr_snd")!=="0";
  const onAlert=ok=>`<span class="tg ${ok?"g":"r"}">${ok?"On":"Off"}</span>`;
  const alertLine=(label,ok,extra="")=>`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><span>${label}${extra?` <span class="muted" style="font-size:.82rem">${extra}</span>`:""}</span>${onAlert(ok)}</div>`;
@@ -201,14 +207,14 @@ function pSettings(){const s=S.settings||{},n=S.notify||{},own=(()=>{try{return 
 <div class="cd" style="margin-top:14px"><h3>Good to know</h3><p class="muted" style="font-size:.9rem">Your admin password is the ADMIN_PASSWORD setting in Netlify. To change it, edit it there and deploy again. Email, ntfy push and SMS alerts are switched on with Netlify environment variables, explained in <b>NOTIFY-SETUP.md</b> in your repository. WhatsApp and Telegram work right here, no redeploy needed.</p></div>`}
 
 /* ---------- routing + render ---------- */
-const TITLES={home:"Home",orders:"Orders",products:"Products",customers:"Customers",analytics:"Analytics",messages:"Messages",feedback:"Feedback",settings:"Settings"};
+const TITLES={home:"Home",orders:"Orders",products:"Products",customers:"Customers",analytics:"Analytics",messages:"Messages",feedback:"Feedback",reviews:"Reviews",settings:"Settings"};
 function skel(){return `<div class="sk"><div class="skb" style="width:38%"></div><div class="skb" style="width:62%"></div><div class="skg"><div class="skc"></div><div class="skc"></div><div class="skc"></div></div><div class="skb" style="width:100%;height:54px"></div><div class="skb" style="width:100%;height:54px"></div><div class="skb" style="width:100%;height:54px"></div></div>`}
 let renderSeq=0;
 async function render(silent,force){const[p,i]=where(),c=$("adc");if(!c)return;const seq=++renderSeq;
  document.querySelectorAll("#ads a.nv").forEach(a=>a.classList.toggle("on",a.dataset.nv===p));$("adT").textContent=TITLES[p]||"Home";
  if(!silent&&!S.hydrated&&!S.loaded)c.innerHTML=skel();
  const paint=async()=>{if(seq!==renderSeq)return;
-  let h="";try{h=p==="orders"?pOrders(i):p==="products"?pProducts(i):p==="customers"?pCustomers():p==="messages"?pMessages():p==="feedback"?pFeedback():p==="settings"?pSettings():p==="analytics"?await pAnalytics():await pHome()}catch(e){h='<div class="empty2">Something went wrong. Refresh and try again.</div>'}
+  let h="";try{h=p==="orders"?pOrders(i):p==="products"?pProducts(i):p==="customers"?pCustomers():p==="messages"?pMessages():p==="feedback"?pFeedback():p==="reviews"?pReviews():p==="settings"?pSettings():p==="analytics"?await pAnalytics():await pHome()}catch(e){h='<div class="empty2">Something went wrong. Refresh and try again.</div>'}
   if(seq!==renderSeq||where().join("/")!==[p,i].join("/"))return;
   c.innerHTML=h;if(p==="products"&&i)bindForm();if(p==="orders"&&!i)bindBrand();};
  const stale=force||!S.loaded||Date.now()-(S.t||0)>60000;
@@ -318,6 +324,7 @@ async function onClick(e){const b=e.target.closest("[data-act],[data-of],[data-p
  if(a==="ccopy"){try{await navigator.clipboard.writeText(d.c||"")}catch(e){}say("Discount code copied.");return}
  if(a==="cfree"){const r=await api("codes/free",{code:d.c});if(r.ok){const k=(S.codes||[]).find(x=>x.c===d.c);if(k){k.used=false;delete k.ut;delete k.ord}render();say("That code can be used again.")}else say(r.d.error||"Could not re-enable that code.");return}
  if(a==="cdel"){if(!confirm("Delete discount code "+d.c+"? It will stop working for the customer."))return;const r=await api("codes/delete",{code:d.c});if(r.ok){S.codes=(S.codes||[]).filter(x=>x.c!==d.c);saveCache();render();say("Discount code deleted.")}else say(r.d.error||"Could not delete that code.");return}
+ if(a==="rvdel"){if(!confirm("Delete this review?"))return;const r=await api("reviews/delete",{id:d.id});if(r.ok){S.reviews=(S.reviews||[]).filter(x=>String(x.id)!==String(d.id));saveCache();render();say("Review deleted.")}else say(r.d.error||"Could not delete that review.");return}
  if(a==="bsave")return saveBrand();
  if(a==="retry"){render(false,true);return}
  if(a==="bsvg")return dlSVG();
@@ -347,6 +354,7 @@ function onChange(e){const bg=e.target&&e.target.dataset?e.target.dataset.bg:"";
  if(e.target.id==="sown"){try{e.target.checked?localStorage.setItem("cr_owner","1"):localStorage.removeItem("cr_owner")}catch(x){}say(e.target.checked?"Your visits will not be counted":"Your visits will be counted")}
  if(e.target.id==="ssnd"){try{localStorage.setItem("cr_snd",e.target.checked?"1":"0")}catch(x){}}}
 async function onSubmit(e){e.preventDefault();
+ if(e.target.id==="rvf"){const pid=$("rvp")?$("rvp").value:"",name=$("rvn").value.trim(),stars=+$("rvs").value,text=$("rvx").value.trim(),el=$("rve");if(!name){if(el){el.className="err";el.textContent="Add the customer's name."}return}if(el){el.className="";el.textContent="Saving…"}const r=await api("reviews/add",{pid,name,stars,text});if(r.ok){if(r.d.review)S.reviews=[r.d.review,...(S.reviews||[])];saveCache();say("Review added");render()}else if(el){el.className="err";el.textContent=r.d.error||"Could not add the review."}return}
  if(e.target.id==="sf"){const f=$("sq").files[0],qr=f?await shrink(f,800):(S.settings.qr||""),u=$("su").value.trim(),nm=$("sn").value.trim(),r=await api("settings",{upi:u,name:nm,qr});$("sfe").className=r.ok?"ok":"err";$("sfe").textContent=r.ok?"Saved.":(r.d.error||"Could not save.");if(r.ok)Object.assign(S.settings,{upi:u,name:nm,qr});return}
  if(e.target.id==="nf"){const ph=$("nw").value.replace(/\D/g,""),k=$("nk").value.trim(),body={waPhone:ph};if(k)body.waKey=k;const r=await api("settings",body);if(r.ok){say("WhatsApp alerts saved");render()}else{$("nfe").className="err";$("nfe").textContent=r.d.error||"Could not save."}return}
  if(e.target.id==="tf"){const tok=$("tt").value.trim(),el=$("tfe");if(el){el.className="";el.textContent="Connecting…"}const r=await api("notify/telegram",tok?{token:tok}:{});if(r.ok){say("Telegram connected"+(r.d.bot?" to @"+r.d.bot:""));render()}else if(el){el.className="err";el.textContent=r.d.error||"Could not connect Telegram."}return}

@@ -202,6 +202,19 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const list=await getCodes(),x=list.find(k=>codeNorm(k.c)===c);
     if(x&&x.used){x.used=false;delete x.ut;delete x.ord;await db.setJSON("codes",list)}
   }
+  const shortName=v=>{const p=String(v||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "Customer";return p.length>1?p[0]+" "+p[p.length-1][0].toUpperCase()+".":p[0]};
+  const getReviews=()=>get("reviews",[]);
+  const me=async()=>{const t=String(req.headers.get("x-cr-token")||"").trim();if(!t)return null;const ss=await get("sessions",[]),s=ss.find(k=>k.token===t);if(!s)return null;if(Date.now()-new Date(s.t||0).getTime()>90*864e5)return null;return s};
+  async function sendOtp(phone,code){
+    const key=E.FAST2SMS_KEY||"";
+    if(!key)return false;
+    try{
+      const msg=`${code} is your Crossroads Shopping verification code. It expires in 10 minutes.`;
+      const r=await fetch("https://www.fast2sms.com/dev/bulkV2?"+new URLSearchParams({authorization:key,route:"q",message:msg,flash:"0",numbers:phone}));
+      const d=await r.json().catch(()=>({}));
+      return !!(r.ok&&(d.return===true||d.status==="success"));
+    }catch(e){return false}
+  }
   const applyOff=(total,off)=>Math.max(1,total-Math.min(off||0,total-1));
   const tgCreds=async()=>{const s=await cfg().catch(()=>({}));return{tok:E.TELEGRAM_BOT_TOKEN||s.tgToken||"",chat:String(E.TELEGRAM_CHAT_ID||s.tgChat||"").trim()}};
   async function tgSend(t,cred){
@@ -452,13 +465,13 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
   }
   if(path==="admin/boot"&&req.method==="GET"){
     if(!admin())return J({error:"Wrong password"},401);
-    const [orders,messages,products,settings,feedback,codes]=await Promise.all([get("orders",[]),get("messages",[]),get("products",[]),get("settings",{}),get("feedback",[]),get("codes",[])]);
+    const [orders,messages,products,settings,feedback,codes,reviews]=await Promise.all([get("orders",[]),get("messages",[]),get("products",[]),get("settings",{}),get("feedback",[]),get("codes",[]),get("reviews",[])]);
     let mx=Math.max(1000,...orders.map(o=>o.no||0)),ch=false;
     [...orders].reverse().forEach(o=>{if(!o.no){o.no=++mx;ch=true}if(!o.method)o.method=o.manual?"upi":"online"});
     if(ch)await db.setJSON("orders",orders);
     const tgTok=E.TELEGRAM_BOT_TOKEN||settings.tgToken||"",tgChat=E.TELEGRAM_CHAT_ID||settings.tgChat||"";
     const safe={upi:settings.upi||"",name:settings.name||"",qr:settings.qr||"",brand:settings.brand||null};
-    return J({orders,messages,products,settings:safe,feedback,codes,
+    return J({orders,messages,products,settings:safe,feedback,codes,reviews,
       notify:{whatsapp:!!(E.CALLMEBOT_KEY||settings.waKey),whatsapp_number:String(E.WA_NUMBER||settings.waPhone||WA).replace(/\D/g,""),
       email:!!(E.RESEND_API_KEY||settings.rsKey),email_to:E.ALERT_EMAIL||settings.rsTo||"producingmj@gmail.com",email_saved:!!settings.rsKey,email_from:E.MAIL_FROM||settings.rsFrom||"",
       telegram:!!(tgTok&&tgChat),telegram_saved:!!settings.tgToken,telegram_chat:tgChat,
@@ -521,6 +534,82 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const c=codeNorm(b.code);if(!c)return J({ok:1});
     const list=(await getCodes()).filter(k=>codeNorm(k.c)!==c);
     await db.setJSON("codes",list);
+    return J({ok:1});
+  }
+  if(path==="auth/start"&&req.method==="POST"){
+    const ph=last10(b.phone),name=cut(String(b.name||"").trim(),60);
+    if(ph.length!==10)return J({error:"Enter a valid 10-digit phone number."},400);
+    if(name.length<2)return J({error:"Enter your name."},400);
+    const hk=new Date().toISOString().slice(0,13),rl=await get("rla",{h:"",n:0});
+    if(rl.h!==hk){rl.h=hk;rl.n=0}
+    if(rl.n>=60)return J({error:"Too many codes requested just now. Try again later."},429);
+    rl.n++;await db.setJSON("rla",rl);
+    const otps=await get("otps",{}),prev=otps[ph];
+    if(prev&&Date.now()-new Date(prev.t||0).getTime()<45000)return J({error:"Wait a few seconds, then ask for another code."},429);
+    const code=String(Math.floor(100000+Math.random()*900000));
+    otps[ph]={c:code,n:name,t:new Date().toISOString(),tries:0};
+    const keys=Object.keys(otps);if(keys.length>800)keys.sort((a,b)=>String(otps[a].t).localeCompare(String(otps[b].t))).slice(0,keys.length-800).forEach(k=>delete otps[k]);
+    await db.setJSON("otps",otps);
+    const sent=await sendOtp(ph,code);
+    return J(sent?{ok:1,sent:true,phone:ph}:{ok:1,sent:false,demo:true,code,phone:ph});
+  }
+  if(path==="auth/verify"&&req.method==="POST"){
+    const ph=last10(b.phone),code=String(b.code||"").replace(/\D/g,"");
+    const otps=await get("otps",{}),x=otps[ph];
+    if(!x)return J({error:"Ask for a new code."},400);
+    if(Date.now()-new Date(x.t||0).getTime()>10*60000){delete otps[ph];await db.setJSON("otps",otps);return J({error:"That code expired. Ask for a new one."},400)}
+    if((x.tries||0)>=5){delete otps[ph];await db.setJSON("otps",otps);return J({error:"Too many tries. Ask for a new code."},400)}
+    if(code!==String(x.c)){x.tries=(x.tries||0)+1;await db.setJSON("otps",otps);return J({error:"That code is not correct."},400)}
+    delete otps[ph];await db.setJSON("otps",otps);
+    const token=crypto.randomBytes(24).toString("hex"),ss=await get("sessions",[]);
+    ss.unshift({token,ph,name:x.n,t:new Date().toISOString()});
+    await db.setJSON("sessions",ss.slice(0,3000));
+    return J({ok:1,token,name:x.n,phone:ph});
+  }
+  if(path==="auth/me"&&req.method==="GET"){
+    const s=await me();
+    return J(s?{user:{name:s.name,phone:s.ph}}:{user:null});
+  }
+  if(path==="auth/logout"&&req.method==="POST"){
+    const t=String(req.headers.get("x-cr-token")||"").trim();
+    if(t)await db.setJSON("sessions",(await get("sessions",[])).filter(k=>k.token!==t));
+    return J({ok:1});
+  }
+  if(path==="reviews"&&req.method==="GET"){
+    const pid=String(new URL(req.url).searchParams.get("pid")||""),all=await getReviews();
+    const L=pid?all.filter(r=>String(r.pid)===pid):all, n=L.length;
+    const avg=n?Math.round(L.reduce((a,r)=>a+(+r.s||0),0)/n*10)/10:0;
+    const dist=[5,4,3,2,1].map(s=>({s,n:L.filter(r=>+r.s===s).length}));
+    const s=await me().catch(()=>null),mine=s?L.find(r=>r.ph===s.ph):null;
+    return J({pid,count:n,avg,dist,mine:mine?{s:mine.s,x:mine.x||"",t:mine.t}:null,
+      reviews:L.slice(0,25).map(r=>({s:+r.s,n:shortName(r.nm),x:r.x||"",t:r.t,v:!!r.v,src:r.src||"customer"}))});
+  }
+  if(path==="reviews"&&req.method==="POST"){
+    const s=await me();if(!s)return J({error:"Log in to rate this product."},401);
+    const pid=String(b.pid||""),stars=Math.max(1,Math.min(5,Math.round(+b.stars||0)));
+    if(!pid||!stars)return J({error:"Choose a star rating first."},400);
+    const text=cut(String(b.text||"").trim(),500);
+    const all=await getReviews(),i=all.findIndex(r=>String(r.pid)===pid&&r.ph===s.ph);
+    const orders=await get("orders",[]),verified=orders.some(o=>!o.cancelled&&last10(o.phone)===s.ph);
+    const rec={id:i>=0?all[i].id:Date.now(),pid,ph:s.ph,nm:cut(s.name,60),s:stars,x:text,t:new Date().toISOString(),v:verified,src:"customer"};
+    if(i>=0)all[i]=rec;else all.unshift(rec);
+    await db.setJSON("reviews",all.slice(0,2000));
+    return J({ok:1,review:{s:stars,x:text,v:verified}});
+  }
+  if(path==="reviews/add"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const pid=String(b.pid||""),name=cut(String(b.name||"").trim(),60),stars=Math.max(1,Math.min(5,Math.round(+b.stars||0))),text=cut(String(b.text||"").trim(),500);
+    if(!pid||!name||!stars)return J({error:"Pick a product, add a name and choose stars."},400);
+    const prods=await get("products",[]),p=prods.find(x=>String(x.id)===pid);
+    const all=await getReviews();
+    const rec={id:Date.now(),pid,pn:p?shortN(p.n,80):"",ph:"",nm:name,s:stars,x:text,t:new Date().toISOString(),v:true,src:"shop"};
+    all.unshift(rec);await db.setJSON("reviews",all.slice(0,2000));
+    return J({ok:1,review:rec});
+  }
+  if(path==="reviews/delete"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const id=String(b.id||"");
+    await db.setJSON("reviews",(await getReviews()).filter(r=>String(r.id)!==id));
     return J({ok:1});
   }
   if(path==="pay/create"){
