@@ -562,9 +562,13 @@ function accRender(msg){const b=$("accBody");if(!b)return;const head=`<div class
 function openAcc(){if(!$("accBody")||!$("accD"))return;accStep="start";accCode="";accRender();$("accD").showModal()}
 /* ---- ratings ---- */
 let revPid="";
-async function loadRevs(pid){const box=$("revs");if(!box)return;revPid=String(pid);let d=null;try{const r=await fetch("/api/reviews?pid="+encodeURIComponent(pid),{headers:acctHdr(ACCT)});if(r.ok)d=await r.json()}catch(e){}
- if(!d){box.innerHTML='<h2>Ratings and reviews</h2><p class="muted">Could not load ratings right now.</p>';return}
- drawRevs(String(pid),d)}
+const revCached=pid=>{try{const c=JSON.parse(localStorage.getItem("cr_rev_"+pid)||"null");return c&&c.t&&Date.now()-c.t<6*3600e3?c.d:null}catch(e){return null}};
+const revStore=(pid,d)=>{try{localStorage.setItem("cr_rev_"+pid,JSON.stringify({t:Date.now(),d}))}catch(e){}};
+async function loadRevs(pid){const box=$("revs");if(!box)return;revPid=String(pid);
+ const cached=revCached(revPid);if(cached)drawRevs(revPid,cached);else box.innerHTML='<h2>Ratings and reviews</h2><p class="muted">Loading ratings…</p>';
+ let d=null;try{const r=await fetch("/api/reviews?pid="+encodeURIComponent(revPid),{headers:acctHdr(ACCT)});if(r.ok)d=await r.json()}catch(e){}
+ if(!d){if(!cached)$("revs").innerHTML='<h2>Ratings and reviews</h2><p class="muted">Could not load ratings right now.</p>';return}
+ revStore(revPid,d);drawRevs(revPid,d)}
 function drawRevs(pid,d){const box=$("revs"),sum=$("rsum"),n=+d.count||0,avg=+d.avg||0;
  if(sum)sum.innerHTML=n?`${starRow(avg)}<span>${avg.toFixed(1)} · ${n} rating${n===1?"":"s"}</span>`:`${starRow(0)}<span>No ratings yet</span>`;
  const rows=(d.dist||[]).map(x=>`<div class="rbar"><b>${x.s} ★</b><span><i style="width:${n?Math.round(x.n/n*100):0}%"></i></span><em>${x.n}</em></div>`).join("");
