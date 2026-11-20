@@ -217,6 +217,7 @@ details{border-top:1px solid var(--line);padding:14px 0}details:last-of-type{bor
 .acct{display:flex;flex-direction:column;gap:12px;padding:18px 20px 26px}
 .acct h3{font-size:1.3rem;margin-bottom:2px}
 .acct .fine{font-size:.8rem;color:var(--mut);line-height:1.55}
+.acct .code{font:700 1.32rem/1 Inter,system-ui;letter-spacing:.3em;color:var(--ink);margin:2px 0 4px}
 .acct .otp{letter-spacing:.4em;text-align:center;font-size:1.25rem;font-weight:700}
 .acct .who{display:flex;align-items:center;gap:12px}
 .acct .who i{flex:none;width:46px;height:46px;border-radius:50%;background:var(--acc);color:#fff;display:grid;place-items:center;font:700 1.05rem Inter,sans-serif;font-style:normal}
@@ -550,14 +551,14 @@ function accRender(msg){const b=$("accBody");if(!b)return;const head=`<div class
   $("accOut").onclick=()=>{post("auth/logout",{},acctHdr(ACCT)).catch(()=>{});acctSet(null);$("accD").close();toast("Logged out");refreshRevs()};
   return}
  if(accStep==="otp"){
-  b.innerHTML=head+`<div class="acct"><h3>Enter your code</h3><p class="fine">We sent a 6-digit code to <b>+91 ${esc(accPhone)}</b>.</p>${accCode?`<p class="fine">SMS is not set up on this store yet. Your code for now is <b>${esc(accCode)}</b>.</p>`:""}<form id="accF" class="fl" novalidate><label>6-digit code<input id="ao" class="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"></label><div class="err" id="ae"></div><button class="btn" type="submit">Verify and log in</button><button class="btn alt" id="accBack" type="button">Use a different number</button></form></div>`;
+  b.innerHTML=head+`<div class="acct"><h3>Enter your code</h3><p class="fine">${accCode?"SMS delivery is not switched on yet. Use the code below to log in.":`We sent a 6-digit code to <b>+91 ${esc(accPhone)}</b>.`}</p>${accCode?`<p class="code">${esc(accCode)}</p>`:""}<form id="accF" class="fl" novalidate><label>6-digit code<input id="ao" class="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"></label><div class="err" id="ae"></div><button class="btn" type="submit">Verify and log in</button><button class="btn alt" id="accBack" type="button">Use a different number</button></form></div>`;
   $("accX").onclick=()=>$("accD").close();
   $("accBack").onclick=()=>{accStep="start";accCode="";accRender()};
-  $("accF").onsubmit=async e=>{e.preventDefault();const code=$("ao").value.replace(/\D/g,""),er=$("ae");if(code.length!==6){er.textContent="Enter the 6-digit code.";return}er.textContent="Checking…";const r=await post("auth/verify",{phone:accPhone,code}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.textContent=r.d.error||"Could not verify that code.";return}acctSet({token:r.d.token,name:r.d.name,phone:r.d.phone});$("accD").close();toast("Logged in as "+r.d.name);prefillCk();refreshRevs()};
+  $("accF").onsubmit=async e=>{e.preventDefault();const code=$("ao").value.replace(/\D/g,""),er=$("ae");er.className="err";if(code.length!==6){er.textContent="Enter the 6-digit code.";return}er.className="";er.textContent="Checking…";const r=await post("auth/verify",{phone:accPhone,code}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not verify that code.";return}acctSet({token:r.d.token,name:r.d.name,phone:r.d.phone});$("accD").close();toast("Logged in as "+r.d.name);prefillCk();refreshRevs()};
   return}
  b.innerHTML=head+`<div class="acct"><h3>Log in or create an account</h3><p class="fine">Optional. Enter your name and phone number and we will send a one-time code. You can still shop without an account.</p><form id="accF" class="fl" novalidate><label>Your name<input id="an" autocomplete="name" value="${esc(accName)}"></label><label>Phone number<input id="ap" inputmode="numeric" autocomplete="tel" maxlength="10" value="${esc(accPhone)}" placeholder="10-digit mobile number"></label><div class="err" id="ae"></div><button class="btn" type="submit">Send code</button></form></div>`;
  $("accX").onclick=()=>$("accD").close();
- $("accF").onsubmit=async e=>{e.preventDefault();const name=$("an").value.trim(),ph=$("ap").value.replace(/\D/g,""),er=$("ae");if(name.length<2){er.textContent="Enter your name.";return}if(ph.length!==10){er.textContent="Enter a valid 10-digit phone number.";return}er.textContent="Sending code…";const r=await post("auth/start",{name,phone:ph}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.textContent=r.d.error||"Could not send the code.";return}accName=name;accPhone=ph;accCode=r.d.demo&&r.d.code?String(r.d.code):"";accStep="otp";accRender()}}
+ $("accF").onsubmit=async e=>{e.preventDefault();const name=$("an").value.trim(),ph=$("ap").value.replace(/\D/g,""),er=$("ae");er.className="err";if(name.length<2){er.textContent="Enter your name.";return}if(ph.length!==10){er.textContent="Enter a valid 10-digit phone number.";return}er.className="";er.textContent="Sending code…";const r=await post("auth/start",{name,phone:ph}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not send the code.";return}accName=name;accPhone=ph;accCode=r.d.demo&&r.d.code?String(r.d.code):"";accStep="otp";accRender()}}
 function openAcc(){if(!$("accBody")||!$("accD"))return;accStep="start";accCode="";accRender();$("accD").showModal()}
 /* ---- ratings ---- */
 let revPid="";
@@ -574,7 +575,7 @@ function drawRevs(pid,d){const box=$("revs"),sum=$("rsum"),n=+d.count||0,avg=+d.
  if($("rLogin"))$("rLogin").onclick=openAcc;
  const pick=$("rpick");let stars=mine;
  if(pick)pick.onclick=e=>{const b=e.target.closest("[data-r]");if(!b)return;stars=+b.dataset.r;pick.querySelectorAll("button").forEach(x=>x.classList.toggle("on",+x.dataset.r<=stars))};
- if($("rf"))$("rf").onsubmit=async e=>{e.preventDefault();const er=$("re");if(!stars){er.textContent="Choose a star rating first.";return}er.textContent="Saving…";const r=await post("reviews",{pid,stars,text:$("rx").value.trim()},acctHdr(ACCT)).catch(()=>({ok:false,d:{}}));if(!r.ok){er.textContent=r.d.error||"Could not save your rating.";return}toast("Thanks for rating!");loadRevs(pid)}}
+ if($("rf"))$("rf").onsubmit=async e=>{e.preventDefault();const er=$("re");er.className="err";if(!stars){er.textContent="Choose a star rating first.";return}er.className="";er.textContent="Saving…";const r=await post("reviews",{pid,stars,text:$("rx").value.trim()},acctHdr(ACCT)).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not save your rating.";return}toast("Thanks for rating!");loadRevs(pid)}}
 $("bAcc").onclick=openAcc;acctSet(ACCT);
 function render(){const c=cart.reduce((a,i)=>a+i.q,0);$("cnt").textContent=c;$("cnt").hidden=!c;
  if($("sumc"))$("sumc").innerHTML=sumHTML();
