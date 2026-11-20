@@ -14,8 +14,8 @@ const S={orders:[],messages:[],products:[],feedback:[],codes:[],settings:{},noti
 try{S.seen=new Set(JSON.parse(localStorage.getItem("cr_seen")||"[]"))}catch(e){}
 const BRAND_DEF={name:"Crossroads Shopping",tag:"Your next favourite find is here.",mono:"CS",bg:"#111318",fg:"#ffffff",ac:"#c9a227",shape:"rounded"};
 let bDraft=null;
-function hydrate(){try{const c=JSON.parse(localStorage.getItem("cr_adm1")||"null");if(!c||c.v!==1)return;S.orders=c.o||[];S.messages=c.m||[];S.settings=c.s||{};S.notify=c.n||{};S.feedback=c.f||[];S.codes=c.c||[];S.reviews=c.rv||[];S.known=new Set(S.orders.map(o=>o.id));S.hydrated=true}catch(e){}}
-function saveCache(){try{localStorage.setItem("cr_adm1",JSON.stringify({v:1,t:Date.now(),o:S.orders.slice(0,300),m:S.messages.slice(0,80),s:S.settings,n:S.notify,f:S.feedback.slice(0,80),c:S.codes.slice(0,300),rv:(S.reviews||[]).slice(0,300)}))}catch(e){}}
+function hydrate(){try{const c=JSON.parse(localStorage.getItem("cr_adm1")||"null");if(!c||c.v!==1)return;S.orders=c.o||[];S.messages=c.m||[];S.settings=c.s||{};S.notify=c.n||{};S.feedback=c.f||[];S.codes=c.c||[];S.reviews=c.rv||[];S.products=c.p||[];S.known=new Set(S.orders.map(o=>o.id));S.hydrated=true}catch(e){}}
+function saveCache(){try{localStorage.setItem("cr_adm1",JSON.stringify({v:1,t:Date.now(),o:S.orders.slice(0,300),m:S.messages.slice(0,80),s:S.settings,n:S.notify,f:S.feedback.slice(0,80),c:S.codes.slice(0,300),rv:(S.reviews||[]).slice(0,300),p:(S.products||[]).slice(0,200)}))}catch(e){}}
 function resetData(){S.orders=[];S.messages=[];S.products=[];S.feedback=[];S.codes=[];S.reviews=[];S.settings={};S.notify={};S.loaded=false;S.hydrated=false;S.t=0;bDraft=null;try{localStorage.removeItem("cr_adm1")}catch(e){}}
 const say=m=>{if(window.toast)window.toast(m);else alert(m)};
 const ic=d=>`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
