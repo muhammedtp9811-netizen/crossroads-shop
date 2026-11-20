@@ -561,12 +561,14 @@ function accRender(msg){const b=$("accBody");if(!b)return;const head=`<div class
  $("accF").onsubmit=async e=>{e.preventDefault();const name=$("an").value.trim(),ph=$("ap").value.replace(/\D/g,""),er=$("ae");er.className="err";if(name.length<2){er.textContent="Enter your name.";return}if(ph.length!==10){er.textContent="Enter a valid 10-digit phone number.";return}er.className="";er.textContent="Sending code…";const r=await post("auth/start",{name,phone:ph}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not send the code.";return}accName=name;accPhone=ph;accCode=r.d.demo&&r.d.code?String(r.d.code):"";accStep="otp";accRender()}}
 function openAcc(){if(!$("accBody")||!$("accD"))return;accStep="start";accCode="";accRender();$("accD").showModal()}
 /* ---- ratings ---- */
-let revPid="";
+ let revPid="";
+const revInflight={};
+const fetchRevs=pid=>{const k=String(pid);if(!revInflight[k])revInflight[k]=fetch("/api/reviews?pid="+encodeURIComponent(k),{headers:acctHdr(ACCT)}).then(r=>r.ok?r.json():null).catch(()=>null).then(v=>{delete revInflight[k];return v});return revInflight[k]};
 const revCached=pid=>{try{const c=JSON.parse(localStorage.getItem("cr_rev_"+pid)||"null");return c&&c.t&&Date.now()-c.t<6*3600e3?c.d:null}catch(e){return null}};
 const revStore=(pid,d)=>{try{localStorage.setItem("cr_rev_"+pid,JSON.stringify({t:Date.now(),d}))}catch(e){}};
 async function loadRevs(pid){const box=$("revs");if(!box)return;revPid=String(pid);
  const cached=revCached(revPid);if(cached)drawRevs(revPid,cached);else box.innerHTML='<h2>Ratings and reviews</h2><p class="muted">Loading ratings…</p>';
- let d=null;try{const r=await fetch("/api/reviews?pid="+encodeURIComponent(revPid),{headers:acctHdr(ACCT)});if(r.ok)d=await r.json()}catch(e){}
+ let d=await fetchRevs(revPid).catch(()=>null);
  if(!d){if(!cached)$("revs").innerHTML='<h2>Ratings and reviews</h2><p class="muted">Could not load ratings right now.</p>';return}
  revStore(revPid,d);drawRevs(revPid,d)}
 function drawRevs(pid,d){const box=$("revs"),sum=$("rsum"),n=+d.count||0,avg=+d.avg||0;
@@ -691,6 +693,7 @@ addEventListener("hashchange",route);addEventListener("popstate",route);
  if(view()==="admin"){await route();return}
  try{const c=JSON.parse(localStorage.getItem("cr_pc")||"[]");if(Array.isArray(c)&&c.length){P=c;loading=false}}catch(e){}
  render();const first=route();
+ if(view()==="product"){const pid=String(location.hash.slice(3));fetchRevs(pid).then(v=>{if(v)revStore(pid,v)}).catch(()=>{})}
  let stOk=false;
  const st=fetch("/api/settings").then(r=>r.json()).then(x=>{ST=x;ST_READY=true;stOk=true}).catch(()=>{ST_READY=true});
  const ch=await loadP();await st;const was=loading;loading=false;
