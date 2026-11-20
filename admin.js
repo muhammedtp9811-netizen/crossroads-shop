@@ -146,7 +146,7 @@ function codePanel(){const L=S.codes||[],live=L.filter(k=>!k.used).length;
  if(!L.length)return "";
  return `<h3 style="margin:30px 0 8px">Discount codes <span class="tg g">${live} unused</span></h3>
  <p class="muted" style="font-size:.85rem;margin:0 0 10px">Every first order earns the customer one code for their next order. It is worth up to ₹30, tied to their phone number and works once.</p>
- <div class="ol">${L.slice(0,50).map(k=>`<div class="or" style="cursor:default;grid-template-columns:minmax(0,1fr) auto auto;align-items:center"><div><b style="letter-spacing:.08em">${esc(k.c)}</b><br><span class="muted" style="font-size:.85rem">${esc(k.ph)}${k.t?" · "+esc(dt(k.t)):""}</span></div><span class="tg ${k.used?"":"g"}">${k.used?"Used":"Unused"}</span><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-act="ccopy" data-c="${esc(k.c)}" type="button">Copy</button>${k.used?`<button class="btn sm" data-act="cfree" data-c="${esc(k.c)}" type="button">Re-enable</button>`:""}</div></div>`).join("")}</div>`}
+ <div class="ol">${L.slice(0,50).map(k=>`<div class="or" style="cursor:default;grid-template-columns:minmax(0,1fr) auto auto;align-items:center"><div><b style="letter-spacing:.08em">${esc(k.c)}</b><br><span class="muted" style="font-size:.85rem">${esc(k.ph)}${k.t?" · "+esc(dt(k.t)):""}</span></div><span class="tg ${k.used?"":"g"}">${k.used?"Used":"Unused"}</span><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-act="ccopy" data-c="${esc(k.c)}" type="button">Copy</button>${k.used?`<button class="btn sm" data-act="cfree" data-c="${esc(k.c)}" type="button">Re-enable</button>`:""}<button class="btn sm alt" data-act="cdel" data-c="${esc(k.c)}" type="button">Delete</button></div></div>`).join("")}</div>`}
 function tlist(o){const lab={placed:"Order placed",paid:"Payment received",shipped:"Marked as shipped",delivered:"Marked as delivered",cancelled:"Order cancelled"},ev=(o.ev&&o.ev.length?o.ev:[{a:"placed",t:o.t}]);
  return`<ul class="tl">${ev.map(e=>`<li>${lab[e.a]||esc(e.a)}${e.a==="shipped"&&o.track?` · Tracking: ${esc(o.track)}`:""}<small>${esc(dt(e.t))}</small></li>`).join("")}</ul>`}
 function pOrder(id){const o=S.orders.find(x=>x.id===id);if(!o)return`<div class="empty2">Order not found. <a href="#admin/orders">Back to orders</a></div>`;
@@ -317,6 +317,7 @@ async function onClick(e){const b=e.target.closest("[data-act],[data-of],[data-p
  const a=d.act,id=d.id,[,oid]=where(),o=S.orders.find(x=>x.id===(a&&a[0]==="o"?(id||oid):oid)),i=S.products.findIndex(p=>String(p.id)===id);
  if(a==="ccopy"){try{await navigator.clipboard.writeText(d.c||"")}catch(e){}say("Discount code copied.");return}
  if(a==="cfree"){const r=await api("codes/free",{code:d.c});if(r.ok){const k=(S.codes||[]).find(x=>x.c===d.c);if(k){k.used=false;delete k.ut;delete k.ord}render();say("That code can be used again.")}else say(r.d.error||"Could not re-enable that code.");return}
+ if(a==="cdel"){if(!confirm("Delete discount code "+d.c+"? It will stop working for the customer."))return;const r=await api("codes/delete",{code:d.c});if(r.ok){S.codes=(S.codes||[]).filter(x=>x.c!==d.c);saveCache();render();say("Discount code deleted.")}else say(r.d.error||"Could not delete that code.");return}
  if(a==="bsave")return saveBrand();
  if(a==="retry"){render(false,true);return}
  if(a==="bsvg")return dlSVG();

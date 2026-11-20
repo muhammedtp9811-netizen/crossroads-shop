@@ -516,6 +516,13 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     await freeCode(b.code);
     return J({ok:1});
   }
+  if(path==="codes/delete"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const c=codeNorm(b.code);if(!c)return J({ok:1});
+    const list=(await getCodes()).filter(k=>codeNorm(k.c)!==c);
+    await db.setJSON("codes",list);
+    return J({ok:1});
+  }
   if(path==="pay/create"){
     if(!E.RAZORPAY_KEY_ID||!E.RAZORPAY_KEY_SECRET)return J({error:"Online payment isn't switched on yet."},503);
     const prods=await get("products",[]),c=b.customer||{},lines=[],its=[];let total=0;

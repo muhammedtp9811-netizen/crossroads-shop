@@ -461,7 +461,7 @@ function renderProduct(id){
  cur=P.find(p=>String(p.id)===String(id)&&!p.hid);const el=$("product");cg=0;
  if(!cur){if(loading){el.innerHTML='<div class="wrap narrow"><p class="sub" style="padding:60px 0">Loading...</p></div>';return}el.innerHTML=`<div class="wrap narrow"><h1>Product not found</h1><p>This item may have been removed.</p><p style="margin-top:16px"><a class="btn" href="./" data-nav="" style="max-width:240px">Back to shop</a></p></div>`;return}
  const S=cur.s&&cur.s.length?cur.s:["One size"],m=imgs(cur),dc=+cur.o>cur.p?Math.round((1-cur.p/cur.o)*100):0,dis=cur.sold?"disabled":"";
- size=S.length===1?S[0]:null;qty=1;ev("view",cur.n,1);document.title=pname(cur)+" | Crossroads Shopping";
+ size=S.length===1?S[0]:null;qty=1;ev("view",cur.n,1);const _pn=pname(cur);document.title=(_pn.length>90?_pn.slice(0,89)+"…":_pn)+" | Crossroads Shopping";
  const rel=P.filter(p=>!p.hid&&p.id!==cur.id&&(p.c===cur.c||p.tr)).slice(0,4),btns=`<button class="btn alt" data-act="add" ${dis}>Add to bag</button><button class="btn" data-act="buy" ${dis}>${cur.sold?"Sold out":"Buy now"}</button>`;
  el.innerHTML=`<div class="wrap"><nav class="bc" aria-label="Breadcrumb"><a href="./" data-nav="">Home</a><span>/</span><a href="./" data-nav="${esc(cur.c||"")}">${esc(cur.c||"Shop")}</a><span>/</span><b>${esc(pname(cur))}</b></nav>
  <div class="pp"><div class="gal"><div class="gm" id="gm">${m.length?m.map((s,k)=>`<img class="sl${k===0?" on":""}" ${k===0?'fetchpriority="high" ':""}decoding="async" src="${s}" alt="${esc(cur.n)}">`).join(""):ph(cur)}${m.length>1?`<div class="gd">${m.map((_,k)=>`<i class="${k===0?"on":""}"></i>`).join("")}</div>`:""}</div>${m.length>1?`<div class="gt">${m.map((s,k)=>`<button type="button" data-g="${k}" aria-label="Photo ${k+1}" aria-pressed="${k===0}"><img src="${s}" alt=""></button>`).join("")}</div>`:""}</div>
@@ -585,7 +585,7 @@ async function hero3d(){const c=$("c3d");if(!c)return;
 let admP=null;
 async function adm(){const A=$("admin");
  if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
-  if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=11";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
+  if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=12";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
   try{await admP}
   catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
  window.CRAdmin.open(A)}
