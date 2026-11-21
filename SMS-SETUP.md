@@ -20,29 +20,48 @@ from your SIM.
 - A free app that has a **webhook trigger** and a **send SMS** action.
   MacroDroid is the easiest free one.
 
-**Steps**
+**Steps (MacroDroid, about 2 minutes)**
 
-1. Install MacroDroid on the phone and give it permission to send SMS.
-2. Create a macro:
-   - **Trigger:** *Webhook (URL)*. Add two variables, for example `num` and `msg`.
-   - **Action:** *Send SMS*. Number = the `num` variable, message = `msg`.
-3. The trigger shows a URL, something like
-   `https://trigger.macrodroid.com/abc123?num=[num]&msg=[msg]`.
-4. Open **Admin → Settings → Login codes (OTP)** and paste the URL in
-   *SMS gateway URL*, replacing the values with the placeholders the site uses:
-   - `{phone}` → the customer's number, already with `91` in front
-   - `{msg}` → the full message text
-   - `{code}` → just the 6-digit code, if your app needs it separately
+1. On an Android phone with a SIM, install **MacroDroid** from the Play Store.
+   Open it and allow **SMS** permission when asked.
+2. Tap **Add Macro**.
+3. **Triggers → Add → Webhook (URL)**:
+   - Identifier: `otp`
+   - Tap the pink **+** to add two **text variables** named exactly `num`
+     and `msg` (the names must match the URL below).
+   - Tap the copy icon to copy the URL. It looks like:
+     `https://trigger.macrodroid.com/<your-device-id>/otp`
+4. **Actions → Add → Send SMS**:
+   - Number: choose the variable **num**.
+   - Message: choose the variable **msg**.
+5. Tap the tick to save. Name it `Crossroads OTP`.
+6. In the store: **Admin → Settings → Login codes (OTP)** → *SMS gateway URL*,
+   paste the URL **with the two placeholders filled in**:
 
-   Example:
    ```
-   https://trigger.macrodroid.com/abc123?num={phone}&msg={msg}
+   https://trigger.macrodroid.com/<your-device-id>/otp?num={phone}&msg={msg}
    ```
-5. Save, then type your own number in **Send a test to** and tap
-   **Send test code**. You should get the SMS in a few seconds.
 
-The site calls the URL with a normal GET request (that is what these apps
-expect). If the URL has no `{...}` placeholders, the site instead POSTs JSON:
+   The site replaces `{phone}` with the customer's number (already starting
+   with `91`) and `{msg}` with the full message text. `{code}` also works if an
+   app needs the 6 digits on their own.
+7. Tap **Save SMS settings**.
+8. Type your own 10-digit mobile number in **Send a test to** and tap
+   **Send test code**. The phone should text you the code within a few seconds.
+   Test from a second phone (or have someone test the real login) so you see
+   the message arrive.
+
+**Keep it reliable**
+
+- The phone must have internet (mobile data or Wi-Fi) — the site's request
+  reaches it over the internet.
+- Keep it charged/plugged in and exclude MacroDroid from **battery
+  optimization** so Android does not delay the macro.
+- Sending from a SIM to Indian numbers uses your normal SMS pack; there is no
+  per-message fee from any provider.
+
+The site calls the URL with a normal GET request (what MacroDroid expects).
+If a URL has no `{...}` placeholders, the site instead POSTs JSON:
 `{"to":"91XXXXXXXXXX","message":"..."}`.
 
 **Cost:** nothing beyond your normal SMS pack. Works for every Indian number,
