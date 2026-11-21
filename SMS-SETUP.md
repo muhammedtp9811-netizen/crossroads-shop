@@ -69,6 +69,39 @@ with no registration.
 
 ---
 
+## 1b. Free: your iPhone sends the SMS (Pushcut)
+
+Same idea as Android, but using a free iOS app called **Pushcut**. The
+iPhone must stay plugged in with the Pushcut app open (its free tier allows
+100 messages a day).
+
+**Steps**
+
+1. On the iPhone, install **Pushcut** from the App Store.
+2. Open Pushcut → **Automation Server → Start Server On This Device**.
+   In Settings, set **Auto-Lock → Never** so the app stays open.
+3. In the **Shortcuts** app, create a shortcut named `Crossroads OTP`:
+   - Add **Get Dictionary from Input** (this reads the data the site sends).
+   - Add **Send Message**:
+     - Recipient: the `phone` value from the dictionary (10-digit, with 91)
+     - Message: the `message` value from the dictionary
+     - Turn **Show When Run** off (so it sends silently).
+4. In Pushcut → **Server Actions**, tap **Update Shortcuts**, then enable
+   `Crossroads OTP`. Tap it to copy its URL — it looks like
+   `https://api.pushcut.io/<secret>/execute?shortcut=Crossroads%20OTP`.
+5. Paste that URL into **Admin → Settings → Login codes (OTP)** →
+   *SMS gateway URL* → **Save SMS settings**.
+6. Send a test code to your own number.
+
+The message is sent from the iPhone's own SIM, so it costs nothing. The
+site sends `{phone, message, code}` to Pushcut, which runs the shortcut
+and texts the customer.
+
+**Note:** the iPhone must stay on and in the Pushcut app. If it sleeps or
+the app closes, codes stop being sent until it is opened again.
+
+---
+
 ## 2. Fast2SMS (paid shortcut, free credits on signup)
 
 1. Create an account at fast2sms.com.

@@ -210,8 +210,15 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const st=await cfg().catch(()=>({})),text=otpText(code);
     const hook=String(E.SMS_WEBHOOK||st.smsHook||"").trim();
     if(hook){
+      const full="91"+phone;
+      if(/api\.pushcut\.io/i.test(hook)){
+        try{
+          const r=await fetch(hook,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({input:{phone:full,message:text,code}})});
+          if(r.ok)return{ok:1,via:"gateway"};
+          return{ok:0,configured:true,err:"Pushcut did not run the shortcut. Keep the Pushcut app open on the iPhone, then check the request list in Pushcut."};
+        }catch(e){return{ok:0,configured:true,err:"Could not reach Pushcut. Check the iPhone's internet connection."}}
+      }
       try{
-        const full="91"+phone;
         if(/\{(phone|msg|code)\}/.test(hook)){
           const url=hook.replace(/\{phone\}/g,encodeURIComponent(full)).replace(/\{msg\}/g,encodeURIComponent(text)).replace(/\{code\}/g,encodeURIComponent(code));
           if((await fetch(url,{method:"GET"})).ok)return{ok:1,via:"gateway"};
