@@ -217,7 +217,8 @@ details{border-top:1px solid var(--line);padding:14px 0}details:last-of-type{bor
 .acct{display:flex;flex-direction:column;gap:12px;padding:18px 20px 26px}
 .acct h3{font-size:1.3rem;margin-bottom:2px}
 .acct .fine{font-size:.8rem;color:var(--mut);line-height:1.55}
-.acct .code{font:700 1.32rem/1 Inter,system-ui;letter-spacing:.3em;color:var(--ink);margin:2px 0 4px}
+.acct .code{display:inline-block;font:700 1.02rem/1.2 Inter,system-ui;letter-spacing:.18em;color:var(--ink);background:var(--line);border-radius:7px;padding:5px 8px 5px 10px;margin-left:2px}
+.acct .otprow{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:.86rem;color:var(--mut);margin:-2px 0 2px}
 .acct .otp{letter-spacing:.4em;text-align:center;font-size:1.25rem;font-weight:700}
 .acct .who{display:flex;align-items:center;gap:12px}
 .acct .who i{flex:none;width:46px;height:46px;border-radius:50%;background:var(--acc);color:#fff;display:grid;place-items:center;font:700 1.05rem Inter,sans-serif;font-style:normal}
@@ -538,6 +539,10 @@ const total=()=>cart.reduce((a,i)=>a+i.p*i.q,0);const payable=()=>Math.max(1,tot
 /* ---- optional account (name + phone + one-time code) ---- */
 const acctGet=()=>{try{return JSON.parse(localStorage.getItem("cr_acct")||"null")}catch(e){return null}};
 let ACCT=acctGet(),accStep="start",accPhone="",accName="",accCode="";
+let accTimer=null;
+const stopAccTimer=()=>{if(accTimer){clearInterval(accTimer);accTimer=null}};
+const maskPhone=p=>{const d=String(p||"").replace(/\D/g,"").slice(-10);return d.length===10?"+91 "+d.slice(0,5)+" "+d.slice(5):"+91 "+d};
+function accCountdown(btn,sec){stopAccTimer();let left=sec;const draw=()=>{if(!btn||!btn.isConnected){stopAccTimer();return}btn.disabled=left>0;btn.textContent=left>0?`Resend in 0:${String(left).padStart(2,"0")}`:"Resend code"};draw();accTimer=setInterval(()=>{left--;if(left<=0){left=0;draw();stopAccTimer();return}draw()},1000)}
 const acctSet=u=>{ACCT=u;try{u?localStorage.setItem("cr_acct",JSON.stringify(u)):localStorage.removeItem("cr_acct")}catch(e){}const b=$("bAcc");if(b)b.setAttribute("aria-label",u?"Your account: "+u.name:"Your account")};
 const acctHdr=u=>(u&&u.token?{"x-cr-token":u.token}:{});
 const starRow=v=>{const k=Math.max(0,Math.min(5,Math.round(+v||0)));return `<span class="stars" aria-hidden="true">${[1,2,3,4,5].map(i=>`<i class="${i<=k?"on":""}">★</i>`).join("")}</span>`};
@@ -551,15 +556,20 @@ function accRender(msg){const b=$("accBody");if(!b)return;const head=`<div class
   $("accOut").onclick=()=>{post("auth/logout",{},acctHdr(ACCT)).catch(()=>{});acctSet(null);$("accD").close();toast("Logged out");refreshRevs()};
   return}
  if(accStep==="otp"){
-  b.innerHTML=head+`<div class="acct"><h3>Enter your code</h3><p class="fine">${accCode?"SMS delivery is not switched on yet. Use the code below to log in.":`We sent a 6-digit code to <b>+91 ${esc(accPhone)}</b>.`}</p>${accCode?`<p class="code">${esc(accCode)}</p>`:""}<form id="accF" class="fl" novalidate><label>6-digit code<input id="ao" class="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"></label><div class="err" id="ae"></div><button class="btn" type="submit">Verify and log in</button><button class="btn alt" id="accBack" type="button">Use a different number</button></form></div>`;
-  $("accX").onclick=()=>$("accD").close();
-  $("accBack").onclick=()=>{accStep="start";accCode="";accRender()};
-  $("accF").onsubmit=async e=>{e.preventDefault();const code=$("ao").value.replace(/\D/g,""),er=$("ae");er.className="err";if(code.length!==6){er.textContent="Enter the 6-digit code.";return}er.className="";er.textContent="Checking…";const r=await post("auth/verify",{phone:accPhone,code}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not verify that code.";return}acctSet({token:r.d.token,name:r.d.name,phone:r.d.phone});$("accD").close();toast("Logged in as "+r.d.name);prefillCk();refreshRevs()};
+  b.innerHTML=head+`<div class="acct"><h3>Enter your code</h3><p class="fine">We sent a 6-digit code to <b>${maskPhone(accPhone)}</b>.</p>${accCode?`<p class="fine demo">SMS is not set up yet, so use this code: <b class="code">${esc(accCode)}</b></p>`:""}<form id="accF" class="fl" novalidate><label>6-digit code<input id="ao" class="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••"></label><div class="err" id="ae"></div><button class="btn" type="submit">Verify and log in</button><div class="otprow"><span>Didn't get it?</span><button class="link" id="accResend" type="button">Resend code</button></div><button class="btn alt" id="accBack" type="button">Use a different number</button></form></div>`;
+  $("accX").onclick=()=>{stopAccTimer();$("accD").close()};
+  const rb=$("accResend");accCountdown(rb,30);
+  $("ao").focus();
+  $("ao").addEventListener("input",e=>{const v=e.target.value.replace(/\D/g,"").slice(0,6);if(e.target.value!==v)e.target.value=v;if(v.length===6){const f=$("accF");if(f)setTimeout(()=>{if(!$("accF"))return;f.requestSubmit?f.requestSubmit():f.dispatchEvent(new Event("submit",{cancelable:true,bubbles:true}))},140)}});
+  $("accBack").onclick=()=>{stopAccTimer();accStep="start";accCode="";accRender()};
+  rb.onclick=async()=>{const er=$("ae");er.className="";er.textContent="Sending a new code…";const r=await post("auth/start",{name:accName,phone:accPhone}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not send a new code.";return}accCode=r.d.demo&&r.d.code?String(r.d.code):"";accRender();toast(r.d.demo?"New code ready":"New code sent")};
+  $("accF").onsubmit=async e=>{e.preventDefault();const code=$("ao").value.replace(/\D/g,""),er=$("ae");er.className="err";if(code.length!==6){er.textContent="Enter the 6-digit code.";return}er.className="";er.textContent="Checking…";const r=await post("auth/verify",{phone:accPhone,code}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not verify that code.";return}stopAccTimer();acctSet({token:r.d.token,name:r.d.name,phone:r.d.phone});$("accD").close();toast("Logged in as "+r.d.name);prefillCk();refreshRevs()};
   return}
- b.innerHTML=head+`<div class="acct"><h3>Log in or create an account</h3><p class="fine">Optional. Enter your name and phone number and we will send a one-time code. You can still shop without an account.</p><form id="accF" class="fl" novalidate><label>Your name<input id="an" autocomplete="name" value="${esc(accName)}"></label><label>Phone number<input id="ap" inputmode="numeric" autocomplete="tel" maxlength="10" value="${esc(accPhone)}" placeholder="10-digit mobile number"></label><div class="err" id="ae"></div><button class="btn" type="submit">Send code</button></form></div>`;
- $("accX").onclick=()=>$("accD").close();
+ b.innerHTML=head+`<div class="acct"><h3>Log in or create an account</h3><p class="fine">Optional — you can shop without one. Enter your name and phone and we will text you a 6-digit code.</p><form id="accF" class="fl" novalidate><label>Your name<input id="an" autocomplete="name" value="${esc(accName)}"></label><label>Phone number<input id="ap" inputmode="numeric" autocomplete="tel" maxlength="10" value="${esc(accPhone)}" placeholder="10-digit mobile number"></label><div class="err" id="ae"></div><button class="btn" type="submit">Send code</button></form></div>`;
+ $("accX").onclick=()=>{stopAccTimer();$("accD").close()};
  $("accF").onsubmit=async e=>{e.preventDefault();const name=$("an").value.trim(),ph=$("ap").value.replace(/\D/g,""),er=$("ae");er.className="err";if(name.length<2){er.textContent="Enter your name.";return}if(ph.length!==10){er.textContent="Enter a valid 10-digit phone number.";return}er.className="";er.textContent="Sending code…";const r=await post("auth/start",{name,phone:ph}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not send the code.";return}accName=name;accPhone=ph;accCode=r.d.demo&&r.d.code?String(r.d.code):"";accStep="otp";accRender()}}
-function openAcc(){if(!$("accBody")||!$("accD"))return;accStep="start";accCode="";accRender();$("accD").showModal()}
+function openAcc(){if(!$("accBody")||!$("accD"))return;stopAccTimer();accStep="start";accCode="";accRender();$("accD").showModal()}
+$("accD").addEventListener("close",stopAccTimer);
 /* ---- ratings ---- */
  let revPid="";
 const revInflight={};
@@ -678,7 +688,7 @@ async function hero3d(){const c=$("c3d");if(!c)return;
 let admP=null;
 async function adm(){const A=$("admin");
  if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
-  if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=15";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
+  if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=16";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
   try{await admP}
   catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
  window.CRAdmin.open(A)}

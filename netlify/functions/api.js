@@ -205,15 +205,42 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
   const shortName=v=>{const p=String(v||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "Customer";return p.length>1?p[0]+" "+p[p.length-1][0].toUpperCase()+".":p[0]};
   const getReviews=()=>get("reviews",[]);
   const me=async()=>{const t=String(req.headers.get("x-cr-token")||"").trim();if(!t)return null;const ss=await get("sessions",[]),s=ss.find(k=>k.token===t);if(!s)return null;if(Date.now()-new Date(s.t||0).getTime()>90*864e5)return null;return s};
+  const otpText=code=>`${code} is your Crossroads Shopping code. It expires in 10 minutes. Never share it with anyone.`;
   async function sendOtp(phone,code){
-    const key=E.FAST2SMS_KEY||"";
-    if(!key)return false;
-    try{
-      const msg=`${code} is your Crossroads Shopping verification code. It expires in 10 minutes.`;
-      const r=await fetch("https://www.fast2sms.com/dev/bulkV2?"+new URLSearchParams({authorization:key,route:"q",message:msg,flash:"0",numbers:phone}));
-      const d=await r.json().catch(()=>({}));
-      return !!(r.ok&&(d.return===true||d.status==="success"));
-    }catch(e){return false}
+    const st=await cfg().catch(()=>({})),text=otpText(code);
+    const hook=String(E.SMS_WEBHOOK||st.smsHook||"").trim();
+    if(hook){
+      try{
+        const full="91"+phone;
+        if(/\{(phone|msg|code)\}/.test(hook)){
+          const url=hook.replace(/\{phone\}/g,encodeURIComponent(full)).replace(/\{msg\}/g,encodeURIComponent(text)).replace(/\{code\}/g,encodeURIComponent(code));
+          if((await fetch(url,{method:"GET"})).ok)return{ok:1,via:"gateway"};
+        }else{
+          const r=await fetch(hook,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({to:full,phone:full,message:text,text,code})});
+          if(r.ok)return{ok:1,via:"gateway"};
+        }
+      }catch(e){}
+    }
+    const key=String(E.FAST2SMS_KEY||st.f2sKey||"").trim();
+    if(key){
+      try{
+        const route=String(E.FAST2SMS_ROUTE||st.f2sRoute||"q")==="otp"?"otp":"q";
+        const r=await fetch("https://www.fast2sms.com/dev/bulkV2?"+new URLSearchParams({authorization:key,route,message:text,flash:"0",numbers:phone}));
+        const d=await r.json().catch(()=>({}));
+        if(r.ok&&(d.return===true||d.status==="success"))return{ok:1,via:"sms"};
+        return{ok:0,configured:true,err:"Our SMS provider did not accept the message. Check the key in Settings."};
+      }catch(e){return{ok:0,configured:true,err:"Could not reach the SMS provider."}}
+    }
+    const tb=String(E.TEXTBELT_KEY||"").trim();
+    if(tb){
+      try{
+        const r=await fetch("https://textbelt.com/text",{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded"},body:new URLSearchParams({phone:"+91"+phone,message:text,key:tb})});
+        const d=await r.json().catch(()=>({}));
+        if(d.success)return{ok:1,via:"sms"};
+        return{ok:0,configured:true,err:d.error||"The SMS provider did not accept the message."};
+      }catch(e){return{ok:0,configured:true,err:"Could not reach the SMS provider."}}
+    }
+    return{ok:0,configured:false};
   }
   const applyOff=(total,off)=>Math.max(1,total-Math.min(off||0,total-1));
   const tgCreds=async()=>{const s=await cfg().catch(()=>({}));return{tok:E.TELEGRAM_BOT_TOKEN||s.tgToken||"",chat:String(E.TELEGRAM_CHAT_ID||s.tgChat||"").trim()}};
@@ -265,6 +292,10 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(b.rsKey!==undefined)nxt.rsKey=cut(String(b.rsKey).trim(),90);
     if(b.rsTo!==undefined)nxt.rsTo=cut(String(b.rsTo).trim().toLowerCase(),120);
     if(b.rsFrom!==undefined)nxt.rsFrom=cut(String(b.rsFrom).trim(),120);
+    if(b.smsHook!==undefined){const h=String(b.smsHook).trim();nxt.smsHook=/^https?:\/\//i.test(h)?cut(h,300):""}
+    if(b.f2sKey!==undefined&&String(b.f2sKey).trim())nxt.f2sKey=cut(String(b.f2sKey).trim(),120);
+    if(b.f2sKey==="")delete nxt.f2sKey;
+    if(b.f2sRoute!==undefined)nxt.f2sRoute=String(b.f2sRoute)==="otp"?"otp":"q";
     await db.setJSON("settings",nxt);cfgCache={t:0,v:null};return J({ok:1});
   }
   if(path==="notify"&&req.method==="GET"){
@@ -273,7 +304,9 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     return J({whatsapp:!!(E.CALLMEBOT_KEY||s.waKey),whatsapp_number:String(E.WA_NUMBER||s.waPhone||WA).replace(/\D/g,""),
       email:!!(E.RESEND_API_KEY||s.rsKey),email_to:E.ALERT_EMAIL||s.rsTo||"producingmj@gmail.com",email_saved:!!s.rsKey,email_from:E.MAIL_FROM||s.rsFrom||"",
       telegram:!!(tgTok&&tgChat),telegram_saved:!!s.tgToken,telegram_chat:tgChat,
-      ntfy:!!E.NTFY_TOPIC,discord:!!E.DISCORD_WEBHOOK,sms:!!E.FAST2SMS_KEY});
+      ntfy:!!E.NTFY_TOPIC,discord:!!E.DISCORD_WEBHOOK,sms:!!E.FAST2SMS_KEY,
+      otp:{gateway:!!String(E.SMS_WEBHOOK||settings.smsHook||"").trim(),fast2sms:!!String(E.FAST2SMS_KEY||settings.f2sKey||"").trim(),
+        textbelt:!!String(E.TEXTBELT_KEY||"").trim(),hook:settings.smsHook||"",f2s:!!String(settings.f2sKey||"").trim()}});
   }
   if(path==="notify/telegram"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
@@ -536,6 +569,15 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     await db.setJSON("codes",list);
     return J({ok:1});
   }
+  if(path==="sms/test"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const ph=last10(b.phone);
+    if(ph.length!==10)return J({error:"Enter a 10-digit mobile number to test."},400);
+    const r=await sendOtp(ph,String(Math.floor(100000+Math.random()*900000)));
+    if(r.ok)return J({ok:1,via:r.via});
+    if(!r.configured)return J({error:"No SMS method is set up yet. Paste a gateway URL or a Fast2SMS key first."},400);
+    return J({error:r.err||"The provider did not accept the message."},502);
+  }
   if(path==="auth/start"&&req.method==="POST"){
     const ph=last10(b.phone),name=cut(String(b.name||"").trim(),60);
     if(ph.length!==10)return J({error:"Enter a valid 10-digit phone number."},400);
@@ -545,13 +587,15 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(rl.n>=60)return J({error:"Too many codes requested just now. Try again later."},429);
     rl.n++;await db.setJSON("rla",rl);
     const otps=await get("otps",{}),prev=otps[ph];
-    if(prev&&Date.now()-new Date(prev.t||0).getTime()<45000)return J({error:"Wait a few seconds, then ask for another code."},429);
+    if(prev&&Date.now()-new Date(prev.t||0).getTime()<30000)return J({error:"Wait a few seconds, then ask for another code."},429);
     const code=String(Math.floor(100000+Math.random()*900000));
     otps[ph]={c:code,n:name,t:new Date().toISOString(),tries:0};
     const keys=Object.keys(otps);if(keys.length>800)keys.sort((a,b)=>String(otps[a].t).localeCompare(String(otps[b].t))).slice(0,keys.length-800).forEach(k=>delete otps[k]);
     await db.setJSON("otps",otps);
     const sent=await sendOtp(ph,code);
-    return J(sent?{ok:1,sent:true,phone:ph}:{ok:1,sent:false,demo:true,code,phone:ph});
+    if(sent.ok)return J({ok:1,sent:true,via:sent.via,phone:ph});
+    if(sent.configured)return J({error:sent.err||"We could not send the code just now. Please try again."},502);
+    return J({ok:1,sent:false,demo:true,code,phone:ph});
   }
   if(path==="auth/verify"&&req.method==="POST"){
     const ph=last10(b.phone),code=String(b.code||"").replace(/\D/g,"");
