@@ -208,15 +208,16 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
   const otpText=code=>`${code} is your Crossroads Shopping code. It expires in 10 minutes. Never share it with anyone.`;
   async function sendOtp(phone,code){
     const st=await cfg().catch(()=>({})),text=otpText(code);
-    const hook=String(E.SMS_WEBHOOK||st.smsHook||"").trim();
-    if(hook){
+    const hooks=[String(E.SMS_WEBHOOK||st.smsHook||"").trim(),String(E.SMS_WEBHOOK2||st.smsHook2||"").trim()].filter(Boolean);
+    for(const hook of hooks){
       const full="91"+phone;
       if(/api\.pushcut\.io/i.test(hook)){
         try{
           const r=await fetch(hook,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({input:{phone:full,message:text,code}})});
           if(r.ok)return{ok:1,via:"gateway"};
-          return{ok:0,configured:true,err:"Pushcut did not run the shortcut. Keep the Pushcut app open on the iPhone, then check the request list in Pushcut."};
-        }catch(e){return{ok:0,configured:true,err:"Could not reach Pushcut. Check the iPhone's internet connection."}}
+          // try next hook
+        }catch(e){}
+        continue;
       }
       try{
         if(/\{(phone|msg|code)\}/.test(hook)){
@@ -301,6 +302,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(b.rsTo!==undefined)nxt.rsTo=cut(String(b.rsTo).trim().toLowerCase(),120);
     if(b.rsFrom!==undefined)nxt.rsFrom=cut(String(b.rsFrom).trim(),120);
     if(b.smsHook!==undefined){const h=String(b.smsHook).trim();nxt.smsHook=/^https?:\/\//i.test(h)?cut(h,300):""}
+    if(b.smsHook2!==undefined){const h=String(b.smsHook2).trim();nxt.smsHook2=/^https?:\/\//i.test(h)?cut(h,300):""}
     if(b.f2sKey!==undefined&&String(b.f2sKey).trim())nxt.f2sKey=cut(String(b.f2sKey).trim(),120);
     if(b.f2sKey==="")delete nxt.f2sKey;
     if(b.f2sRoute!==undefined)nxt.f2sRoute=String(b.f2sRoute)==="otp"?"otp":"q";
@@ -314,7 +316,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       telegram:!!(tgTok&&tgChat),telegram_saved:!!s.tgToken,telegram_chat:tgChat,
       ntfy:!!E.NTFY_TOPIC,discord:!!E.DISCORD_WEBHOOK,sms:!!E.FAST2SMS_KEY,
       otp:{gateway:!!String(E.SMS_WEBHOOK||s.smsHook||"").trim(),fast2sms:!!String(E.FAST2SMS_KEY||s.f2sKey||"").trim(),
-        textbelt:!!String(E.TEXTBELT_KEY||"").trim(),hook:s.smsHook||"",f2s:!!String(s.f2sKey||"").trim()}});
+        textbelt:!!String(E.TEXTBELT_KEY||"").trim(),hook:s.smsHook||"",hook2:s.smsHook2||"",f2s:!!String(s.f2sKey||"").trim()}});
   }
   if(path==="notify/telegram"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
@@ -518,7 +520,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       telegram:!!(tgTok&&tgChat),telegram_saved:!!settings.tgToken,telegram_chat:tgChat,
       ntfy:!!E.NTFY_TOPIC,discord:!!E.DISCORD_WEBHOOK,sms:!!E.FAST2SMS_KEY},
       otp:{gateway:!!String(E.SMS_WEBHOOK||settings.smsHook||"").trim(),fast2sms:!!String(E.FAST2SMS_KEY||settings.f2sKey||"").trim(),
-        textbelt:!!String(E.TEXTBELT_KEY||"").trim(),hook:settings.smsHook||"",f2s:!!String(settings.f2sKey||"").trim()}});
+        textbelt:!!String(E.TEXTBELT_KEY||"").trim(),hook:settings.smsHook||"",hook2:settings.smsHook2||"",f2s:!!String(settings.f2sKey||"").trim()}});
   }
   if(path==="admin"&&req.method==="GET"){
     if(!admin())return J({error:"Wrong password"},401);
