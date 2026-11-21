@@ -121,7 +121,7 @@ async function chatAI(messages,prods){
 export default async(req,context)=>{
   const db=getStore({name:"shop",consistency:"strong"}), path=new URL(req.url).pathname.replace(/^\/api\/?/,"");
   const get=async(k,d)=>(await db.get(k,{type:"json"}))??d;
-  const cfg=async()=>{if(cfgCache.v&&Date.now()-cfgCache.t<60000)return cfgCache.v;const s=await get("settings",{});cfgCache={t:Date.now(),v:s};return s};
+  const cfg=async()=>{if(cfgCache.v&&Date.now()-cfgCache.t<15000)return cfgCache.v;const s=await get("settings",{});cfgCache={t:Date.now(),v:s};return s};
   const admin=()=>E.ADMIN_PASSWORD&&req.headers.get("x-admin")===E.ADMIN_PASSWORD;
   const b=req.method==="POST"?await req.json().catch(()=>({})):{};
   const imgId=b=>crypto.createHash("sha1").update(b).digest("hex").slice(0,24);
