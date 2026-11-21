@@ -666,8 +666,9 @@ function upiHTML(){const amt=payable(),link="upi://pay?pa="+encodeURIComponent(S
 function renderCheckout(){const el=$("checkout");
  if(!cart.length){el.innerHTML=`<div class="wrap narrow"><h1>Your bag is empty</h1><p>Add something you like, then come back to check out.</p><p style="margin-top:16px"><a class="btn" href="./" data-nav="" style="max-width:240px">Continue shopping</a></p></div>`;return}
  const pm=ST.paymentMethod||"both";
- const showCod=pm==="cod"||pm==="both";
- const showUpi=pm==="upi"||pm==="both";
+ const cartPms=cart.map(i=>{const p=P.find(x=>x.id===i.id);return p&&p.pm?p.pm:"both"});
+ const showCod=cartPms.some(x=>x==="cod"||x==="both")||(pm==="cod"||pm==="both");
+ const showUpi=cartPms.some(x=>x==="upi"||x==="both")||(pm==="upi"||pm==="both");
  const first=ST.online&&showUpi?"online":ST.upi&&showUpi?"upi":showCod?"cod":"";
  el.innerHTML=`<div class="wrap"><nav class="bc" aria-label="Breadcrumb"><a href="./" data-nav="">Home</a><span>/</span><b>Checkout</b></nav><h1 style="font-size:clamp(1.8rem,4vw,2.4rem)">Checkout</h1>
  <div class="ck"><form id="f" novalidate class="cardx"><h2 class="fh">Delivery details</h2>
