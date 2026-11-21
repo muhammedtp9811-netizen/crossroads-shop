@@ -508,13 +508,14 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
   }
   if(path==="admin/boot"&&req.method==="GET"){
     if(!admin())return J({error:"Wrong password"},401);
-    const [orders,messages,products,settings,feedback,codes,reviews]=await Promise.all([get("orders",[]),get("messages",[]),get("products",[]),get("settings",{}),get("feedback",[]),get("codes",[]),get("reviews",[])]);
+    const [orders,messages,products,settings,feedback,codes,reviews,sessions]=await Promise.all([get("orders",[]),get("messages",[]),get("products",[]),get("settings",{}),get("feedback",[]),get("codes",[]),get("reviews",[]),get("sessions",[])]);
     let mx=Math.max(1000,...orders.map(o=>o.no||0)),ch=false;
     [...orders].reverse().forEach(o=>{if(!o.no){o.no=++mx;ch=true}if(!o.method)o.method=o.manual?"upi":"online"});
     if(ch)await db.setJSON("orders",orders);
     const tgTok=E.TELEGRAM_BOT_TOKEN||settings.tgToken||"",tgChat=E.TELEGRAM_CHAT_ID||settings.tgChat||"";
     const safe={upi:settings.upi||"",name:settings.name||"",qr:settings.qr||"",brand:settings.brand||null};
-    return J({orders,messages,products,settings:safe,feedback,codes,reviews,
+    const acctMap={};(sessions||[]).forEach(s=>{const k=String(s.ph||"").replace(/\D/g,"").slice(-10);if(!k)return;if(!acctMap[k]||new Date(s.t||0)>new Date(acctMap[k].t||0))acctMap[k]={name:s.name||"Customer",phone:s.ph,t:s.t};});const accounts=Object.values(acctMap).sort((a,b)=>new Date(b.t||0)-new Date(a.t||0));
+    return J({orders,messages,products,settings:safe,feedback,codes,reviews,accounts,
       notify:{whatsapp:!!(E.CALLMEBOT_KEY||settings.waKey),whatsapp_number:String(E.WA_NUMBER||settings.waPhone||WA).replace(/\D/g,""),
       email:!!(E.RESEND_API_KEY||settings.rsKey),email_to:E.ALERT_EMAIL||settings.rsTo||"producingmj@gmail.com",email_saved:!!settings.rsKey,email_from:E.MAIL_FROM||settings.rsFrom||"",
       telegram:!!(tgTok&&tgChat),telegram_saved:!!settings.tgToken,telegram_chat:tgChat,
