@@ -517,7 +517,7 @@ document.querySelectorAll("a.mail-t").forEach(e=>e.href="mailto:"+MAIL);
 document.querySelectorAll(".ig-t").forEach(e=>e.textContent="@"+IG);document.querySelectorAll(".mail-t").forEach(e=>e.textContent=MAIL);
 $("host").textContent=location.host||"crossroadsshoppings.in";document.querySelectorAll(".host-t").forEach(e=>e.textContent=location.host||"crossroadsshoppings.in");$("yr").textContent=new Date().getFullYear();
 
-let P=[],cat="All",cart=[],cur=null,size=null,Q="",SO="n",ST={upi:"",name:"",qr:"",online:false},ST_READY=false,DISC={code:"",off:0},wasAdmin=false,loading=true;
+let P=[],cat="All",cart=[],cur=null,size=null,Q="",SO="n",ST={upi:"",name:"",qr:"",online:false,paymentMethod:"both"},ST_READY=false,DISC={code:"",off:0},wasAdmin=false,loading=true;
 try{cart=JSON.parse(localStorage.getItem("cr_cart")||"[]")}catch(e){}
 const save=()=>{try{localStorage.setItem("cr_cart",JSON.stringify(cart))}catch(e){}};
 const imgs=p=>p.images&&p.images.length?p.images:(p.imgs&&p.imgs.length?p.imgs:(p.img?[p.img]:[]));
@@ -665,14 +665,18 @@ function upiHTML(){const amt=payable(),link="upi://pay?pa="+encodeURIComponent(S
  return `<div class="upi">${ST.qr?`<img src="${ST.qr}" alt="UPI QR code">`:""}<p>UPI ID: <b>${esc(ST.upi)}</b></p><a class="btn alt" href="${link}">Open my UPI app</a><p class="sub">Pay exactly ${money(amt)}, then enter the UPI transaction ID (UTR) shown in your payment app.</p><label>UPI transaction ID<input id="ut" inputmode="numeric" autocomplete="off"></label></div>`}
 function renderCheckout(){const el=$("checkout");
  if(!cart.length){el.innerHTML=`<div class="wrap narrow"><h1>Your bag is empty</h1><p>Add something you like, then come back to check out.</p><p style="margin-top:16px"><a class="btn" href="./" data-nav="" style="max-width:240px">Continue shopping</a></p></div>`;return}
- const first=ST.online?"online":ST.upi?"upi":"";
+ const pm=ST.paymentMethod||"both";
+ const showCod=pm==="cod"||pm==="both";
+ const showUpi=pm==="upi"||pm==="both";
+ const first=ST.online&&showUpi?"online":ST.upi&&showUpi?"upi":showCod?"cod":"";
  el.innerHTML=`<div class="wrap"><nav class="bc" aria-label="Breadcrumb"><a href="./" data-nav="">Home</a><span>/</span><b>Checkout</b></nav><h1 style="font-size:clamp(1.8rem,4vw,2.4rem)">Checkout</h1>
  <div class="ck"><form id="f" novalidate class="cardx"><h2 class="fh">Delivery details</h2>
  <label>Full name<input id="fn" autocomplete="name"></label><label>Phone number<input id="fp" inputmode="tel" autocomplete="tel"></label>
  <label>Email (for your receipt)<input id="fe" type="email" autocomplete="email"></label><label>Full address with pincode<textarea id="fa" rows="3" autocomplete="street-address"></textarea></label>
  <h2 class="fh" style="margin-top:10px">Payment</h2>
- ${ST.online?`<label class="pmo"><input type="radio" name="pm" value="online" ${first==="online"?"checked":""}><span>Pay online<small>Cards, UPI and net banking</small></span></label>`:""}
- ${ST.upi?`<label class="pmo"><input type="radio" name="pm" value="upi" ${first==="upi"?"checked":""}><span>Pay by UPI QR<small>Scan, pay, then enter your transaction ID</small></span></label>`:""}
+ ${ST.online&&showUpi?`<label class="pmo"><input type="radio" name="pm" value="online" ${first==="online"?"checked":""}><span>Pay online<small>Cards, UPI and net banking</small></span></label>`:""}
+ ${ST.upi&&showUpi?`<label class="pmo"><input type="radio" name="pm" value="upi" ${first==="upi"?"checked":""}><span>Pay by UPI QR<small>Scan, pay, then enter your transaction ID</small></span></label>`:""}
+ ${showCod?`<label class="pmo"><input type="radio" name="pm" value="cod" ${first==="cod"?"checked":""}><span>Cash on Delivery<small>Pay when your order arrives</small></span></label>`:""}
  ${!first?(ST_READY?'<div class="err">Payment is not available yet. Message us on Instagram to order.</div>':'<div class="muted">Loading payment options…</div>'):""}
  <div class="trustbar"><span>&#128274; Secure checkout</span><span>&#128666; Free shipping</span><span>&#8617; Easy returns</span><span>&#9989; Genuine products</span><span>&#128222; WhatsApp support</span></div>
  <p class="muted" style="font-size:.88rem;margin-top:6px">Shipping is free. Orders are dispatched within 24 hours and delivered in about 5 days — never more than 2 weeks. <a href="#delivery">Delivery details</a>.</p>
@@ -694,6 +698,7 @@ function done(a,b,amt,next){EC.o++;OV+=+amt||0;AC.push({a:"order",n:money(+amt||
  $("checkout").innerHTML=`<div class="wrap narrow" style="text-align:center;padding:50px 0"><h1 class="ok">${a}</h1><p>${b}</p>${nb}<p style="margin-top:22px"><a class="btn" href="./" data-nav="" style="max-width:240px;margin:0 auto">Continue shopping</a></p></div>`;scrollTo(0,0)}
 async function place(){const d=cust();if(!d)return;const tot=payable();const r=document.querySelector("input[name=pm]:checked"),er=$("fr");if(!r){er.textContent="Choose a payment method.";return}
  const items=cart.map(i=>({id:i.id,size:i.s,q:i.q})),customer={name:d.n,phone:d.ph,email:d.em,address:d.ad},code=DISC.code||"";ev("buy","Pay "+money(payable()));$("pay").disabled=true;
+ if(r.value==="cod"){const x=await post("order/manual",{items,customer,utr:"",code,method:"cod"}).catch(()=>({ok:false,d:{}}));if(x.ok)done("Order placed. Thank you!","We will call to confirm. Pay in cash when your order arrives. Delivery takes about 5 days, and never more than 2 weeks.",tot,x.d.next);else{er.textContent=x.d.error||"Something went wrong. Try again.";$("pay").disabled=false}return}
  if(r.value==="upi"){const ut=$("ut").value.trim();if(ut.replace(/\W/g,"").length<8){er.textContent="Enter the UPI transaction ID from your payment app.";$("pay").disabled=false;return}
   const x=await post("order/manual",{items,customer,utr:ut,code}).catch(()=>({ok:false,d:{}}));
   if(x.ok)done("Order received. Thank you!","We will check your payment and start packing. Delivery takes about 5 days, and never more than 2 weeks.",tot,x.d.next);else{er.textContent=x.d.error||"Something went wrong. Try again.";$("pay").disabled=false}return}

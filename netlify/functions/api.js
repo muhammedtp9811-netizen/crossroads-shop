@@ -286,11 +286,12 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     }
     return J(r);
   }
-  if(path==="settings"&&req.method==="GET"){const t=await get("settings",{});return J({upi:t.upi||"",name:t.name||"",qr:t.qr||"",online:!!(E.RAZORPAY_KEY_ID&&E.RAZORPAY_KEY_SECRET)})}
+  if(path==="settings"&&req.method==="GET"){const t=await get("settings",{});return J({upi:t.upi||"",name:t.name||"",qr:t.qr||"",online:!!(E.RAZORPAY_KEY_ID&&E.RAZORPAY_KEY_SECRET),paymentMethod:t.paymentMethod||"both"})}
   if(path==="settings"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
     const cur=await get("settings",{}),nxt={...cur};
     if(b.upi!==undefined)nxt.upi=cut(b.upi,80);
+    if(b.paymentMethod!==undefined)nxt.paymentMethod=["cod","upi","both"].includes(b.paymentMethod)?b.paymentMethod:"both";
     if(b.name!==undefined)nxt.name=cut(b.name,60);
     if(b.qr!==undefined)nxt.qr=cut(b.qr,400000);
     if(b.brand!==undefined){const x=b.brand&&typeof b.brand==="object"?b.brand:null;nxt.brand=x?{name:cut(x.name,40)||"Crossroads Shopping",tag:cut(x.tag,70),mono:cut(x.mono,3)||"CS",bg:/^#[0-9a-f]{3,8}$/i.test(x.bg||"")?x.bg:"#111318",fg:/^#[0-9a-f]{3,8}$/i.test(x.fg||"")?x.fg:"#ffffff",ac:/^#[0-9a-f]{3,8}$/i.test(x.ac||"")?x.ac:"#c9a227",shape:["rounded","circle","square"].includes(x.shape)?x.shape:"rounded"}:null;}
@@ -401,8 +402,10 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       if(!p||p.sold)return J({error:"An item in your cart is no longer available."},400);
       lines.push(`${p.n} (${cut(i.size,20)}) x${q}`);its.push({n:shortN(p.n,90),s:cut(i.size,20),q,p:p.p});total+=p.p*q;
     }
+    const method=String(b.method||"upi")==="cod"?"cod":"upi";
     const utr=String(b.utr||"").replace(/\W/g,"").slice(0,30);
-    if(!lines.length||!c.name||!c.phone||!c.address||utr.length<8)return J({error:"Fill in your details and the UPI transaction ID."},400);
+    if(!lines.length||!c.name||!c.phone||!c.address)return J({error:"Fill in your details."},400);
+    if(method==="upi"&&utr.length<8)return J({error:"Fill in your details and the UPI transaction ID."},400);
     const orders=await get("orders",[]);
     if(orders.some(x=>x.utr===utr))return J({error:"This transaction ID was already used."},400);
     const id="upi"+Date.now();
@@ -411,12 +414,12 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     total=applyOff(total,cc.off);
     const first=!orders.some(x=>!x.cancelled&&last10(x.phone)===last10(c.phone));
     const mx=Math.max(1000,...orders.map(o=>o.no||0));
-    const o={id,no:mx+1,method:"upi",ev:[{a:"placed",t:new Date().toISOString()}],lines,it:its,total,paid:false,manual:true,utr,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)};
+    const o={id,no:mx+1,method:method,ev:[{a:"placed",t:new Date().toISOString()}],lines,it:its,total,paid:false,manual:true,utr:method==="cod"?"":utr,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)};
     if(cc.off)o.disc={code:cc.code,off:cc.off};
     if(first){const nc=await issueCode(c.phone);if(nc)o.next=nc}
     orders.unshift(o);
     await db.setJSON("orders",orders.slice(0,500));
-    await notify(orderText(o,"ðŸ›’ New order â€” UPI payment claimed. Check your bank app, then mark it paid.")+(cc.off?`\nDiscount code used: ${cc.code}`:""),true);
+    await notify(orderText(o,method==="cod"?"New order - Cash on Delivery. Collect payment on delivery.":"New order - UPI payment claimed. Check your bank app, then mark it paid.")+(cc.off?`\nDiscount code used: ${cc.code}`:""),true);
     await custMail(o,"received");
     return J({ok:1,next:o.next||""});
   }
@@ -513,7 +516,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     [...orders].reverse().forEach(o=>{if(!o.no){o.no=++mx;ch=true}if(!o.method)o.method=o.manual?"upi":"online"});
     if(ch)await db.setJSON("orders",orders);
     const tgTok=E.TELEGRAM_BOT_TOKEN||settings.tgToken||"",tgChat=E.TELEGRAM_CHAT_ID||settings.tgChat||"";
-    const safe={upi:settings.upi||"",name:settings.name||"",qr:settings.qr||"",brand:settings.brand||null};
+    const safe={upi:settings.upi||"",name:settings.name||"",qr:settings.qr||"",brand:settings.brand||null,paymentMethod:settings.paymentMethod||"both"};
     const acctMap={};(sessions||[]).forEach(s=>{const k=String(s.ph||"").replace(/\D/g,"").slice(-10);if(!k)return;if(!acctMap[k]||new Date(s.t||0)>new Date(acctMap[k].t||0))acctMap[k]={name:s.name||"Customer",phone:s.ph,t:s.t};});const accounts=Object.values(acctMap).sort((a,b)=>new Date(b.t||0)-new Date(a.t||0));
     return J({orders,messages,products,settings:safe,feedback,codes,reviews,accounts,
       notify:{whatsapp:!!(E.CALLMEBOT_KEY||settings.waKey),whatsapp_number:String(E.WA_NUMBER||settings.waPhone||WA).replace(/\D/g,""),
@@ -706,7 +709,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       const first=!orders.some(x=>x.id!==o.id&&x.paid&&!x.cancelled&&last10(x.phone)===last10(o.phone));
       if(first){const nc=await issueCode(o.phone);if(nc)o.next=nc}
       await db.setJSON("orders",orders);
-      await notify(orderText(o,"âœ… PAID order â€” ready to ship")+(o.disc?`\nDiscount code used: ${o.disc.code}`:""),true);
+      await notify(orderText(o,method==="cod"?"New order - Cash on Delivery. Collect payment on delivery.":"New order - UPI payment claimed. Check your bank app, then mark it paid.")+(o.disc?`\nDiscount code used: ${o.disc.code}`:""),true);
       await custMail(o,"paid");
       return J({ok:1,next:o.next||""});
     }
