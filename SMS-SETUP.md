@@ -7,7 +7,14 @@ There are three ways to deliver the code. The first one costs nothing.
 
 ---
 
-## 1. Free: your own Android phone sends the SMS
+## 1. Free: your own phone sends the SMS (primary + backup)
+
+You can set up **both** an Android phone and an iPhone at the same time:
+- **Primary gateway** = your Android phone (MacroDroid)
+- **Backup gateway** = your iPhone (Pushcut)
+
+The store tries the primary first; if it fails, it automatically tries the backup.
+If both fail, it falls back to Fast2SMS (if configured) or Textbelt.
 
 Any old Android phone with a SIM can send the code. The site calls a webhook,
 a free app on the phone turns that call into an SMS, and the phone sends it
