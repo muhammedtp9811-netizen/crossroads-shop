@@ -305,8 +305,8 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       email:!!(E.RESEND_API_KEY||s.rsKey),email_to:E.ALERT_EMAIL||s.rsTo||"producingmj@gmail.com",email_saved:!!s.rsKey,email_from:E.MAIL_FROM||s.rsFrom||"",
       telegram:!!(tgTok&&tgChat),telegram_saved:!!s.tgToken,telegram_chat:tgChat,
       ntfy:!!E.NTFY_TOPIC,discord:!!E.DISCORD_WEBHOOK,sms:!!E.FAST2SMS_KEY,
-      otp:{gateway:!!String(E.SMS_WEBHOOK||settings.smsHook||"").trim(),fast2sms:!!String(E.FAST2SMS_KEY||settings.f2sKey||"").trim(),
-        textbelt:!!String(E.TEXTBELT_KEY||"").trim(),hook:settings.smsHook||"",f2s:!!String(settings.f2sKey||"").trim()}});
+      otp:{gateway:!!String(E.SMS_WEBHOOK||s.smsHook||"").trim(),fast2sms:!!String(E.FAST2SMS_KEY||s.f2sKey||"").trim(),
+        textbelt:!!String(E.TEXTBELT_KEY||"").trim(),hook:s.smsHook||"",f2s:!!String(s.f2sKey||"").trim()}});
   }
   if(path==="notify/telegram"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
@@ -508,7 +508,9 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       notify:{whatsapp:!!(E.CALLMEBOT_KEY||settings.waKey),whatsapp_number:String(E.WA_NUMBER||settings.waPhone||WA).replace(/\D/g,""),
       email:!!(E.RESEND_API_KEY||settings.rsKey),email_to:E.ALERT_EMAIL||settings.rsTo||"producingmj@gmail.com",email_saved:!!settings.rsKey,email_from:E.MAIL_FROM||settings.rsFrom||"",
       telegram:!!(tgTok&&tgChat),telegram_saved:!!settings.tgToken,telegram_chat:tgChat,
-      ntfy:!!E.NTFY_TOPIC,discord:!!E.DISCORD_WEBHOOK,sms:!!E.FAST2SMS_KEY}});
+      ntfy:!!E.NTFY_TOPIC,discord:!!E.DISCORD_WEBHOOK,sms:!!E.FAST2SMS_KEY},
+      otp:{gateway:!!String(E.SMS_WEBHOOK||settings.smsHook||"").trim(),fast2sms:!!String(E.FAST2SMS_KEY||settings.f2sKey||"").trim(),
+        textbelt:!!String(E.TEXTBELT_KEY||"").trim(),hook:settings.smsHook||"",f2s:!!String(settings.f2sKey||"").trim()}});
   }
   if(path==="admin"&&req.method==="GET"){
     if(!admin())return J({error:"Wrong password"},401);
