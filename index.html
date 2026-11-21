@@ -3,10 +3,37 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Crossroads Shopping</title>
+<title>Crossroads Shopping - Fashion, Trending Items and Accessories</title>
+<meta name="description" content="Shop fashion, trending items, shoes and accessories at Crossroads Shopping. Free shipping across India. Fast delivery in 5 days.">
+<meta name="keywords" content="online shopping India, fashion, shoes, accessories, trending items, Crossroads Shopping">
+<meta name="author" content="Crossroads Shopping">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://crossroads-shopping.netlify.app/">
 <meta name="theme-color" content="#080A10">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Crossroads Shopping - Fashion and Trending Items">
+<meta property="og:description" content="Shop fashion, trending items, shoes and accessories. Free shipping across India.">
+<meta property="og:url" content="https://crossroads-shopping.netlify.app/">
+<meta property="og:site_name" content="Crossroads Shopping">
+<meta property="og:image" content="https://crossroads-shopping.netlify.app/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="en_IN">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Crossroads Shopping - Fashion and Trending Items">
+<meta name="twitter:description" content="Shop fashion, trending items, shoes and accessories. Free shipping across India.">
+<meta name="twitter:image" content="https://crossroads-shopping.netlify.app/og-image.jpg">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Organization","name":"Crossroads Shopping","url":"https://crossroads-shopping.netlify.app/","logo":"https://crossroads-shopping.netlify.app/logo.png","contactPoint":{"@type":"ContactPoint","telephone":"+91-8281036836","contactType":"customer service","areaServed":"IN","availableLanguage":["English","Hindi"]}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","name":"Crossroads Shopping","url":"https://crossroads-shopping.netlify.app/","potentialAction":{"@type":"SearchAction","target":"https://crossroads-shopping.netlify.app/?q={search_term_string}","query-input":"required name=search_term_string"}}
+</script>
+
 <script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("cr_theme")||"dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
-<meta name="description" content="Fashion, trending items, shoes and accessories delivered to your door.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -254,7 +281,30 @@ details{border-top:1px solid var(--line);padding:14px 0}details:last-of-type{bor
 .rform .pick button{border:0;background:none;font-size:1.8rem;line-height:1;color:var(--line);cursor:pointer;padding:0 3px}
 .rform .pick button.on{color:#E0A800}
 @media(max-width:700px){.rhead{grid-template-columns:1fr;gap:18px}.revs{margin-top:32px}}
+.trustbar{display:flex;flex-wrap:wrap;gap:8px 14px;justify-content:center;padding:12px 0;margin:10px 0;font-size:.82rem;color:var(--mut);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.trustbar span{display:flex;align-items:center;gap:4px;white-space:nowrap}
 </style>
+<!-- Facebook Pixel -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init','YOUR_FB_PIXEL_ID');
+fbq('track','PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=YOUR_FB_PIXEL_ID&ev=PageView&noscript=1"/></noscript>
+
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=YOUR_GA_ID"></script>
+<script>
+window.dataLayer=window.dataLayer||[];
+function gtag(){dataLayer.push(arguments);}
+gtag('js',new Date());
+gtag('config','YOUR_GA_ID');
+</script>
+
 </head>
 <body>
 <div class="ann" id="ann">Free shipping across India<span class="hm"> &nbsp;·&nbsp; Delivered in about 5 days &nbsp;·&nbsp; Pay by UPI or online</span></div>
@@ -507,9 +557,12 @@ function renderProduct(id){
  const S=cur.s&&cur.s.length?cur.s:["One size"],m=imgs(cur),dc=+cur.o>cur.p?Math.round((1-cur.p/cur.o)*100):0,dis=cur.sold?"disabled":"";
  size=S.length===1?S[0]:null;qty=1;ev("view",cur.n,1);const _pn=pname(cur);document.title=(_pn.length>90?_pn.slice(0,89)+"…":_pn)+" | Crossroads Shopping";
  const rel=P.filter(p=>!p.hid&&p.id!==cur.id&&(p.c===cur.c||p.tr)).slice(0,4),btns=`<button class="btn alt" data-act="add" ${dis}>Add to bag</button><button class="btn" data-act="buy" ${dis}>${cur.sold?"Sold out":"Buy now"}</button>`;
+ // SEO: Product structured data
+ try{const old=document.getElementById("prodSchema");if(old)old.remove();const s=document.createElement("script");s.id="prodSchema";s.type="application/ld+json";s.textContent=JSON.stringify({"@context":"https://schema.org","@type":"Product","name":cur.n,"description":cur.d||cur.n,"image":m,"offers":{"@type":"Offer","price":cur.p,"priceCurrency":"INR","availability":cur.sold?"https://schema.org/OutOfStock":"https://schema.org/InStock","url":location.href},"brand":{"@type":"Brand","name":"Crossroads Shopping"}});document.head.appendChild(s)}catch(e){}
  el.innerHTML=`<div class="wrap"><nav class="bc" aria-label="Breadcrumb"><a href="./" data-nav="">Home</a><span>/</span><a href="./" data-nav="${esc(cur.c||"")}">${esc(cur.c||"Shop")}</a><span>/</span><b>${esc(pname(cur))}</b></nav>
  <div class="pp"><div class="gal"><div class="gm" id="gm">${m.length?m.map((s,k)=>`<img class="sl${k===0?" on":""}" ${k===0?'fetchpriority="high" ':""}decoding="async" src="${s}" alt="${esc(cur.n)}">`).join(""):ph(cur)}${m.length>1?`<div class="gd">${m.map((_,k)=>`<i class="${k===0?"on":""}"></i>`).join("")}</div>`:""}</div>${m.length>1?`<div class="gt">${m.map((s,k)=>`<button type="button" data-g="${k}" aria-label="Photo ${k+1}" aria-pressed="${k===0}"><img src="${s}" alt=""></button>`).join("")}</div>`:""}</div>
  <div class="pd"><h1 title="${esc(cur.n)}">${esc(pname(cur))}</h1><div class="price lg">${money(cur.p)}${dc?`<s>${money(cur.o)}</s><i class="off">-${dc}%</i>`:""}</div><button class="rsum" id="rsum" type="button" style="align-self:flex-start"></button>${cur.d?`<p class="dsc">${esc(cur.d)}</p>`:""}${!cur.d&&cur.n&&pname(cur)!==cur.n?`<p class="dsc">${esc(cur.n)}</p>`:""}
+ <div class="trustbar" style="margin:12px 0"><span>&#128274; Secure</span><span>&#128666; Free ship</span><span>&#8617; Returns</span><span>&#9989; Genuine</span></div>
  <div><b>${S.length===1?"Size":"Select size"}</b><div class="sizes" id="sz">${S.map(s=>`<button type="button" data-s="${esc(s)}" aria-pressed="${s===size}">${esc(s)}</button>`).join("")}</div></div>
  <div><b>Quantity</b><div class="qty"><button type="button" data-q="-1" aria-label="Less">−</button><b id="qv">1</b><button type="button" data-q="1" aria-label="More">+</button></div></div>
  <div class="acts">${btns}</div>
@@ -622,6 +675,7 @@ function renderCheckout(){const el=$("checkout");
  ${ST.online?`<label class="pmo"><input type="radio" name="pm" value="online" ${first==="online"?"checked":""}><span>Pay online<small>Cards, UPI and net banking</small></span></label>`:""}
  ${ST.upi?`<label class="pmo"><input type="radio" name="pm" value="upi" ${first==="upi"?"checked":""}><span>Pay by UPI QR<small>Scan, pay, then enter your transaction ID</small></span></label>`:""}
  ${!first?(ST_READY?'<div class="err">Payment is not available yet. Message us on Instagram to order.</div>':'<div class="muted">Loading payment options…</div>'):""}
+ <div class="trustbar"><span>&#128274; Secure checkout</span><span>&#128666; Free shipping</span><span>&#8617; Easy returns</span><span>&#9989; Genuine products</span><span>&#128222; WhatsApp support</span></div>
  <p class="muted" style="font-size:.88rem;margin-top:6px">Shipping is free. Orders are dispatched within 24 hours and delivered in about 5 days — never more than 2 weeks. <a href="#delivery">Delivery details</a>.</p>
  <h2 class="fh" style="margin-top:10px">Discount code</h2><div style="display:flex;gap:8px"><input id="dc" placeholder="Enter your code" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase"><button class="btn alt sm" id="dcb" type="button" style="flex:none;white-space:nowrap">Apply</button></div><div class="err" id="dcm"></div>
  <div id="upip" ${first==="upi"?"":"hidden"}></div><div class="err" id="fr" role="alert"></div>
