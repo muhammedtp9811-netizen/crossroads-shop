@@ -219,7 +219,7 @@ ${o.gateway||o.fast2sms||o.textbelt?"":'<p class="muted" style="font-size:.85rem
 <div class="cd" style="margin-top:14px"><h3>Good to know</h3><p class="muted" style="font-size:.9rem">Your admin password is the ADMIN_PASSWORD setting in Netlify. To change it, edit it there and deploy again. Email, ntfy push and SMS alerts are switched on with Netlify environment variables, explained in <b>NOTIFY-SETUP.md</b> in your repository. WhatsApp and Telegram work right here, no redeploy needed.</p></div>`}
 
 /* ---------- routing + render ---------- */
-const TITLES={home:"Home",orders:"Orders",products:"Products",customers:"Customers",analytics:"Analytics",messages:"Messages",feedback:"Feedback",reviews:"Reviews",settings:"Settings"};
+const TITLES={home:"Home",orders:"Orders",products:"Products",customers:"Customers",accounts:"Accounts",analytics:"Analytics",messages:"Messages",feedback:"Feedback",reviews:"Reviews",settings:"Settings"};
 function skel(){return `<div class="sk"><div class="skb" style="width:38%"></div><div class="skb" style="width:62%"></div><div class="skg"><div class="skc"></div><div class="skc"></div><div class="skc"></div></div><div class="skb" style="width:100%;height:54px"></div><div class="skb" style="width:100%;height:54px"></div><div class="skb" style="width:100%;height:54px"></div></div>`}
 let renderSeq=0;
 async function render(silent,force){const[p,i]=where(),c=$("adc");if(!c)return;const seq=++renderSeq;
