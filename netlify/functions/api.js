@@ -235,7 +235,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
         const r=await fetch("https://www.fast2sms.com/dev/bulkV2?"+new URLSearchParams({authorization:key,route,message:text,flash:"0",numbers:phone}));
         const d=await r.json().catch(()=>({}));
         if(r.ok&&(d.return===true||d.status==="success"))return{ok:1,via:"sms"};
-        return{ok:0,configured:true,err:"Our SMS provider did not accept the message. Check the key in Settings."};
+        const msg=String(d.message||d.msg||d.error||"").trim();\n        return{ok:0,configured:true,err:msg?"Fast2SMS: "+msg:"Our SMS provider did not accept the message. Check the key in Settings."};
       }catch(e){return{ok:0,configured:true,err:"Could not reach the SMS provider."}}
     }
     const tb=String(E.TEXTBELT_KEY||"").trim();
