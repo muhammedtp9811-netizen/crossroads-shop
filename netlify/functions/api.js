@@ -635,6 +635,10 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(t)await db.setJSON("sessions",(await get("sessions",[])).filter(k=>k.token!==t));
     return J({ok:1});
   }
+  if(path==="auth/clear"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    await db.setJSON("sessions",[]);return J({ok:1});
+  }
   if(path==="reviews"&&req.method==="GET"){
     const pid=String(new URL(req.url).searchParams.get("pid")||""),all=await getReviews();
     const L=pid?all.filter(r=>String(r.pid)===pid):all, n=L.length;
