@@ -232,7 +232,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(key){
       try{
         const route=String(E.FAST2SMS_ROUTE||st.f2sRoute||"q")==="otp"?"otp":"q";
-        const r=await fetch("https://www.fast2sms.com/dev/bulkV2?"+new URLSearchParams({authorization:key,route,message:text,flash:"0",numbers:phone}));
+        const r=await fetch("https://www.fast2sms.com/dev/bulkV2?"+new URLSearchParams({route,message:text,flash:"0",numbers:phone}),{headers:{Authorization:key}});
         const d=await r.json().catch(()=>({}));
         if(r.ok&&(d.return===true||d.status==="success"))return{ok:1,via:"sms"};
         const msg=String(d.message||d.msg||d.error||"").trim();
@@ -269,7 +269,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(!waKey&&!E.DISCORD_WEBHOOK&&!E.FAST2SMS_KEY&&!E.NTFY_TOPIC&&!rsKey&&!(tgTok&&tgChat))return;
     if(!imp&&!await allow())return;
     if(waKey&&!skipWa)await fetch(`https://api.callmebot.com/whatsapp.php?phone=${waPhone}&apikey=${encodeURIComponent(waKey)}&text=${encodeURIComponent(t)}`).catch(()=>{});
-    if(imp&&E.FAST2SMS_KEY&&!skip.sms)await fetch("https://www.fast2sms.com/dev/bulkV2?"+new URLSearchParams({authorization:E.FAST2SMS_KEY,route:"q",message:t.replace(/[^\x20-\x7E\n]/g,"").slice(0,150),flash:"0",numbers:E.SMS_TO||"8281036836"})).catch(()=>{});
+    if(imp&&E.FAST2SMS_KEY&&!skip.sms)await fetch("https://www.fast2sms.com/dev/bulkV2?"+new URLSearchParams({route:"q",message:t.replace(/[^\x20-\x7E\n]/g,"").slice(0,150),flash:"0",numbers:E.SMS_TO||"8281036836"}),{headers:{Authorization:E.FAST2SMS_KEY}}).catch(()=>{});
     if(E.DISCORD_WEBHOOK&&!skip.discord)await fetch(E.DISCORD_WEBHOOK,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({content:t})}).catch(()=>{});
     if(E.NTFY_TOPIC&&!skip.ntfy)await fetch("https://ntfy.sh/"+encodeURIComponent(E.NTFY_TOPIC),{method:"POST",headers:{Title:"Crossroads"},body:t}).catch(()=>{});
     if(imp&&rsKey&&!skip.email)await mail(t.split("\n").filter(Boolean)[0],t,{key:rsKey,to:rsTo,from:rsFrom}).catch(()=>{});
