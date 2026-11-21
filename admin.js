@@ -2,7 +2,7 @@
 (()=>{
 if(window.CRAdmin)return;
 const $=id=>document.getElementById(id);
-const esc=s=>String(s…"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money=n=>"₹"+(+n||0).toLocaleString("en-IN");
 const dt=t=>{try{return new Date(t).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})}catch(e){return""}};
 const dur=s=>s<60?s+"s":Math.floor(s/60)+"m "+(s%60)+"s";
@@ -246,7 +246,7 @@ async function saveP(){const r=await api("products",{products:S.products});if(!r
 async function upd(id,body){const r=await api("orders/update",Object.assign({id},body));if(!r.ok)say(r.d.error||"Could not update");await render(true,true);return r.ok}
 /* ---------- brand, invoice, packing slip ---------- */
 const STORE_IG="crossroads_shopping",STORE_MAIL="producingmj@gmail.com";
-const short=(s,n=90)=>{s=String(s…"");return s.length>n?s.slice(0,n-1)+"…":s};
+const short=(s,n=90)=>{s=String(s??"");return s.length>n?s.slice(0,n-1)+"…":s};
 const dtl=t=>{try{return new Date(t||Date.now()).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})}catch(e){return ""}};
 function getBrand(){const s=(S.settings&&S.settings.brand)||{};return Object.assign({},BRAND_DEF,s,bDraft||{})}
 function logoSVG(b,w=520){const h=Math.round(w*160/520),rx=b.shape==="circle"?60:b.shape==="square"?0:26;
