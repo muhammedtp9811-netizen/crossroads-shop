@@ -1,4 +1,4 @@
-import {getStore} from "@netlify/blobs";
+﻿import {getStore} from "@netlify/blobs";
 import crypto from "node:crypto";
 export const config={path:"/api/*"};
 const E=process.env, WA=E.WA_NUMBER||"918281036836";
@@ -24,8 +24,8 @@ const STORE={ig:"crossroads_shopping",mail:"producingmj@gmail.com",
   pay:"We accept UPI (scan the QR, then enter the UPI transaction ID from your payment app) and online payment by card, UPI or net banking. Cash on delivery is not available.",
   returns:"If an item arrives damaged or in the wrong size, message us on Instagram within 48 hours with a photo and we will sort it out.",
   hours:"We usually reply within a few hours, between 9 AM and 9 PM IST."};
-const inr=n=>"₹"+(+n||0).toLocaleString("en-IN");
-const shortN=(s,n=58)=>{s=String(s??"").replace(/\s+/g," ").trim();if(s.length<=n)return s;const c=s.slice(0,n),i=c.lastIndexOf(" ");return(i>20?c.slice(0,i):c)+"…"};
+const inr=n=>"â‚¹"+(+n||0).toLocaleString("en-IN");
+const shortN=(s,n=58)=>{s=String(s??"").replace(/\s+/g," ").trim();if(s.length<=n)return s;const c=s.slice(0,n),i=c.lastIndexOf(" ");return(i>20?c.slice(0,i):c)+"â€¦"};
 const DASH="https://crossroads-shopping.netlify.app/#admin";
 const normPhone=v=>String(v??"").replace(/\D/g,"").replace(/^00+/,"").slice(0,15);
 const last10=v=>String(v??"").replace(/\D/g,"").slice(-10);
@@ -35,7 +35,7 @@ const CODE_OFF=30;
 let cfgCache={t:0,v:null};
 function orderText(o,head){
   let when="";try{when=new Date(o.t||Date.now()).toLocaleString("en-IN",{timeZone:"Asia/Kolkata",day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})}catch(e){when=new Date(o.t||Date.now()).toISOString().slice(0,16).replace("T"," ")}
-  return `${head}\nOrder #${o.no||"—"} · ${inr(o.total)}\n${(o.lines||[]).join("\n")}\n\n${o.name}\n${o.phone}${o.email?" · "+o.email:""}\n${o.address}\n\n${o.method==="upi"?"UPI QR":o.method==="online"?"Online payment":"Payment"}${o.utr?" · UTR "+o.utr:""}${o.pay?" · Pay ID "+o.pay:""}${o.paid?" · PAID":""}\n${when} IST\n${DASH}`;
+  return `${head}\nOrder #${o.no||"â€”"} Â· ${inr(o.total)}\n${(o.lines||[]).join("\n")}\n\n${o.name}\n${o.phone}${o.email?" Â· "+o.email:""}\n${o.address}\n\n${o.method==="upi"?"UPI QR":o.method==="online"?"Online payment":"Payment"}${o.utr?" Â· UTR "+o.utr:""}${o.pay?" Â· Pay ID "+o.pay:""}${o.paid?" Â· PAID":""}\n${when} IST\n${DASH}`;
 }
 const STOP=new Set(("a an the and or of for with to in on is are be do does did you your i my me we our us can could would should please show some any what which how who when where have has it this that these those under below less upto max rs rupee rupees size sizes price cost costs buy get want need looking look find").split(" "));
 const SYN={headphones:"audio earphones earbuds headset",headphone:"audio earphones earbuds headset",earphones:"audio headphones",earbud:"audio headphones",earbuds:"audio headphones",speaker:"audio sound",music:"audio",shoes:"shoe sneakers footwear",shoe:"sneakers footwear",sneakers:"shoes footwear",shirt:"cotton fleece tee",tshirt:"cotton tee shirt",tee:"shirt cotton",hoodie:"fleece sweatshirt",sweatshirt:"fleece hoodie",mousepad:"mouse pad desk",mat:"mouse pad desk",desk:"mouse pad mat",bag:"backpack",backpack:"bag",watch:"watch",charger:"charger cable",mobile:"phone case"};
@@ -51,11 +51,11 @@ function chatRule(text,prods,cart){
   const q=String(text||"").toLowerCase().trim(),live=prods.filter(p=>!p.hid),ok=re=>re.test(q);
   const ig={l:"Message on Instagram",href:"https://ig.me/m/"+STORE.ig},shop={l:"Browse the shop",href:"./"};
   if(ok(/^(thanks|thank you|thankyou|thx)\b/))return{text:"Happy to help! Anything else you'd like to know?",quick:[shop,ig]};
-  if(ok(/^(bye|goodbye|see you)\b/))return{text:"Thanks for stopping by — hope to see you at checkout soon!",quick:[shop]};
+  if(ok(/^(bye|goodbye|see you)\b/))return{text:"Thanks for stopping by â€” hope to see you at checkout soon!",quick:[shop]};
   if(ok(/^(hi|hey|hello|hai|hiya|namaste|yo)\b/)||ok(/^good (morning|afternoon|evening)/))
-    return{text:"Hi! 👋 What are you looking for today? I can help with products, sizes, delivery or payment.",quick:[{l:"What's new?"},{l:"Delivery time"},ig]};
+    return{text:"Hi! ðŸ‘‹ What are you looking for today? I can help with products, sizes, delivery or payment.",quick:[{l:"What's new?"},{l:"Delivery time"},ig]};
   if(ok(/\b(human|agent|owner|real person|whatsapp|call|phone|contact|email|support)\b/)&&!ok(/\b(product|price|size|delivery)\b/))
-    return{text:`The fastest way to reach a person is Instagram — @${STORE.ig}. ${STORE.hours}\n\nYou can also email ${STORE.mail} or use the Contact page.`,quick:[ig,{l:"Contact page",href:"#contact"}]};
+    return{text:`The fastest way to reach a person is Instagram â€” @${STORE.ig}. ${STORE.hours}\n\nYou can also email ${STORE.mail} or use the Contact page.`,quick:[ig,{l:"Contact page",href:"#contact"}]};
   if(ok(/\b(track|tracking|order status|parcel|where is my|my order|order number)\b/))
     return{text:"I can't see live order status from here yet. Send your order number to the owner on Instagram and they'll check it for you. You'll also be contacted once your parcel is shipped.",quick:[ig,{l:"Message form",href:"#contact"}]};
   if(ok(/\b(deliver|delivery|shipping|ship|courier|how long|days|arrive|reach)\b/))
@@ -66,11 +66,11 @@ function chatRule(text,prods,cart){
     return{text:STORE.returns,quick:[ig,{l:"Contact page",href:"#contact"}]};
   if(ok(/\b(size|sizes|fit|fitting|measurement|measurements|xl|xxl|small|medium|large)\b/)){
     const S=[...new Set(live.flatMap(p=>p.s||[]))];
-    return{text:"Sizes differ by product — the exact sizes in stock are shown on each product page"+(S.length?` (for example ${S.slice(0,6).join(", ")})`:"")+". If you're between two sizes, size up for a relaxed fit. Tell me the product name and I'll check what's available.",quick:[shop,ig]};
+    return{text:"Sizes differ by product â€” the exact sizes in stock are shown on each product page"+(S.length?` (for example ${S.slice(0,6).join(", ")})`:"")+". If you're between two sizes, size up for a relaxed fit. Tell me the product name and I'll check what's available.",quick:[shop,ig]};
   }
   if(ok(/\b(cart|bag|basket)\b/)){
     if(cart.length){const t=cart.reduce((a,i)=>a+(+i.p||0)*(+i.q||1),0);
-      return{text:`Your bag has ${cart.reduce((a,i)=>a+(+i.q||1),0)} item(s):\n`+cart.map(i=>`• ${shortN(i.n,40)} × ${+i.q||1} — ${inr((+i.p||0)*(+i.q||1))}`).join("\n")+`\n\nTotal: ${inr(t)}`,quick:[{l:"Go to checkout",href:"#checkout"},shop]};
+      return{text:`Your bag has ${cart.reduce((a,i)=>a+(+i.q||1),0)} item(s):\n`+cart.map(i=>`â€¢ ${shortN(i.n,40)} Ã— ${+i.q||1} â€” ${inr((+i.p||0)*(+i.q||1))}`).join("\n")+`\n\nTotal: ${inr(t)}`,quick:[{l:"Go to checkout",href:"#checkout"},shop]};
     }
     return{text:"Your bag is empty right now. Everything in the shop is one tap away.",quick:[shop]};
   }
@@ -88,7 +88,7 @@ function chatRule(text,prods,cart){
   }
   let lo=0,hi=0,m=/(?:between)\s*(\d{2,5})\s*(?:and|to|-)\s*(\d{2,5})/.exec(q);
   if(m){lo=+m[1];hi=+m[2]}
-  if(!hi){m=/(?:under|below|less than|upto|up to|max)\s*(?:rs\.?|₹)?\s*(\d{2,5})/.exec(q);if(m)hi=+m[1]}
+  if(!hi){m=/(?:under|below|less than|upto|up to|max)\s*(?:rs\.?|â‚¹)?\s*(\d{2,5})/.exec(q);if(m)hi=+m[1]}
   if(!hi&&ok(/\b(cheap|cheapest|lowest price|budget|affordable)\b/)&&live.length){hi=Math.min(...live.map(p=>+p.p||0))}
   if(hi){
     let L=live.filter(p=>(+p.p||0)>=lo&&(+p.p||0)<=hi);
@@ -101,14 +101,14 @@ function chatRule(text,prods,cart){
   const hits=matchProds(q,live);
   if(hits.length)return{text:"Here's what I found:",products:cardsFor(hits),quick:[shop,ig]};
   if(tk(q).length)
-    return{text:"I couldn't find that in the shop right now. New pieces are added regularly — here's the latest:",products:cardsFor([...live].sort((a,b)=>(b.id||0)-(a.id||0)).slice(0,3)),quick:[ig,shop]};
+    return{text:"I couldn't find that in the shop right now. New pieces are added regularly â€” here's the latest:",products:cardsFor([...live].sort((a,b)=>(b.id||0)-(a.id||0)).slice(0,3)),quick:[ig,shop]};
   return{text:"I can help with products, prices, sizes, delivery, payment and orders. What would you like to know?",quick:[{l:"What's new?"},{l:"Delivery time"},ig]};
 }
 async function chatAI(messages,prods){
   const key=E.AI_API_KEY||E.OPENAI_API_KEY||E.OPENROUTER_API_KEY;
   if(!key)return null;
   const url=E.AI_URL||"https://openrouter.ai/api/v1/chat/completions",model=E.AI_MODEL||"openai/gpt-4o-mini";
-  const list=prods.slice(0,30).map(p=>`- ${cut(p.n,70)} | ${p.c||"Other"} | ₹${p.p}${p.s&&p.s.length?" | sizes: "+p.s.join("/"):""}${p.sold?" | SOLD OUT":""}`).join("\n");
+  const list=prods.slice(0,30).map(p=>`- ${cut(p.n,70)} | ${p.c||"Other"} | â‚¹${p.p}${p.s&&p.s.length?" | sizes: "+p.s.join("/"):""}${p.sold?" | SOLD OUT":""}`).join("\n");
   const sys=`You are the shopping assistant for Crossroads Shopping, a small online store in India. Reply in the customer's language, warmly, in at most 60 words. Use only the facts below. Never invent prices, stock, delivery times or policies. If you don't know, point them to Instagram @${STORE.ig} or the Contact page.\nStore facts:\n${STORE.delivery}\n${STORE.ship}\n${STORE.pay}\n${STORE.returns}\nSupport hours: ${STORE.hours}\nProducts:\n${list}\nWhen suggesting products, give the name and price only.`;
   try{
     const r=await fetch(url,{method:"POST",headers:{"content-type":"application/json",authorization:"Bearer "+key},
@@ -153,7 +153,7 @@ export default async(req,context)=>{
 
 Thank you for shopping with Crossroads Shopping. We have received your order.
 
-Order #${o.no||""}  ·  ${when} IST
+Order #${o.no||""}  Â·  ${when} IST
 
 ${(o.lines||[]).join("\n")}
 
@@ -173,8 +173,8 @@ ${o.phone||""}
 
 Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
 
-— Crossroads Shopping`;
-    await mail(kind==="paid"?"Order #"+(o.no||"")+" confirmed — payment received":"Order #"+(o.no||"")+" received",body,{key,to:email,from}).catch(()=>{});
+â€” Crossroads Shopping`;
+    await mail(kind==="paid"?"Order #"+(o.no||"")+" confirmed â€” payment received":"Order #"+(o.no||"")+" received",body,{key,to:email,from}).catch(()=>{});
   };
   const codeNorm=v=>String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
   const getCodes=()=>get("codes",[]);
@@ -235,7 +235,8 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
         const r=await fetch("https://www.fast2sms.com/dev/bulkV2?"+new URLSearchParams({authorization:key,route,message:text,flash:"0",numbers:phone}));
         const d=await r.json().catch(()=>({}));
         if(r.ok&&(d.return===true||d.status==="success"))return{ok:1,via:"sms"};
-        const msg=String(d.message||d.msg||d.error||"").trim();\n        return{ok:0,configured:true,err:msg?"Fast2SMS: "+msg:"Our SMS provider did not accept the message. Check the key in Settings."};
+        const msg=String(d.message||d.msg||d.error||"").trim();
+        return{ok:0,configured:true,err:msg?"Fast2SMS: "+msg:"Our SMS provider did not accept the message. Check the key in Settings."};
       }catch(e){return{ok:0,configured:true,err:"Could not reach the SMS provider."}}
     }
     const tb=String(E.TEXTBELT_KEY||"").trim();
@@ -335,7 +336,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     }
     const nxt={...cur,tgToken:cut(tok,120),tgChat:cut(chat,40)};
     await db.setJSON("settings",nxt);cfgCache={t:0,v:null};
-    const err=await tgSend("✅ Telegram alerts are connected to Crossroads Shopping.\nYou will get every new order here.\n"+DASH,{tok,chat});
+    const err=await tgSend("âœ… Telegram alerts are connected to Crossroads Shopping.\nYou will get every new order here.\n"+DASH,{tok,chat});
     if(err)return J({error:"Saved, but Telegram said: "+err},400);
     return J({ok:1,bot:me.result.username,chat,who});
   }
@@ -344,17 +345,17 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const cur=await get("settings",{}),key=String(b.key||cur.rsKey||E.RESEND_API_KEY||"").trim();
     const to=String(b.to||cur.rsTo||E.ALERT_EMAIL||"producingmj@gmail.com").trim().toLowerCase();
     const from=String(b.from||cur.rsFrom||E.MAIL_FROM||"").trim();
-    if(!key)return J({error:"Paste your Resend API key first (resend.com → API Keys)."},400);
+    if(!key)return J({error:"Paste your Resend API key first (resend.com â†’ API Keys)."},400);
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))return J({error:"That email address does not look right."},400);
     let r,d={};
     try{
-      r=await mail("Test alert from Crossroads Shopping","🔔 Test alert from Crossroads Shopping\nIf you can read this, order alerts are working.\n"+DASH,{key,to,from});
+      r=await mail("Test alert from Crossroads Shopping","ðŸ”” Test alert from Crossroads Shopping\nIf you can read this, order alerts are working.\n"+DASH,{key,to,from});
       d=await r.json().catch(()=>({}));
     }catch(e){return J({error:"Could not reach Resend. Check your internet and try again."},400)}
     if(!r.ok){
       const m=String(d.message||d.error||"").trim();
       if(/only send testing emails/i.test(m))return J({error:"Resend blocked this: the free sender can only email the address that owns the Resend account. Use that same address here."},400);
-      if(/invalid|not authorized|unauthorized/i.test(m))return J({error:"Resend says the API key is invalid. Copy it again from resend.com → API Keys."},400);
+      if(/invalid|not authorized|unauthorized/i.test(m))return J({error:"Resend says the API key is invalid. Copy it again from resend.com â†’ API Keys."},400);
       return J({error:"Resend refused the email: "+(m||("status "+r.status))},400);
     }
     await db.setJSON("settings",{...cur,rsKey:cut(key,90),rsTo:cut(to,120),rsFrom:cut(from,120)});cfgCache={t:0,v:null};
@@ -367,7 +368,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const rsKey=E.RESEND_API_KEY||st.rsKey||"",rsTo=E.ALERT_EMAIL||st.rsTo||"producingmj@gmail.com",rsFrom=E.MAIL_FROM||st.rsFrom||"";
     const other=rsKey||E.NTFY_TOPIC||E.DISCORD_WEBHOOK||(tgTok&&tgChat);
     if(!waKey&&!other)return J({error:"No alert channel is set up yet."},400);
-    const msg="🔔 Test alert from Crossroads Shopping\nIf you can read this, order alerts are working.\n"+DASH;
+    const msg="ðŸ”” Test alert from Crossroads Shopping\nIf you can read this, order alerts are working.\n"+DASH;
     let wa="",waOk=false;
     if(waKey){
       try{
@@ -413,7 +414,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(first){const nc=await issueCode(c.phone);if(nc)o.next=nc}
     orders.unshift(o);
     await db.setJSON("orders",orders.slice(0,500));
-    await notify(orderText(o,"🛒 New order — UPI payment claimed. Check your bank app, then mark it paid.")+(cc.off?`\nDiscount code used: ${cc.code}`:""),true);
+    await notify(orderText(o,"ðŸ›’ New order â€” UPI payment claimed. Check your bank app, then mark it paid.")+(cc.off?`\nDiscount code used: ${cc.code}`:""),true);
     await custMail(o,"received");
     return J({ok:1,next:o.next||""});
   }
@@ -526,7 +527,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     return J({orders,messages:await get("messages",[])});
   }
   if(path==="event"){
-    const L={open:"👀 Someone opened your store",view:"🛍️ Viewing: ",cart:"➕ Added to cart: ",buy:"💳 Going to pay: "};
+    const L={open:"ðŸ‘€ Someone opened your store",view:"ðŸ›ï¸ Viewing: ",cart:"âž• Added to cart: ",buy:"ðŸ’³ Going to pay: "};
     if(L[b.type])await notify("Crossroads\n"+L[b.type]+cut(b.name,80),b.type==="cart"||b.type==="buy");
     return J({ok:1});
   }
@@ -534,7 +535,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const m={name:cut(b.name,60),contact:cut(b.contact,80),text:cut(b.text,800),t:new Date().toISOString()};
     if(!m.text)return J({error:"Write a message first."},400);
     const all=await get("messages",[]);all.unshift(m);await db.setJSON("messages",all.slice(0,200));
-    await notify(`✉️ New message\n${m.name} (${m.contact})\n${m.text}`,true);return J({ok:1});
+    await notify(`âœ‰ï¸ New message\n${m.name} (${m.contact})\n${m.text}`,true);return J({ok:1});
   }
   if(path==="feedback"&&req.method==="POST"){
     const f={topic:cut(b.topic,40),text:cut(b.text,900),name:cut(b.name,60),contact:cut(b.contact,80),page:cut(b.page,120),device:cut(b.device,40),t:new Date().toISOString()};
@@ -544,8 +545,8 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(rl.n>=30)return J({error:"Too many messages just now. Try again in a while."},429);
     rl.n++;await db.setJSON("rlf",rl);
     const all=await get("feedback",[]);all.unshift(f);await db.setJSON("feedback",all.slice(0,400));
-    const who=[f.name,f.contact].filter(Boolean).join(" · ")||"Anonymous visitor";
-    await notify(`💬 New shop feedback\n${f.topic?f.topic+" — ":""}${f.text}\n\n${who}\nPage: ${f.page||"/"}${f.device?" · "+f.device:""}`,true);
+    const who=[f.name,f.contact].filter(Boolean).join(" Â· ")||"Anonymous visitor";
+    await notify(`ðŸ’¬ New shop feedback\n${f.topic?f.topic+" â€” ":""}${f.text}\n\n${who}\nPage: ${f.page||"/"}${f.device?" Â· "+f.device:""}`,true);
     return J({ok:1});
   }
   if(path==="feedback"&&req.method==="GET"){
@@ -702,7 +703,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       const first=!orders.some(x=>x.id!==o.id&&x.paid&&!x.cancelled&&last10(x.phone)===last10(o.phone));
       if(first){const nc=await issueCode(o.phone);if(nc)o.next=nc}
       await db.setJSON("orders",orders);
-      await notify(orderText(o,"✅ PAID order — ready to ship")+(o.disc?`\nDiscount code used: ${o.disc.code}`:""),true);
+      await notify(orderText(o,"âœ… PAID order â€” ready to ship")+(o.disc?`\nDiscount code used: ${o.disc.code}`:""),true);
       await custMail(o,"paid");
       return J({ok:1,next:o.next||""});
     }
