@@ -11,13 +11,13 @@ const dur=s=>s<60?s+"s":Math.floor(s/60)+"m "+(s%60)+"s";
 const imgs=p=>p.images&&p.images.length?p.images:(p.imgs&&p.imgs.length?p.imgs:(p.img?[p.img]:[]));
 let PW=sessionStorage.getItem("cr_pw")||"",root=null,draft=[],impDraft=null;
 const H=()=>({"x-admin":PW,"content-type":"application/json"});
-async function api(p,b){const o=b===undefined?{headers:H()}:{method:"POST",headers:H(),body:JSON.stringify(b)};try{const r=await fetch("/api/"+p,o);let d={};try{d=await r.json()}catch(e){}return{ok:r.ok,s:r.status,d}}catch(e){return{ok:false,s:0,d:{error:"No connection"}}}}
+async function api(p,b){const o=b===undefined?{headers:H(),cache:"no-store"}:{method:"POST",headers:H(),body:JSON.stringify(b)};try{const r=await fetch("/api/"+p,o);let d={};try{d=await r.json()}catch(e){}return{ok:r.ok,s:r.status,d}}catch(e){return{ok:false,s:0,d:{error:"No connection"}}}}
 const S={orders:[],messages:[],products:[],feedback:[],codes:[],settings:{},notify:{},known:new Set(),seen:new Set(),range:7,of:"all",oq:"",pq:"",pf:"all",vf:"all",poll:null,loaded:false,t:0,hydrated:false,ana:null,reviews:[],otp:{},accounts:[]};
 try{S.seen=new Set(JSON.parse(localStorage.getItem("cr_seen")||"[]"))}catch(e){}
 const BRAND_DEF={name:"Crossroads Shopping",tag:"Your next favourite find is here.",mono:"CS",bg:"#111318",fg:"#ffffff",ac:"#c9a227",shape:"rounded"};
 let bDraft=null;
 function hydrate(){try{const c=JSON.parse(localStorage.getItem("cr_adm1")||"null");if(!c||c.v!==1)return;S.orders=c.o||[];S.messages=c.m||[];S.settings=c.s||{};S.notify=c.n||{};S.feedback=c.f||[];S.codes=c.c||[];S.reviews=c.rv||[];S.products=c.p||[];S.otp=c.ot||{};S.accounts=c.a||[];S.known=new Set(S.orders.map(o=>o.id));S.hydrated=true}catch(e){}try{const a=JSON.parse(localStorage.getItem("cr_ana")||"null");if(a&&a.d&&a.days)S.ana=a}catch(e){}}
-function saveCache(){try{localStorage.setItem("cr_adm1",JSON.stringify({v:1,t:Date.now(),o:S.orders.slice(0,300),m:S.messages.slice(0,80),s:S.settings,n:S.notify,f:S.feedback.slice(0,80),c:S.codes.slice(0,300),rv:(S.reviews||[]).slice(0,300),p:(S.products||[]).slice(0,200),ot:S.otp||{},a:(S.accounts||[]).slice(0,500)}))}catch(e){}}
+function saveCache(){try{const d=JSON.stringify({v:1,t:Date.now(),o:S.orders.slice(0,300),m:S.messages.slice(0,80),s:S.settings,n:S.notify,f:S.feedback.slice(0,80),c:S.codes.slice(0,300),rv:(S.reviews||[]).slice(0,300),p:(S.products||[]).slice(0,200),ot:S.otp||{},a:(S.accounts||[]).slice(0,500)});if(d===saveCache._last)return;saveCache._last=d;localStorage.setItem("cr_adm1",d)}catch(e){}}
 function resetData(){S.orders=[];S.messages=[];S.products=[];S.feedback=[];S.codes=[];S.reviews=[];S.settings={};S.notify={};S.loaded=false;S.hydrated=false;S.t=0;S.ana=null;bDraft=null;try{localStorage.removeItem("cr_adm1");localStorage.removeItem("cr_ana")}catch(e){}}
 const say=m=>{if(window.toast)window.toast(m);else alert(m)};
 const ic=d=>`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
