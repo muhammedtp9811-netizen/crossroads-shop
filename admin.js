@@ -171,7 +171,7 @@ function pOrder(id){const o=S.orders.find(x=>x.id===id);if(!o)return`<div class=
  if(!S.seen.has(o.id)){S.seen.add(o.id);try{localStorage.setItem("cr_seen",JSON.stringify([...S.seen]))}catch(e){}}
  const ph=String(o.phone||"").replace(/\D/g,"").slice(-10),wa="https://wa.me/91"+ph+"?text="+encodeURIComponent("Hi "+o.name+", this is Crossroads Shopping about your order #"+o.no+".");
  return`<p><a href="#admin/orders">₹ All orders</a></p><div class="rowh"><h2 style="font:700 1.5rem 'Playfair Display',Georgia,serif">Order #${o.no}</h2><span><span class="tg ${o.paid?"g":"y"}">${o.paid?"Paid":"Payment pending"}</span> <span class="tg ${stc(o)}">${st(o)}</span></span></div><p class="muted" style="margin-top:-8px">${esc(dt(o.t))}</p>
-<div class="acts2">${!o.paid&&!o.cancelled?'<button class="btn sm" data-act="opaid">Mark as paid</button>':""}${o.paid&&!o.shipped&&!o.cancelled?'<button class="btn sm" data-act="oship">Mark as shipped</button>':""}${o.shipped&&!o.delivered&&!o.cancelled?'<button class="btn sm" data-act="odeliv">Mark as delivered</button>':""}<button class="btn sm alt" data-act="oinv">Print invoice</button><button class="btn sm alt" data-act="oslip">Packing slip</button>${o.cancelled?'<button class="btn sm alt" data-act="orestore">Restore order</button>':'<button class="btn sm alt" data-act="ocancel">Cancel order</button>'}<button class="link" data-act="odel">Delete</button></div>
+<div class="acts2">${!o.paid&&!o.cancelled?'<button class="btn sm" data-act="opaid">Mark as paid</button>':""}${o.paid&&!o.shipped&&!o.cancelled?'<button class="btn sm" data-act="oship">Mark as shipped</button>':""}${o.shipped&&!o.delivered&&!o.cancelled?'<button class="btn sm" data-act="odeliv">Mark as delivered</button>':""}<button class="btn sm alt" data-act="oinv">Print invoice</button><button class="btn sm alt" data-act="oslip">Packing slip</button><button class="btn sm alt" data-act="olabel">Shipping label</button>${o.cancelled?'<button class="btn sm alt" data-act="orestore">Restore order</button>':'<button class="btn sm alt" data-act="ocancel">Cancel order</button>'}<button class="link" data-act="odel">Delete</button></div>
 <div class="g3" style="margin-top:0"><div style="display:grid;gap:14px"><div class="cd"><h3>Items</h3>${(o.lines||[]).map(l=>`<p style="margin:6px 0">${esc(l)}</p>`).join("")}<hr style="border:0;border-top:1px solid var(--line);margin:12px 0"><p style="display:flex;justify-content:space-between;font-weight:700"><span>Total</span><span>${money(o.total)}</span></p></div><div class="cd"><h3>Timeline</h3>${tlist(o)}</div><div class="cd"><h3>Private note</h3><textarea id="onote" rows="3" placeholder="Only you can see this">${esc(o.note||"")}</textarea><p style="margin-top:8px"><button class="btn sm alt" data-act="onote">Save note</button></p></div></div>
 <div style="display:grid;gap:14px;align-content:start"><div class="cd"><h3>Customer</h3><p><b>${esc(o.name)}</b></p><p>${esc(o.phone)} · <a href="tel:${esc(ph)}">Call</a> · <a href="${wa}" target="_blank" rel="noopener">WhatsApp</a></p>${o.email?`<p><a href="mailto:${esc(o.email)}">${esc(o.email)}</a></p>`:""}<p class="muted" style="white-space:pre-line;overflow-wrap:anywhere">${esc(o.address)}</p><p><button class="link" data-act="ocopy">Copy address</button></p></div>
 <div class="cd"><h3>Payment</h3><p>${o.method==="cod"?"Cash on Delivery (COD)":o.method==="upi"?"UPI QR (manual)":"Online (Razorpay)"}</p>${o.utr?`<p class="muted">UPI transaction ID: <b>${esc(o.utr)}</b></p>`:""}${o.pay?`<p class="muted">Payment ID: ${esc(o.pay)}</p>`:""}${o.method==="upi"&&!o.paid?'<p class="muted">Check your bank app for this transaction ID, then tap Mark as paid.</p>':""}${o.track?`<p class="muted">Tracking: ${esc(o.track)}</p>`:""}${o.disc?`<p class="muted">Discount code used: <b>${esc(o.disc.code)}</b> (₹${money(o.disc.off)})</p>`:""}${o.next?`<p class="muted">Next-order code given: <b>${esc(o.next)}</b></p>`:""}</div></div></div>`}
@@ -349,6 +349,39 @@ function slipHTML(o){const b=getBrand(),m=orderMoney(o);
  <div class="note" style="margin-top:14px">Please check your items when they arrive. If anything is damaged, missing or wrong, message us within 48 hours with a photo and we will fix it quickly.</div>
  <div style="margin-top:26px;text-align:center"><div class="ty">Thank you for shopping with ${esc(b.name)}!</div><div style="margin-top:8px;font:700 15px/1.4 Georgia,serif">@${STORE_IG}</div><div class="note" style="margin-top:4px">${esc(location.host||"crossroadsshoppings.in")} · ${STORE_MAIL}</div></div></div>`;
  return docHTML("Packing slip #"+(o.no||""),body)}
+function labelHTML(o){const b=getBrand(),m=orderMoney(o),inv="ORD-"+String(o.no||0).padStart(4,"0");
+ const body=`<div class="pg" style="max-width:105mm;margin:0 auto;padding:8mm;font:12px/1.4 Arial,sans-serif">
+  <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:8px">
+   <div style="font:700 16px/1 Georgia,serif">${esc(b.name)}</div>
+   <div style="text-align:right"><div style="font:700 14px/1 monospace">${inv}</div><div style="font-size:10px;color:#555">${dtl(o.t)}</div></div>
+  </div>
+  <div style="background:#f3f4f6;border-radius:6px;padding:8px;margin-bottom:8px">
+   <div style="font:600 10px/1 Arial,sans-serif;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">SHIP TO</div>
+   <div style="font:700 15px/1.3 Arial,sans-serif">${esc(o.name||"Customer")}</div>
+   <div style="font-size:12px;margin-top:2px">${esc(o.address||"").replace(/\n/g,"<br>")}</div>
+   <div style="font:700 13px/1.4 Arial,sans-serif;margin-top:4px">Phone: ${esc(o.phone||"")}</div>
+   ${o.email?`<div style="font-size:11px;color:#555;margin-top:2px">Email: ${esc(o.email)}</div>`:""}
+  </div>
+  <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:8px">
+   <div style="flex:1;background:#fff;border:1px solid #ddd;border-radius:6px;padding:6px">
+    <div style="font:600 9px/1 Arial,sans-serif;color:#6b7280;text-transform:uppercase;margin-bottom:2px">Payment</div>
+    <div style="font:700 12px/1 Arial,sans-serif">${o.paid?"PAID":"COD"}</div>
+    <div style="font-size:11px;margin-top:2px">${money(m.total)}</div>
+   </div>
+   <div style="flex:1;background:#fff;border:1px solid #ddd;border-radius:6px;padding:6px">
+    <div style="font:600 9px/1 Arial,sans-serif;color:#6b7280;text-transform:uppercase;margin-bottom:2px">Items</div>
+    <div style="font:700 12px/1 Arial,sans-serif">${m.its.reduce((a,x)=>a+x.q,0)} pcs</div>
+    <div style="font-size:10px;margin-top:2px;color:#555">${m.its.map(x=>short(x.n,20)+" x"+x.q).join(", ").slice(0,60)}</div>
+   </div>
+  </div>
+  ${o.track?`<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:6px;margin-bottom:8px;text-align:center"><div style="font:600 9px/1 Arial,sans-serif;color:#856404;text-transform:uppercase;margin-bottom:2px">Tracking</div><div style="font:700 12px/1 monospace">${esc(o.track)}</div></div>`:""}
+  <div style="border-top:1px dashed #999;padding-top:6px;text-align:center">
+   <div style="font:700 11px/1 Arial,sans-serif">${esc(b.name)} · ${STORE_MAIL}</div>
+   <div style="font-size:9px;color:#888;margin-top:2px">Handle with care · Do not bend</div>
+  </div>
+ </div>`;
+ return docHTML("Shipping label #"+(o.no||""),body)}
+function label(o){printDoc(labelHTML(o))}
 function printDoc(html){const w=window.open("","_blank");if(!w){say("Allow pop-ups to open the invoice.");return}try{w.document.open();w.document.write(html);w.document.close();w.focus();setTimeout(()=>{try{w.print()}catch(e){}},500)}catch(e){say("Could not open the print window.")}}
 function slip(o){printDoc(slipHTML(o))}
 async function onClick(e){const b=e.target.closest("[data-act],[data-of],[data-pf],[data-vf]");if(!b)return;const d=b.dataset;
@@ -365,6 +398,7 @@ async function onClick(e){const b=e.target.closest("[data-act],[data-of],[data-p
  if(a==="bsvg")return dlSVG();
  if(a==="bpng")return dlPNG();
  if(a==="oinv"&&o)return printDoc(invoiceHTML(o));
+ if(a==="olabel"&&o)return label(o);
  if(a==="oview"){location.hash="#admin/orders/"+id;return}
  if(a==="ntest"){const el=$("ntxt");if(el){el.className="muted";el.textContent="Sending…"}const r=await api("notify/test",{});let m=r.ok?"Test sent.":(r.d.error||"Could not send the test.");if(r.ok&&r.d.whatsapp)m+=" WhatsApp: "+(r.d.whatsapp_ok?"sent — check your phone.":(r.d.whatsapp_reply||"sent, but check your phone."));if(r.ok&&r.d.telegram)m+=" Telegram: "+(r.d.telegram_error||"sent — check your phone.");if(r.ok&&r.d.email)m+=" Email: "+(r.d.email_error||"sent to "+r.d.email_to+".");if(el){el.className=r.ok?"ok":"err";el.textContent=m}else say(m);return}
  if(a==="cview"){S.oq=d.q||"";S.of="all";location.hash="#admin/orders";return}

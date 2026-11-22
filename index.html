@@ -33,7 +33,7 @@
 {"@context":"https://schema.org","@type":"WebSite","name":"Crossroads Shopping","url":"https://crossroads-shopping.netlify.app/","potentialAction":{"@type":"SearchAction","target":"https://crossroads-shopping.netlify.app/?q={search_term_string}","query-input":"required name=search_term_string"}}
 </script>
 
-<script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("cr_theme")||"dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>","oldString":"<script>try{document.documentElement.setAttribute(\"data-theme\",localStorage.getItem(\"cr_theme\")||\"dark\")}catch(e){document.documentElement.setAttribute(\"data-theme\",\"dark\")}</script>"
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -615,14 +615,19 @@ function accRender(msg){const b=$("accBody");if(!b)return;const head=`<div class
   const rb=$("accResend");accCountdown(rb,30);
   $("ao").focus();
   $("ao").addEventListener("input",e=>{const v=e.target.value.replace(/\D/g,"").slice(0,6);if(e.target.value!==v)e.target.value=v;if(v.length===6){const f=$("accF");if(f)setTimeout(()=>{if(!$("accF"))return;f.requestSubmit?f.requestSubmit():f.dispatchEvent(new Event("submit",{cancelable:true,bubbles:true}))},140)}});
-  $("accBack").onclick=()=>{stopAccTimer();accStep="start";accCode="";accRender()};
+  $("accBack").onclick=()=>{stopAccTimer();accStep="start";accCode="";accRender();if($("gLogin"))$("gLogin").onclick=()=>{accGoogleLogin()}};
   rb.onclick=async()=>{const er=$("ae");er.className="";er.textContent="Sending a new code…";const r=await post("auth/start",{name:accName,phone:accPhone}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not send a new code.";return}accCode=r.d.demo&&r.d.code?String(r.d.code):"";accRender();toast(r.d.demo?"New code ready":"New code sent")};
   $("accF").onsubmit=async e=>{e.preventDefault();const code=$("ao").value.replace(/\D/g,""),er=$("ae");er.className="err";if(code.length!==6){er.textContent="Enter the 6-digit code.";return}er.className="";er.textContent="Checking…";const r=await post("auth/verify",{phone:accPhone,code}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not verify that code.";return}stopAccTimer();acctSet({token:r.d.token,name:r.d.name,phone:r.d.phone});$("accD").close();toast("Logged in as "+r.d.name);prefillCk();refreshRevs()};
   return}
- b.innerHTML=head+`<div class="acct"><h3>Log in or create an account</h3><p class="fine">Optional — you can shop without one. Enter your name and phone and we will text you a 6-digit code.</p><form id="accF" class="fl" novalidate><label>Your name<input id="an" autocomplete="name" value="${esc(accName)}"></label><label>Phone number<input id="ap" inputmode="numeric" autocomplete="tel" maxlength="10" value="${esc(accPhone)}" placeholder="10-digit mobile number"></label><div class="err" id="ae"></div><button class="btn" type="submit">Send code</button></form></div>`;
+ b.innerHTML=head+`<div class="acct"><h3>Log in or create an account</h3><p class="fine">Optional — you can shop without one. Enter your name and phone and we will text you a 6-digit code.</p><form id="accF" class="fl" novalidate><label>Your name<input id="an" autocomplete="name" value="${esc(accName)}"></label><label>Phone number<input id="ap" inputmode="numeric" autocomplete="tel" maxlength="10" value="${esc(accPhone)}" placeholder="10-digit mobile number"></label><div class="err" id="ae"></div><button class="btn" type="submit">Send code</button></form><div style="margin-top:12px;text-align:center"><div style="font-size:.8rem;color:var(--mut);margin-bottom:8px">or continue with</div><button class="btn alt" id="gLogin" type="button" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" style="width:18px;height:18px">Continue with Google</button></div></div>`;
  $("accX").onclick=()=>{stopAccTimer();$("accD").close()};
  $("accF").onsubmit=async e=>{e.preventDefault();const name=$("an").value.trim(),ph=$("ap").value.replace(/\D/g,""),er=$("ae");er.className="err";if(name.length<2){er.textContent="Enter your name.";return}if(ph.length!==10){er.textContent="Enter a valid 10-digit phone number.";return}er.className="";er.textContent="Sending code…";const r=await post("auth/start",{name,phone:ph}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not send the code.";return}accName=name;accPhone=ph;accCode=r.d.demo&&r.d.code?String(r.d.code):"";accStep="otp";accRender()}}
-function openAcc(){if(!$("accBody")||!$("accD"))return;stopAccTimer();accStep="start";accCode="";accRender();$("accD").showModal()}
+const GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLIENT_ID";
+function accGoogleLogin(){if(!window.google||!google.accounts){toast("Google Sign-In is loading, try again in a moment.");return}
+ google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:(resp)=>{try{const parts=resp.credential.split(".");const payload=JSON.parse(atob(parts[1].replace(/-/g,"+").replace(/_/g,"/")));const name=payload.name||payload.given_name||"Customer";const email=payload.email||"";const pic=payload.picture||"";const token="g_"+btoa(email||name).replace(/=/g,"");acctSet({token,name,phone:"",email,pic,provider:"google"});$("accD").close();toast("Logged in as "+name);prefillCk();refreshRevs()}catch(e){toast("Google login failed. Try again.")}},auto_select:false});
+ google.accounts.id.prompt()}
+
+function openAcc(){if(!$("accBody")||!$("accD"))return;stopAccTimer();accStep="start";accCode="";accRender();$("accD").showModal();if($("gLogin"))$("gLogin").onclick=()=>{accGoogleLogin()}}
 $("accD").addEventListener("close",stopAccTimer);
 /* ---- ratings ---- */
  let revPid="";
@@ -663,8 +668,20 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeCart()});
 
 function loadRzp(){return new Promise((ok,no)=>{if(window.Razorpay)return ok();const s=document.createElement("script");s.src="https://checkout.razorpay.com/v1/checkout.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
 function sumHTML(){return cart.map(i=>{const p=P.find(x=>x.id===i.id),m=p?imgs(p):[];return `<div class="sr"><div class="t0">${m[0]?`<img src="${m[0]}" alt="">`:""}</div><div><b>${esc(i.n)}</b><small>Size: ${esc(i.s)} · Qty: ${i.q}</small></div><b>${money(i.p*i.q)}</b></div>`}).join("")+`<div class="total" style="padding:14px 0 0"><span>Total${DISC.off?' <small class="ok" style="font-size:.8rem;font-weight:600">code applied</small>':""}</span><span>${money(payable())}</span></div>`}
-function upiHTML(){const amt=payable(),link="upi://pay?pa="+encodeURIComponent(ST.upi)+"&pn="+encodeURIComponent(ST.name||"Crossroads")+"&am="+amt+"&cu=INR&tn="+encodeURIComponent("Crossroads order");
- return `<div class="upi">${ST.qr?`<img src="${ST.qr}" alt="UPI QR code">`:""}<p>UPI ID: <b>${esc(ST.upi)}</b></p><a class="btn alt" href="${link}">Open my UPI app</a><p class="sub">Pay exactly ${money(amt)}, then enter the UPI transaction ID (UTR) shown in your payment app.</p><label>UPI transaction ID<input id="ut" inputmode="numeric" autocomplete="off"></label></div>`}
+function upiHTML(){const amt=payable(),upi=ST.upi,pn=encodeURIComponent(ST.name||"Crossroads"),am=amt,tn=encodeURIComponent("Crossroads order"),pa=encodeURIComponent(upi);
+ const base=`pa=${pa}&pn=${pn}&am=${am}&cu=INR&tn=${tn}`;
+ const generic="upi://pay?"+base;
+ const gpay="tez://upi/pay?"+base;
+ const phonepe="phonepe://pay?"+base;
+ const paytm="paytmmp://pay?"+base;
+ return `<div class="upi">${ST.qr?`<img src="${ST.qr}" alt="UPI QR code">`:""}<p>UPI ID: <b>${esc(ST.upi)}</b></p><p class="sub" style="margin:6px 0">Pay exactly ${money(amt)}, then enter the UPI transaction ID (UTR) shown in your payment app.</p>
+ <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:10px 0">
+  <a class="btn alt" href="${generic}" style="text-align:center;padding:10px 6px"><span style="display:block;font-size:1.1rem">📱</span>Any UPI app</a>
+  <a class="btn alt" href="${gpay}" style="text-align:center;padding:10px 6px;background:#4285f4;color:#fff;border-color:#4285f4"><span style="display:block;font-size:1.1rem">G</span>Google Pay</a>
+  <a class="btn alt" href="${phonepe}" style="text-align:center;padding:10px 6px;background:#5f259f;color:#fff;border-color:#5f259f"><span style="display:block;font-size:1.1rem">P</span>PhonePe</a>
+  <a class="btn alt" href="${paytm}" style="text-align:center;padding:10px 6px;background:#00baf2;color:#fff;border-color:#00baf2"><span style="display:block;font-size:1.1rem">₹</span>Paytm</a>
+ </div>
+ <label>UPI transaction ID (UTR)<input id="ut" inputmode="numeric" autocomplete="off" placeholder="12-digit UTR from your payment app"></label></div>`}
 function renderCheckout(){const el=$("checkout");
  if(!cart.length){el.innerHTML=`<div class="wrap narrow"><h1>Your bag is empty</h1><p>Add something you like, then come back to check out.</p><p style="margin-top:16px"><a class="btn" href="./" data-nav="" style="max-width:240px">Continue shopping</a></p></div>`;return}
  const pm=ST.paymentMethod||"both";
@@ -751,7 +768,7 @@ async function hero3d(){const c=$("c3d");if(!c)return;
 let admP=null;
 async function adm(){const A=$("admin");
  if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
-   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=29";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
+   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=30";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
   try{await admP}
   catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
  window.CRAdmin.open(A)}
