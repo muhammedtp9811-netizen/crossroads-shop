@@ -541,7 +541,7 @@ const pname=p=>(p&&(p.sn||p.n))||"";
 function card(p,i){const m=imgs(p),dc=+p.o>p.p?Math.round((1-p.p/p.o)*100):0;
  return `<button class="card" data-id="${p.id}" style="--d:${(i%8)*60}ms"><span class="im">${m[0]?`${i<2?`<img src="${m[0]}" alt="${esc(p.n)}" loading="eager" fetchpriority="high">`:`<img src="${m[0]}" alt="${esc(p.n)}" loading="lazy" decoding="async">`}${m[1]?`<img class="im2" src="${m[1]}" alt="" loading="lazy">`:""}`:ph(p)}${p.sold?'<i class="bd so">Sold out</i>':dc?`<i class="bd">-${dc}%</i>`:p.tr?'<i class="bd">Trending</i>':""}<em class="qv">Quick view</em></span><span class="nm">${esc(pname(p))}</span><span class="price">${money(p.p)}${+p.o>p.p?`<s>${money(p.o)}</s>`:""}</span></button>`}
 function reveal(){const cs=document.querySelectorAll(".card:not(.in)");if(!("IntersectionObserver" in window)){cs.forEach(c=>c.classList.add("in"));return}
- const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{rootMargin:"0px 0px -5% 0px"});cs.forEach(c=>io.observe(c))}
+ const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{rootMargin:"120px 0px"});cs.forEach(c=>io.observe(c))}
 function grid(){if(loading&&!P.length){$("grid").innerHTML=Array.from({length:8},()=>'<div class="card sk in"><span class="im"></span><span class="nm"></span></div>').join("");$("cn").textContent="Loading...";return}const L=list();$("ttl").textContent=cat==="All"?"All products":cat;$("cn").textContent=L.length+(L.length===1?" product":" products");
  $("grid").innerHTML=L.length?L.map(card).join(""):`<div class="empty">${P.some(p=>!p.hid)?"No products match your search.":"New arrivals are on the way. Message us on Instagram to ask what is coming."}</div>`;reveal()}
 $("cats").onclick=e=>{const b=e.target.closest("button[data-c]");if(!b)return;cat=b.dataset.c;log("Browsed category: "+cat);if(view()!=="shop"){history.pushState(null,"",location.pathname);route()}else{cats();grid()}};
@@ -721,12 +721,12 @@ $("mf").onsubmit=async e=>{e.preventDefault();const t=$("mt").value.trim();if(!t
  const r=await post("message",{name:$("mn").value,contact:$("mc").value,text:t}).catch(()=>({ok:false,d:{}}));
  if(r.ok){log("Sent a message");$("mt").value="";$("me").className="ok";$("me").textContent="Message sent. We will reply soon."}else{$("me").className="err";$("me").textContent=r.d.error||"Could not send. Try Instagram or email instead."}};
 
-function tilt(root){root.addEventListener("pointermove",e=>{if(e.pointerType!=="mouse")return;const c=e.target.closest(".card");if(!c||c.classList.contains("sk"))return;const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;c.style.setProperty("--ry",(x*12).toFixed(2)+"deg");c.style.setProperty("--rx",(-y*12).toFixed(2)+"deg");c.style.setProperty("--gx",(x*100+50).toFixed(0)+"%");c.style.setProperty("--gy",(y*100+50).toFixed(0)+"%")});
+function tilt(root){let raf=0;root.addEventListener("pointermove",e=>{if(e.pointerType!=="mouse")return;if(raf)return;raf=requestAnimationFrame(()=>{raf=0;const c=document.elementFromPoint(e.clientX,e.clientY)?.closest?.(".card");if(!c||c.classList.contains("sk"))return;const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;c.style.setProperty("--ry",(x*12).toFixed(2)+"deg");c.style.setProperty("--rx",(-y*12).toFixed(2)+"deg");c.style.setProperty("--gx",(x*100+50).toFixed(0)+"%");c.style.setProperty("--gy",(y*100+50).toFixed(0)+"%")})},{passive:true});
  root.addEventListener("pointerout",e=>{const c=e.target.closest(".card");if(c&&!c.contains(e.relatedTarget)){c.style.setProperty("--ry","0deg");c.style.setProperty("--rx","0deg")}})}
 tilt($("grid"));tilt($("product"));
 let h3=false;function maybeHero(){if(!h3&&view()==="shop"){h3=true;const go=()=>hero3d();if("requestIdleCallback" in window)requestIdleCallback(go,{timeout:2500});else setTimeout(go,1200)}}
 async function hero3d(){const c=$("c3d");if(!c)return;
- if(matchMedia("(prefers-reduced-motion:reduce)").matches||(navigator.connection&&navigator.connection.saveData)){c.remove();return}
+ if(matchMedia("(prefers-reduced-motion:reduce)").matches||(navigator.connection&&navigator.connection.saveData)||(navigator.connection&&/2g/.test(navigator.connection.effectiveType||""))){c.remove();return}
  try{const THREE=await import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js");
   const r=new THREE.WebGLRenderer({canvas:c,antialias:true,alpha:true,powerPreference:"low-power"});r.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
   const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(38,1,.1,100);cam.position.set(0,0,8);
@@ -734,7 +734,7 @@ async function hero3d(){const c=$("c3d");if(!c)return;
   const g=new THREE.Group();sc.add(g);
   const knot=new THREE.Mesh(new THREE.TorusKnotGeometry(1.15,.34,96,14),new THREE.MeshStandardMaterial({color:col(),metalness:.7,roughness:.25}));g.add(knot);
   const wire=new THREE.Mesh(new THREE.IcosahedronGeometry(2.1,1),new THREE.MeshBasicMaterial({color:col(),wireframe:true,transparent:true,opacity:.22}));g.add(wire);
-  const N=180,pa=new Float32Array(N*3);for(let i=0;i<N;i++){const a=Math.random()*6.283,b=Math.acos(2*Math.random()-1),d=3+Math.random()*3.5;pa[i*3]=d*Math.sin(b)*Math.cos(a);pa[i*3+1]=d*Math.sin(b)*Math.sin(a);pa[i*3+2]=d*Math.cos(b)}
+  const N=120,pa=new Float32Array(N*3);for(let i=0;i<N;i++){const a=Math.random()*6.283,b=Math.acos(2*Math.random()-1),d=3+Math.random()*3.5;pa[i*3]=d*Math.sin(b)*Math.cos(a);pa[i*3+1]=d*Math.sin(b)*Math.sin(a);pa[i*3+2]=d*Math.cos(b)}
   const pg=new THREE.BufferGeometry();pg.setAttribute("position",new THREE.BufferAttribute(pa,3));
   const pts=new THREE.Points(pg,new THREE.PointsMaterial({color:0x9db4ff,size:.045,transparent:true,opacity:.8}));g.add(pts);
   sc.add(new THREE.HemisphereLight(0xffffff,0x223355,1.1));
@@ -769,8 +769,9 @@ addEventListener("hashchange",route);addEventListener("popstate",route);
  if(view()==="product"){const pid=String(location.hash.slice(3));fetchRevs(pid).then(v=>{if(v)revStore(pid,v)}).catch(()=>{})}
  let stOk=false;
  const st=fetch("/api/settings").then(r=>r.json()).then(x=>{ST=x;ST_READY=true;stOk=true}).catch(()=>{ST_READY=true});
- const ch=await loadP();await st;const was=loading;loading=false;
- if(view()!=="admin"&&(ch||was||stOk)){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout()}
+  const ch=await loadP();const was=loading;loading=false;
+  if(view()!=="admin"&&(ch||was)){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout()}
+  await st;if(view()!=="admin"&&stOk){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout()}
  await first;if(view()!=="admin"){ev("open","",1);sync()}})();
 window.CRShop={get products(){return P},get cart(){return cart}};
 </script>
