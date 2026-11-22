@@ -21,7 +21,7 @@ function srcOf(ref,utm,ua,host){const x=String(utm||"").toLowerCase();if(x){if(/
 const STORE={ig:"crossroads_shopping",mail:"producingmj@gmail.com",
   delivery:"Most orders are dispatched within 24 hours and delivered in about 5 days. The maximum for any pin code is 2 weeks.",
   ship:"Shipping is free. The price you see at checkout is the final price.",
-  pay:"We accept UPI (scan the QR, then enter the UPI transaction ID from your payment app) and online payment by card, UPI or net banking. Cash on delivery is not available.",
+  pay:"We accept Cash on Delivery (COD), UPI (scan the QR, then enter the UPI transaction ID from your payment app) and online payment by card, UPI or net banking.",
   returns:"If an item arrives damaged or in the wrong size, message us on Instagram within 48 hours with a photo and we will sort it out.",
   hours:"We usually reply within a few hours, between 9 AM and 9 PM IST."};
 const inr=n=>"â‚¹"+(+n||0).toLocaleString("en-IN");
@@ -163,7 +163,7 @@ async function jvecProduct(u){
   const parts=u.pathname.split("/").filter(Boolean);let slug=parts[0]==="product"&&parts[1]?decodeURIComponent(parts[1]):"";
   if(!slug&&parts[0]==="products"&&parts.length>1)slug=decodeURIComponent(parts[parts.length-1]);
   if(!slug)slug=u.searchParams.get("slug")||u.searchParams.get("id")||"";
-  if(!slug)return null;
+  if(!slug)throw new Error("Open one product, not the whole list, and copy that product link (it contains /product/).");
   const creds=await jvecCreds();
   let row=null;
   if(/^[0-9a-f-]{36}$/i.test(slug)){const rr=await jvecFetch(creds,"products?id=eq."+encodeURIComponent(slug)+"&select=*&limit=1");row=rr&&rr[0]}
