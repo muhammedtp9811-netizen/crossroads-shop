@@ -427,7 +427,7 @@ function showIgPost(pid){
  const card=document.createElement("div");card.style.cssText="background:var(--card,#fff);color:var(--ink,#111);border-radius:14px;max-width:520px;width:100%;max-height:90vh;overflow:auto;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.4)";
  card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0;font-size:1.1rem">Post to Instagram</h3><button type="button" id="igclose" class="link" style="font-size:1.2rem;line-height:1">×</button></div>
  <p class="muted" style="font-size:.85rem;margin:0 0 12px">Semi-automatic: copy the caption, save the photo, then paste into Instagram. Music can be added in the Instagram app after posting.</p>
- <div style="display:grid;gap:8px;margin-bottom:14px">${imgs.map((s,i)=>`<div style="display:flex;gap:8px;align-items:center"><img src="${esc(s)}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px"><a class="btn sm alt" href="${esc(s)}" target="_blank" rel="noopener" download style="flex:none">Save photo ${i+1}</a></div>`).join("")}</div>
+ <div style="display:grid;gap:8px;margin-bottom:14px">${imgs.map((s,i)=>`<div style="display:flex;gap:8px;align-items:center"><img src="${esc(s)}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px"><button type="button" class="btn sm alt" data-dl="${esc(s)}" data-dn="crossroads-product-${i+1}.jpg" data-idx="${i+1}" style="flex:none">Save photo ${i+1}</button></div>`).join("")}</div>
  <label style="display:block;margin-bottom:6px;font-weight:600;font-size:.85rem">Caption (auto-generated)</label>
  <textarea id="igcap" readonly style="width:100%;min-height:180px;font-size:.82rem;padding:10px;border:1px solid var(--line,#ddd);border-radius:8px;background:var(--bg,#f7f7f7);color:var(--ink,#111);resize:vertical">${esc(cap)}</textarea>
  <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
@@ -440,6 +440,7 @@ function showIgPost(pid){
  ov.appendChild(card);document.body.appendChild(ov);
  const close=()=>ov.remove();
  card.querySelector("#igclose").onclick=close;card.querySelector("#igclose2").onclick=close;ov.onclick=e=>{if(e.target===ov)close()};
+ card.querySelectorAll("[data-dl]").forEach(btn=>{btn.onclick=async()=>{const url=btn.dataset.dl;const name=btn.dataset.dn||"photo.jpg";const orig=btn.textContent;btn.textContent="Downloading...";try{const r=await fetch(url,{mode:"cors"});const blob=await r.blob();const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);btn.textContent="Saved ✓";setTimeout(()=>{btn.textContent=orig},1500)}catch(e){window.open(url,"_blank");btn.textContent="Opened (save manually)";setTimeout(()=>{btn.textContent=orig},2000)}}});
  card.querySelector("#igcopy").onclick=async()=>{try{await navigator.clipboard.writeText(cap);say("Caption copied to clipboard")}catch(e){const t=card.querySelector("#igcap");t.select();document.execCommand("copy");say("Caption copied")}};
  card.querySelector("#igopen").onclick=()=>window.open("https://www.instagram.com/","_blank");
 }
