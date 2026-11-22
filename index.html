@@ -724,7 +724,7 @@ function renderTrack(){const el=$("track");
  </form></div>
  <div id="trackres" style="margin-top:24px"></div>
  </div>`;
- $("trackf").onsubmit=async e=>{e.preventDefault();const no=+($("trno").value||0),ph=$("trph").value.replace(/\D/g,""),er=$("tre");er.className="err";if(!no||ph.length!==10){er.textContent="Enter your order number and 10-digit phone number.";return}er.className="";er.textContent="Looking up your order...";const r=await post("orders/track",{no,phone:ph}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not find your order.";return}er.className="";er.textContent="";drawTrack(r.d.order)}
+  const _tf=$("trackf");if(_tf)_tf.addEventListener("submit",async e=>{e.preventDefault();const no=+($("trno").value||0),ph=$("trph").value.replace(/\D/g,""),er=$("tre");if(!er)return;er.className="err";if(!no||ph.length!==10){er.textContent="Enter your order number and 10-digit phone number.";return}er.className="";er.textContent="Looking up your order...";const r=await post("orders/track",{no,phone:ph}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not find your order.";return}er.className="";er.textContent="";drawTrack(r.d.order)})
 }
 
 function drawTrack(o){const box=$("trackres");if(!box)return;
@@ -810,7 +810,7 @@ async function hero3d(){const c=$("c3d");if(!c)return;
 let admP=null;
 async function adm(){const A=$("admin");
  if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
-   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=31";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
+   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=32";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
   try{await admP}
   catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
  window.CRAdmin.open(A)}
