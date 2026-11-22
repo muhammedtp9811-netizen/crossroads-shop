@@ -33,6 +33,8 @@
 {"@context":"https://schema.org","@type":"WebSite","name":"Crossroads Shopping","url":"https://crossroads-shopping.netlify.app/","potentialAction":{"@type":"SearchAction","target":"https://crossroads-shopping.netlify.app/?q={search_term_string}","query-input":"required name=search_term_string"}}
 </script>
 
+<link rel="preconnect" href="https://accounts.google.com">
+<link rel="dns-prefetch" href="https://accounts.google.com">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>try{document.documentElement.setAttribute("data-theme","dark");localStorage.setItem("cr_theme","dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -638,14 +640,21 @@ function accRender(msg){const b=$("accBody");if(!b)return;const head=`<div class
  $("accX").onclick=()=>{stopAccTimer();$("accD").close()};
  $("accF").onsubmit=async e=>{e.preventDefault();const name=$("an").value.trim(),ph=$("ap").value.replace(/\D/g,""),er=$("ae");er.className="err";if(name.length<2){er.textContent="Enter your name.";return}if(ph.length!==10){er.textContent="Enter a valid 10-digit phone number.";return}er.className="";er.textContent="Sending code…";const r=await post("auth/start",{name,phone:ph}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not send the code.";return}accName=name;accPhone=ph;accCode=r.d.demo&&r.d.code?String(r.d.code):"";accStep="otp";accRender()}}
 function gClientId(){return (typeof ST!=="undefined"&&ST&&ST.googleClientId)||""}
+let GIS_READY=false,GIS_CID="";
+function gisInit(cid){
+ if(GIS_READY&&GIS_CID===cid)return;
+ if(!cid||!window.google||!google.accounts||!google.accounts.id)return;
+ try{
+  google.accounts.id.initialize({client_id:cid,callback:(resp)=>{try{const parts=resp.credential.split(".");const payload=JSON.parse(atob(parts[1].replace(/-/g,"+").replace(/_/g,"/")));const name=payload.name||payload.given_name||"Customer";const email=payload.email||"";const pic=payload.picture||"";const token="g_"+btoa(email||name).replace(/=/g,"");acctSet({token,name,phone:"",email,pic,provider:"google"});$("accD").close();toast("Logged in as "+name);if(email){post("welcome",{name,email},null,true).catch(()=>{})}prefillCk();refreshRevs()}catch(e){toast("Google login failed. Try again.")}},auto_select:false,ux_mode:"popup",itp_support:true});
+  GIS_READY=true;GIS_CID=cid
+ }catch(e){}
+}
 function accGoogleLogin(){
  const cid=gClientId();
  if(!cid){accGoogleHelp("Google login is not set up yet. Ask the store owner to add a free Google Client ID in Admin -> Settings -> Google login. Until then, please log in with your phone number below.");return}
- if(!window.google||!google.accounts){toast("Google Sign-In is loading, try again in a moment.");return}
- try{
-  google.accounts.id.initialize({client_id:cid,callback:(resp)=>{try{const parts=resp.credential.split(".");const payload=JSON.parse(atob(parts[1].replace(/-/g,"+").replace(/_/g,"/")));const name=payload.name||payload.given_name||"Customer";const email=payload.email||"";const pic=payload.picture||"";const token="g_"+btoa(email||name).replace(/=/g,"");acctSet({token,name,phone:"",email,pic,provider:"google"});$("accD").close();toast("Logged in as "+name);if(email){post("welcome",{name,email}).catch(()=>{})}prefillCk();refreshRevs()}catch(e){toast("Google login failed. Try again.")}},auto_select:false,ux_mode:"popup"});
-  google.accounts.id.prompt((notif)=>{if(notif&&notif.isNotDisplayed&&notif.isNotDisplayed()&&notif.getNotDisplayedReason&&notif.getNotDisplayedReason()==="opt_out_or_no_session"){toast("Google sign-in popup was blocked. Allow popups and try again.")}})
- }catch(e){toast("Google Sign-In error: "+(e&&e.message||"unknown"))}
+ gisInit(cid);
+ if(!GIS_READY){toast("Google Sign-In is loading, try again in a moment.");window.addEventListener("load",()=>gisInit(gClientId()),{once:true});return}
+ try{google.accounts.id.prompt((notif)=>{if(notif&&notif.isNotDisplayed&&notif.isNotDisplayed()&&notif.getNotDisplayedReason&&notif.getNotDisplayedReason()==="opt_out_or_no_session"){toast("Google sign-in popup was blocked. Allow popups and try again.")}})}catch(e){toast("Google Sign-In error: "+(e&&e.message||"unknown"))}
 }
 function accGoogleHelp(msg){const el=$("gHelp");if(el){el.className="err";el.textContent=msg;el.hidden=false;el.scrollIntoView({block:"nearest"})}else toast(msg)}
 
@@ -846,7 +855,7 @@ async function hero3d(){const c=$("c3d");if(!c)return;
 let admP=null;
 async function adm(){const A=$("admin");
  if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
-   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=39";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
+   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=40";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
   try{await admP}
   catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
  window.CRAdmin.open(A)}
@@ -866,7 +875,8 @@ addEventListener("hashchange",route);addEventListener("popstate",route);
  const st=fetch("/api/settings",{cache:"no-store"}).then(r=>r.json()).then(x=>{ST=x;ST_READY=true;stOk=true}).catch(()=>{ST_READY=true});
   const ch=await loadP();const was=loading;loading=false;
   if(view()!=="admin"&&(ch||was)){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout();if(view()==="track")renderTrack()}
-  await st;if(view()!=="admin"&&stOk){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout();if(view()==="track")renderTrack()}
+  await st;gisInit(gClientId());if(!GIS_READY){const gi=setInterval(()=>{gisInit(gClientId());if(GIS_READY)clearInterval(gi)},400);setTimeout(()=>clearInterval(gi),8000)}
+  if(view()!=="admin"&&stOk){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout();if(view()==="track")renderTrack()}
  await first;if(view()!=="admin"){ev("open","",1);sync()}})();
 window.CRShop={get products(){return P},get cart(){return cart}};
 </script>
