@@ -525,7 +525,7 @@ const view=()=>{const x=location.hash;return x==="#about"?"about":x==="#contact"
 function toast(t){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.h);toast.h=setTimeout(()=>e.classList.remove("on"),1900)}
 const ph=p=>`<span class="ph" style="background:linear-gradient(135deg,hsl(${p.id%360} 25% 32%),hsl(${(p.id+40)%360} 30% 22%))">${esc((p.n||"").trim().charAt(0).toUpperCase())}</span>`;
 
-async function loadP(){let ok=true;try{const r=await fetch("/api/products");P=await r.json();if(!r.ok)throw 0}catch(e){ok=false;try{P=JSON.parse(localStorage.getItem("cr_pc")||"[]")}catch(_){P=[]}}
+async function loadP(){let ok=true;try{const r=await fetch("/api/products",{cache:"no-store"});P=await r.json();if(!r.ok)throw 0}catch(e){ok=false;try{P=JSON.parse(localStorage.getItem("cr_pc")||"[]")}catch(_){P=[]}}
  if(!Array.isArray(P))P=[];
  if(ok){const s=JSON.stringify(P);let ch=true;try{ch=s!==localStorage.getItem("cr_pc");localStorage.setItem("cr_pc",s)}catch(e){}return ch}
  if(!P.length&&["127.0.0.1","localhost"].includes(location.hostname))P=[{id:11,n:"Sample linen shirt with a really long product title to test how it wraps",c:"Fashion",p:1299,o:1799,s:["S","M","L","XL"],tr:true,d:"Preview only. Add your real products from #admin once the site is online."},{id:12,n:"Sample sneakers",c:"Shoes",p:1899,o:0,s:["7","8","9","10"]},{id:13,n:"Sample watch",c:"Accessories",p:1499,o:1999,s:["One size"]},{id:14,n:"Sample wallet",c:"Accessories",p:599,o:0,s:["One size"],sold:true}];
@@ -751,7 +751,7 @@ async function hero3d(){const c=$("c3d");if(!c)return;
 let admP=null;
 async function adm(){const A=$("admin");
  if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
-   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=25";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
+   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=26";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
   try{await admP}
   catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
  window.CRAdmin.open(A)}
@@ -768,7 +768,7 @@ addEventListener("hashchange",route);addEventListener("popstate",route);
  render();const first=route();
  if(view()==="product"){const pid=String(location.hash.slice(3));fetchRevs(pid).then(v=>{if(v)revStore(pid,v)}).catch(()=>{})}
  let stOk=false;
- const st=fetch("/api/settings").then(r=>r.json()).then(x=>{ST=x;ST_READY=true;stOk=true}).catch(()=>{ST_READY=true});
+ const st=fetch("/api/settings",{cache:"no-store"}).then(r=>r.json()).then(x=>{ST=x;ST_READY=true;stOk=true}).catch(()=>{ST_READY=true});
   const ch=await loadP();const was=loading;loading=false;
   if(view()!=="admin"&&(ch||was)){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout()}
   await st;if(view()!=="admin"&&stOk){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout()}
