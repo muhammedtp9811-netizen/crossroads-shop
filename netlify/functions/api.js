@@ -118,6 +118,66 @@ async function chatAI(messages,prods){
     return cut(t,700).trim()||null;
   }catch(e){return null}
 }
+/* ---------- Supplier product import (admin only) ---------- */
+const UA={"user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36","accept-language":"en-IN,en;q=0.9"};
+const round9=n=>{n=+n||0;if(n<=0)return 0;return Math.max(9,Math.ceil(n/10)*10-1)};
+const plainText=s=>String(s??"")
+  .replace(/<br\s*\/?>/gi,"\n").replace(/<\/(p|div|li|h[1-6])>/gi,"\n")
+  .replace(/<[^>]*>/g," ")
+  .replace(/&nbsp;/gi," ").replace(/&amp;/gi,"&").replace(/&lt;/gi,"<").replace(/&gt;/gi,">")
+  .replace(/&quot;/gi,'"').replace(/&#0?39;/gi,"'").replace(/&#x27;/gi,"'")
+  .replace(/[ \t]+/g," ").replace(/\n[ \t]+/g,"\n").replace(/\n{3,}/g,"\n\n").trim();
+const metaMap=html=>{const out={},re=/<meta\b[^>]*>/gi;let m;while((m=re.exec(html))){const k=/\b(?:property|name)\s*=\s*["']([^"']+)["']/i.exec(m[0]),v=/\bcontent\s*=\s*["']([^"']*)["']/i.exec(m[0]);if(k&&v)out[k[1].toLowerCase()]=v[1]}return out};
+const ldProduct=html=>{const flat=[],re=/<script[^>]+type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;let m;
+  while((m=re.exec(html))){try{const j=JSON.parse(m[1].trim());(function push(x){if(!x)return;if(Array.isArray(x))return x.forEach(push);if(x["@graph"])return push(x["@graph"]);flat.push(x)})(j)}catch(e){}}
+  return flat.find(x=>{const t=[].concat(x["@type"]||[]).map(String).join(" ").toLowerCase();return t.includes("product")})||null};
+const ldImages=v=>{if(!v)return[];const a=Array.isArray(v)?v:[v];return a.map(x=>typeof x==="string"?x:(x&&(x.url||x.contentUrl))||"").filter(Boolean)};
+const ldPrice=o=>{if(!o)return 0;const a=Array.isArray(o)?o:[o];for(const x of a){const p=+(x&&(x.price||x.lowPrice||x.highPrice));if(p>0)return p}return 0};
+async function genericProduct(u){
+  const r=await fetch(u.href,{headers:UA,redirect:"follow"});if(!r.ok)return null;
+  const html=await r.text(),ld=ldProduct(html),meta=metaMap(html);
+  const title=plainText((ld&&ld.name)||meta["og:title"]||meta["twitter:title"]||(/<title[^>]*>([\s\S]*?)<\/title>/i.exec(html)||[])[1]||"").replace(/\s+/g," ");
+  if(!title)return null;
+  let images=ldImages(ld&&ld.image);if(!images.length)images=ldImages(meta["og:image"]||meta["twitter:image"]);
+  const desc=plainText((ld&&ld.description)||meta["og:description"]||meta.description||"");
+  const price=ldPrice(ld&&ld.offers);
+  return{n:cut(title,120),sn:cut(title,60),c:"",d:desc,images:images.filter(x=>/^https?:\/\//.test(x)).filter((x,i,a)=>a.indexOf(x)===i).slice(0,5),cost:price,sup:{s:u.hostname.replace(/^www\./,""),u:u.href}};
+}
+let jvCred={t:0,url:"",key:""},jvCat={t:0,map:{}};
+async function jvecCreds(){
+  if(jvCred.url&&Date.now()-jvCred.t<6*3600*1000)return jvCred;
+  const home=await fetch("https://www.jvecomb2b.com/",{headers:UA});
+  if(!home.ok)throw new Error("The supplier site is not reachable right now.");
+  const html=await home.text(),m=/<script[^>]+src\s*=\s*["']([^"']*\/assets\/[^"']+\.js)["']/i.exec(html);
+  if(!m)throw new Error("The supplier page changed. Open the product and copy the link again.");
+  const js=await(await fetch(m[1].startsWith("http")?m[1]:"https://www.jvecomb2b.com"+m[1],{headers:UA})).text();
+  const url=(js.match(/https:\/\/[a-z0-9]+\.supabase\.co/)||[])[0],key=(js.match(/eyJ[A-Za-z0-9_\-.]{60,}/)||[])[0];
+  if(!url||!key)throw new Error("Could not reach the supplier catalogue.");
+  jvCred={t:Date.now(),url,key};return jvCred;
+}
+async function jvecFetch(creds,path){
+  const r=await fetch(creds.url+"/rest/v1/"+path,{headers:{apikey:creds.key,authorization:"Bearer "+creds.key}});
+  if(!r.ok)return null;return r.json().catch(()=>null);
+}
+async function jvecProduct(u){
+  const parts=u.pathname.split("/").filter(Boolean);let slug=parts[0]==="product"&&parts[1]?decodeURIComponent(parts[1]):"";
+  if(!slug&&parts[0]==="products"&&parts.length>1)slug=decodeURIComponent(parts[parts.length-1]);
+  if(!slug)slug=u.searchParams.get("slug")||u.searchParams.get("id")||"";
+  if(!slug)return null;
+  const creds=await jvecCreds();
+  let row=null;
+  if(/^[0-9a-f-]{36}$/i.test(slug)){const rr=await jvecFetch(creds,"products?id=eq."+encodeURIComponent(slug)+"&select=*&limit=1");row=rr&&rr[0]}
+  if(!row){const rr=await jvecFetch(creds,"products?slug=eq."+encodeURIComponent(slug)+"&select=*&limit=1");row=rr&&rr[0]}
+  if(!row)return null;
+  if(Date.now()-jvCat.t>6*3600*1000){const rows=await jvecFetch(creds,"categories?select=id,name&limit=500");const map={};(rows||[]).forEach(c=>{if(c&&c.id)map[c.id]=c.name||""});jvCat={t:Date.now(),map}}
+  const cost=[+row.discounted_price,+row.original_price].filter(x=>x>0).sort((a,b)=>a-b)[0]||0;
+  const images=[row.image].concat(Array.isArray(row.images)?row.images:[]).filter(x=>x&&/^https?:\/\//.test(x)).filter((x,i,a)=>a.indexOf(x)===i).slice(0,5);
+  const name=String(row.name||"").replace(/\s+/g," ").trim();
+  if(!name)return null;
+  return{n:cut(name,120),sn:cut(name,60),c:jvCat.map[row.category_id]||"",d:plainText(row.description),images,cost,
+    sup:{s:"jvecomb2b",id:row.id||"",slug:row.slug||slug,cost,stock:+(row.on_hand_stock??row.stock??0)||0,u:u.href}};
+}
+
 export default async(req,context)=>{
   const db=getStore({name:"shop",consistency:"strong"}), path=new URL(req.url).pathname.replace(/^\/api\/?/,"");
   const get=async(k,d)=>(await db.get(k,{type:"json"}))??d;
@@ -503,6 +563,32 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const id=path.slice(4);if(!/^[a-f0-9]{24}$/.test(id))return J({error:"Not found"},404);
     const r=await db.getWithMetadata("img/"+id,{type:"arrayBuffer"});if(!r)return J({error:"Not found"},404);
     return new Response(r.data,{headers:{"content-type":(r.metadata&&r.metadata.type)||"image/jpeg","cache-control":"public, max-age=31536000, immutable"}});
+  }
+  if(path==="import/product"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const raw=String(b.url||"").trim();let u;try{u=new URL(raw)}catch(e){return J({error:"Paste the full product link, starting with https://"},400)}
+    if(!/^https?:$/.test(u.protocol))return J({error:"Only http and https links work"},400);
+    let p=null;
+    try{if(/(^|\.)jvecomb2b\.com$/i.test(u.hostname))p=await jvecProduct(u);if(!p)p=await genericProduct(u)}
+    catch(e){return J({error:String((e&&e.message)||e)},502)}
+    if(!p)return J({error:"Could not read that product. Open it in your browser, copy the link again, or add the product manually."},422);
+    const mk=Math.min(10,Math.max(1,+b.markup||2)),cost=+p.cost||0,explicit=+b.price||0;
+    p.cost=cost;p.p=explicit>0?Math.round(explicit):round9(cost*mk);p.o=round9(Math.max(p.p*1.5,p.p+1));
+    if(!p.p)p.p=1;
+    return J({ok:1,product:p,markup:mk});
+  }
+  if(path==="import/sync"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const list=await get("products",[]),rows=list.filter(p=>p.sup&&p.sup.s==="jvecomb2b"&&p.sup.id);
+    if(!rows.length)return J({ok:1,updated:0});
+    let creds;try{creds=await jvecCreds()}catch(e){return J({error:String((e&&e.message)||e)},502)}
+    const data=await jvecFetch(creds,"products?id=in.("+rows.map(p=>encodeURIComponent(p.sup.id)).join(",")+")&select=id,discounted_price,original_price,on_hand_stock,stock");
+    const map={};(data||[]).forEach(r=>{map[r.id]=r});
+    let n=0;for(const p of list){if(!p.sup||p.sup.s!=="jvecomb2b")continue;const r=map[p.sup.id];if(!r)continue;
+      const cost=[+r.discounted_price,+r.original_price].filter(x=>x>0).sort((a,b)=>a-b)[0]||0;
+      p.sup.cost=cost;p.sup.stock=+(r.on_hand_stock??r.stock??0)||0;n++}
+    if(n)await db.setJSON("products",list);
+    return J({ok:1,updated:n});
   }
   if(path==="products"&&req.method==="GET"){const all=await get("products",[]);if(await pack(all))await db.setJSON("products",all);return J(admin()?all:all.filter(p=>!p.hid))}
   if(path==="products"&&req.method==="POST"){
