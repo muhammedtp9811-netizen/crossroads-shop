@@ -33,7 +33,7 @@
 {"@context":"https://schema.org","@type":"WebSite","name":"Crossroads Shopping","url":"https://crossroads-shopping.netlify.app/","potentialAction":{"@type":"SearchAction","target":"https://crossroads-shopping.netlify.app/?q={search_term_string}","query-input":"required name=search_term_string"}}
 </script>
 
-<script src="https://accounts.google.com/gsi/client" async defer></script>","oldString":"<script>try{document.documentElement.setAttribute(\"data-theme\",localStorage.getItem(\"cr_theme\")||\"dark\")}catch(e){document.documentElement.setAttribute(\"data-theme\",\"dark\")}</script>"
+<!-- <script src="https://accounts.google.com/gsi/client" async defer></script> -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -460,13 +460,14 @@ gtag('config','YOUR_GA_ID');
 
 <section class="pg" id="product" hidden></section>
 <section class="pg" id="checkout" hidden></section>
+<section class="pg" id="track" hidden></section>
 
 <div id="admin" hidden></div>
 
 <footer id="foot"><div class="wrap">
 <div class="fg">
 <div><div class="lg">Crossroads Shopping</div><p>Your next favourite find is here.</p></div>
-<div><h4>Explore</h4><a href="./" id="fHome">Shop</a><a href="#about">About us</a><a href="#delivery">Delivery</a><a href="#policy">Store policy</a><a href="#contact">Contact</a></div>
+<div><h4>Explore</h4><a href="./" id="fHome">Shop</a><a href="#about">About us</a><a href="#delivery">Delivery</a><a href="#track">Track order</a><a href="#policy">Store policy</a><a href="#contact">Contact</a></div>
 <div><h4>Get in touch</h4><a id="fIg" target="_blank" rel="noopener" class="ig-t"></a><a id="fMail" class="mail-t"></a></div>
 </div>
 <small>© <span id="yr"></span> Crossroads Shopping. All rights reserved.</small>
@@ -521,7 +522,7 @@ let P=[],cat="All",cart=[],cur=null,size=null,Q="",SO="n",ST={upi:"",name:"",qr:
 try{cart=JSON.parse(localStorage.getItem("cr_cart")||"[]")}catch(e){}
 const save=()=>{try{localStorage.setItem("cr_cart",JSON.stringify(cart))}catch(e){}};
 const imgs=p=>p.images&&p.images.length?p.images:(p.imgs&&p.imgs.length?p.imgs:(p.img?[p.img]:[]));
-const view=()=>{const x=location.hash;return x==="#about"?"about":x==="#contact"?"contact":x==="#policy"?"policy":x==="#delivery"?"delivery":x.startsWith("#admin")?"admin":x==="#checkout"?"checkout":x.startsWith("#p/")?"product":"shop"};
+const view=()=>{const x=location.hash;return x==="#about"?"about":x==="#contact"?"contact":x==="#policy"?"policy":x==="#delivery"?"delivery":x.startsWith("#admin")?"admin":x==="#checkout"?"checkout":x==="#track"?"track":x.startsWith("#p/")?"product":"shop"};
 function toast(t){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.h);toast.h=setTimeout(()=>e.classList.remove("on"),1900)}
 const ph=p=>`<span class="ph" style="background:linear-gradient(135deg,hsl(${p.id%360} 25% 32%),hsl(${(p.id+40)%360} 30% 22%))">${esc((p.n||"").trim().charAt(0).toUpperCase())}</span>`;
 
@@ -712,6 +713,47 @@ function renderCheckout(){const el=$("checkout");
  $("f").onchange=e=>{if(e.target.name==="pm"){const u=e.target.value==="upi";$("upip").hidden=!u;if(u)$("upip").innerHTML=upiHTML();$("pay").textContent=u?"I have paid, place order":"Pay securely"}};
  prefillCk();}
 $("checkout").onclick=e=>{const n=e.target.closest("[data-nav]");if(n){e.preventDefault();cat=n.dataset.nav||"All";history.pushState(null,"",location.pathname);route()}};
+function renderTrack(){const el=$("track");
+ if(!el)return;
+ el.innerHTML=`<div class="wrap narrow"><h1 style="font-size:clamp(1.8rem,4vw,2.4rem)">Track your order</h1><p class="muted" style="margin-bottom:20px">Enter your order number and phone number to see the status of your order.</p>
+ <div class="cardx" style="max-width:480px"><form id="trackf" novalidate class="fl">
+  <label>Order number<input id="trno" type="number" inputmode="numeric" placeholder="e.g. 1001"></label>
+  <label>Phone number<input id="trph" inputmode="tel" maxlength="10" placeholder="10-digit mobile number"></label>
+  <div class="err" id="tre"></div>
+  <button class="btn" type="submit">Track order</button>
+ </form></div>
+ <div id="trackres" style="margin-top:24px"></div>
+ </div>`;
+ $("trackf").onsubmit=async e=>{e.preventDefault();const no=+($("trno").value||0),ph=$("trph").value.replace(/\D/g,""),er=$("tre");er.className="err";if(!no||ph.length!==10){er.textContent="Enter your order number and 10-digit phone number.";return}er.className="";er.textContent="Looking up your order...";const r=await post("orders/track",{no,phone:ph}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not find your order.";return}er.className="";er.textContent="";drawTrack(r.d.order)}
+}
+
+function drawTrack(o){const box=$("trackres");if(!box)return;
+ const statusSteps=["placed","confirmed","processing","shipped","intransit","outfordelivery","delivered"];
+ const curIdx=statusSteps.indexOf(o.status);
+ const est=new Date(o.estDate);
+ const daysLeft=o.daysLeft||0;
+ const statusColors={placed:"var(--mut)",confirmed:"var(--acc)",processing:"var(--acc)",shipped:"var(--hot)",intransit:"var(--hot)",outfordelivery:"var(--ok)",delivered:"var(--ok)",cancelled:"var(--err)"};
+ const items=(o.items||[]).map(i=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)"><span>${esc(i.n)}${i.s?` <small class="muted">(${esc(i.s)})</small>`:""} x${i.q}</span><b>${money(i.p*i.q)}</b></div>`).join("");
+ const timeline=(o.events||[]).map(e=>`<div style="display:flex;gap:10px;padding:8px 0;border-left:2px solid var(--line);padding-left:14px;margin-left:6px;position:relative"><span style="position:absolute;left:-7px;top:12px;width:12px;height:12px;border-radius:50%;background:var(--acc)"></span><div><b style="font-size:.9rem">${esc(statusLabel(e.a))}</b><p class="muted" style="font-size:.8rem;margin:2px 0 0">${esc(dt(e.t))}${e.note?` — ${esc(e.note)}`:""}</p></div></div>`).join("");
+ const cancelled=o.status==="cancelled";
+ box.innerHTML=`<div class="cardx" style="max-width:640px">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+   <div><h2 style="margin:0;font-size:1.3rem">Order #${o.no}</h2><p class="muted" style="margin:2px 0 0;font-size:.85rem">${esc(o.name)} · +91 ${esc(o.phone)}</p></div>
+   <span class="tg" style="background:${statusColors[o.status]||"var(--mut)"};color:#fff;font-size:.85rem;padding:6px 12px">${esc(o.statusLabel)}</span>
+  </div>
+  ${cancelled?'<div class="err" style="margin-bottom:12px">This order has been cancelled.</div>':''}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+   <div style="background:var(--bg);border-radius:10px;padding:12px"><p class="muted" style="font-size:.75rem;margin:0 0 4px;text-transform:uppercase;letter-spacing:.05em">Order placed</p><b style="font-size:.95rem">${esc(dt(o.placed))}</b></div>
+   <div style="background:var(--bg);border-radius:10px;padding:12px"><p class="muted" style="font-size:.75rem;margin:0 0 4px;text-transform:uppercase;letter-spacing:.05em">Estimated delivery</p><b style="font-size:.95rem">${esc(fmtDate(o.estDate))}</b>${daysLeft>0?`<p class="muted" style="font-size:.8rem;margin:2px 0 0">${daysLeft} day${daysLeft===1?"":"s"} left</p>`:'<p class="ok" style="font-size:.8rem;margin:2px 0 0">Delivered or arriving today</p>'}</div>
+  </div>
+  ${o.courier||o.trackNo?`<div style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:16px"><p class="muted" style="font-size:.75rem;margin:0 0 4px;text-transform:uppercase;letter-spacing:.05em">Shipping details</p>${o.courier?`<p style="margin:2px 0"><b>Courier:</b> ${esc(o.courier)}</p>`:""}${o.trackNo?`<p style="margin:2px 0"><b>Tracking no:</b> ${esc(o.trackNo)}</p>`:""}${o.note?`<p style="margin:6px 0 0;font-size:.85rem">${esc(o.note)}</p>`:""}</div>`:""}
+  <div style="margin-bottom:16px"><h3 style="font-size:1rem;margin:0 0 8px">Items</h3>${items}<div style="display:flex;justify-content:space-between;padding:8px 0;font-weight:700"><span>Total</span><span>${money(o.total)}</span></div><p class="muted" style="font-size:.82rem;margin:4px 0 0">Payment: ${o.method==="cod"?"Cash on Delivery":o.method==="upi"?"UPI (manual)":"Online"} · ${o.paid?"Paid":"Payment pending"}</p></div>
+  <div><h3 style="font-size:1rem;margin:0 0 8px">Timeline</h3>${timeline||'<p class="muted">No updates yet.</p>'}</div>
+ </div>`;
+}
+function statusLabel(a){const m={placed:"Order Placed",confirmed:"Confirmed",processing:"Processing",shipped:"Shipped",intransit:"In Transit",outfordelivery:"Out for Delivery",delivered:"Delivered",cancelled:"Cancelled",paid:"Payment Received"};return m[a]||a.charAt(0).toUpperCase()+a.slice(1)}
+function fmtDate(s){if(!s)return"—";try{return new Date(s).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}catch(e){return s}}
+
 function cust(){const n=$("fn").value.trim(),ph=$("fp").value.replace(/\D/g,""),em=$("fe").value.trim(),ad=$("fa").value.trim();
  if(!n||ph.length<10||ad.length<10){$("fr").textContent="Enter your name, a 10-digit phone number and your full address.";return null}
  $("fr").textContent="";return{n,ph,em,ad}}
@@ -768,15 +810,15 @@ async function hero3d(){const c=$("c3d");if(!c)return;
 let admP=null;
 async function adm(){const A=$("admin");
  if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
-   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=30";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
+   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=31";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
   try{await admP}
   catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
  window.CRAdmin.open(A)}
 
-async function route(){stopAuto();document.title="Crossroads Shopping";const v=view();["shop","about","contact","policy","delivery","product","checkout","admin"].forEach(k=>$(k).hidden=v!==k);$("foot").hidden=$("hd").hidden=$("ann").hidden=v==="admin";
+async function route(){stopAuto();document.title="Crossroads Shopping";const v=view();["shop","about","contact","policy","delivery","product","checkout","track","admin"].forEach(k=>$(k).hidden=v!==k);$("foot").hidden=$("hd").hidden=$("ann").hidden=v==="admin";
  if(v==="admin"){wasAdmin=true;await adm();return}
  if(wasAdmin){wasAdmin=false;await loadP()}
- jp(pageName());cats();if(v==="shop"){grid();maybeHero()}if(v==="product")renderProduct(location.hash.slice(3));if(v==="checkout")renderCheckout();
+ jp(pageName());cats();if(v==="shop"){grid();maybeHero()}if(v==="product")renderProduct(location.hash.slice(3));if(v==="checkout")renderCheckout();if(v==="track")renderTrack();
  scrollTo({top:0,left:0,behavior:"instant"});if(v!=="shop")log("Opened the "+v+" page")}
 addEventListener("hashchange",route);addEventListener("popstate",route);
 (async()=>{
@@ -787,8 +829,8 @@ addEventListener("hashchange",route);addEventListener("popstate",route);
  let stOk=false;
  const st=fetch("/api/settings",{cache:"no-store"}).then(r=>r.json()).then(x=>{ST=x;ST_READY=true;stOk=true}).catch(()=>{ST_READY=true});
   const ch=await loadP();const was=loading;loading=false;
-  if(view()!=="admin"&&(ch||was)){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout()}
-  await st;if(view()!=="admin"&&stOk){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout()}
+  if(view()!=="admin"&&(ch||was)){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout();if(view()==="track")renderTrack()}
+  await st;if(view()!=="admin"&&stOk){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout();if(view()==="track")renderTrack()}
  await first;if(view()!=="admin"){ev("open","",1);sync()}})();
 window.CRShop={get products(){return P},get cart(){return cart}};
 </script>

@@ -507,7 +507,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     total=applyOff(total,cc.off);
     const first=!orders.some(x=>!x.cancelled&&last10(x.phone)===last10(c.phone));
     const mx=Math.max(1000,...orders.map(o=>o.no||0));
-    const o={id,no:mx+1,method:method,ev:[{a:"placed",t:new Date().toISOString()}],lines,it:its,total,paid:false,manual:true,utr:method==="cod"?"":utr,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)};
+    const o={id,no:mx+1,method:method,ev:[{a:"placed",t:new Date().toISOString()}],lines,it:its,total,paid:false,manual:true,utr:method==="cod"?"":utr,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300),track:{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[{a:"placed",t:new Date().toISOString()}]}};
     if(cc.off)o.disc={code:cc.code,off:cc.off};
     if(first){const nc=await issueCode(c.phone);if(nc)o.next=nc}
     orders.unshift(o);
@@ -526,11 +526,30 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const orders=await get("orders",[]),o=orders.find(x=>x.id===b.id);
     if(o){let justPaid=false;for(const k of ["paid","shipped","delivered","cancelled"])if(typeof b[k]==="boolean"&&o[k]!==b[k]){o[k]=b[k];if(b[k])(o.ev=o.ev||[]).push({a:k==="cancelled"?"cancelled":k,t:new Date().toISOString()});if(k==="paid"&&b[k])justPaid=true}
       if(b.track!==undefined)o.track=cut(b.track,120);if(b.note!==undefined)o.note=cut(b.note,500);
+       if(b.trackStatus!==undefined){const ts=String(b.trackStatus);if(["placed","confirmed","processing","shipped","intransit","outfordelivery","delivered","cancelled"].includes(ts)){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.status=ts;o.track.events=o.track.events||[];o.track.events.push({a:ts,t:new Date().toISOString(),note:cut(b.trackNote||"",200)});if(ts==="shipped"&&!o.shipped){o.shipped=true;(o.ev=o.ev||[]).push({a:"shipped",t:new Date().toISOString()})}if(ts==="delivered"&&!o.delivered){o.delivered=true;(o.ev=o.ev||[]).push({a:"delivered",t:new Date().toISOString()})}}}
+       if(b.courier!==undefined){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.courier=cut(String(b.courier||""),60)}
+       if(b.trackNo!==undefined){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.trackNo=cut(String(b.trackNo||""),60)}
+       if(b.estDays!==undefined){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.estDays=Math.max(1,Math.min(30,+b.estDays||5))}
+       if(b.estDate!==undefined){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.estDate=cut(String(b.estDate||""),20)}
+       if(b.trackNote!==undefined){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.note=cut(String(b.trackNote||""),300)}
       if(justPaid&&!o.next&&!orders.some(x=>x.id!==o.id&&x.paid&&!x.cancelled&&last10(x.phone)===last10(o.phone))){const nc=await issueCode(o.phone);if(nc)o.next=nc}
       await db.setJSON("orders",orders);
       if(b.cancelled===true&&o.disc&&o.disc.code)await freeCode(o.disc.code);
       if(justPaid)await custMail(o,"paid")}
     return J({ok:1});
+  }
+
+  if(path==="orders/track"&&req.method==="POST"){
+    const no=+b.no||0,phone=String(b.phone||"").replace(/\D/g,"").slice(-10);
+    if(!no||phone.length<10)return J({error:"Enter your order number and phone number."},400);
+    const orders=await get("orders",[]),o=orders.find(x=>x.no===no&&last10(x.phone)===phone);
+    if(!o)return J({error:"No order found with that number and phone."},404);
+    const t=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};
+    const placed=new Date(o.t||Date.now());
+    const estDate=t.estDate?t.estDate:new Date(placed.getTime()+t.estDays*864e5).toISOString().slice(0,10);
+    const daysLeft=Math.max(0,Math.ceil((new Date(estDate)-Date.now())/864e5));
+    const statusLabels={placed:"Order Placed",confirmed:"Confirmed",processing:"Processing",shipped:"Shipped",intransit:"In Transit",outfordelivery:"Out for Delivery",delivered:"Delivered",cancelled:"Cancelled"};
+    return J({ok:1,order:{no:o.no,name:o.name,phone:o.phone,total:o.total,paid:!!o.paid,method:o.method||"upi",placed:o.t,estDate,daysLeft,status:t.status,statusLabel:statusLabels[t.status]||t.status,courier:t.courier||"",trackNo:t.trackNo||"",note:t.note||"",events:(t.events||[]).map(e=>({a:e.a,t:e.t,note:e.note||""})),lines:o.lines||[],items:o.it||[]}});
   }
   if(path==="orders/delete"){
     if(!admin())return J({error:"Wrong password"},401);
@@ -842,7 +861,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(!r.ok)return J({error:"Could not start payment. Try again."},502);
     const orders=await get("orders",[]);
     const mx=Math.max(1000,...orders.map(x=>x.no||0));
-    const ord={id:o.id,no:mx+1,method:"online",ev:[{a:"placed",t:new Date().toISOString()}],lines,it:its,total,paid:false,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300)};
+    const ord={id:o.id,no:mx+1,method:"online",ev:[{a:"placed",t:new Date().toISOString()}],lines,it:its,total,paid:false,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300),track:{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[{a:"placed",t:new Date().toISOString()}]}};
     if(cc.off){ord.code=cc.code;ord.disc={code:cc.code,off:cc.off}}
     orders.unshift(ord);
     await db.setJSON("orders",orders.slice(0,500));
