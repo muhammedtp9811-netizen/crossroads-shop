@@ -375,12 +375,13 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     }
     return J(r);
   }
-  if(path==="settings"&&req.method==="GET"){const t=await get("settings",{});return J({upi:t.upi||"",name:t.name||"",qr:t.qr||"",online:!!(E.RAZORPAY_KEY_ID&&E.RAZORPAY_KEY_SECRET),paymentMethod:t.paymentMethod||"both"})}
+  if(path==="settings"&&req.method==="GET"){const t=await get("settings",{});return J({upi:t.upi||"",name:t.name||"",qr:t.qr||"",online:!!(E.RAZORPAY_KEY_ID&&E.RAZORPAY_KEY_SECRET),paymentMethod:t.paymentMethod||"both",googleClientId:t.googleClientId||""})}
   if(path==="settings"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
     const cur=await get("settings",{}),nxt={...cur};
     if(b.upi!==undefined)nxt.upi=cut(b.upi,80);
     if(b.paymentMethod!==undefined)nxt.paymentMethod=["cod","upi","both"].includes(b.paymentMethod)?b.paymentMethod:"both";
+    if(b.googleClientId!==undefined)nxt.googleClientId=cut(String(b.googleClientId).trim(),160);
     if(b.name!==undefined)nxt.name=cut(b.name,60);
     if(b.qr!==undefined)nxt.qr=cut(b.qr,400000);
     if(b.brand!==undefined){const x=b.brand&&typeof b.brand==="object"?b.brand:null;nxt.brand=x?{name:cut(x.name,40)||"Crossroads Shopping",tag:cut(x.tag,70),mono:cut(x.mono,3)||"CS",bg:/^#[0-9a-f]{3,8}$/i.test(x.bg||"")?x.bg:"#111318",fg:/^#[0-9a-f]{3,8}$/i.test(x.fg||"")?x.fg:"#ffffff",ac:/^#[0-9a-f]{3,8}$/i.test(x.ac||"")?x.ac:"#c9a227",shape:["rounded","circle","square"].includes(x.shape)?x.shape:"rounded"}:null;}
