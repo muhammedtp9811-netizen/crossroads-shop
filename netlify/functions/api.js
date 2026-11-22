@@ -791,29 +791,29 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const dist=[5,4,3,2,1].map(s=>({s,n:L.filter(r=>+r.s===s).length}));
     const s=await me().catch(()=>null),mine=s?L.find(r=>r.ph===s.ph):null;
     return J({pid,count:n,avg,dist,mine:mine?{s:mine.s,x:mine.x||"",t:mine.t}:null,
-      reviews:L.slice(0,25).map(r=>({s:+r.s,n:shortName(r.nm),x:r.x||"",t:r.t,v:!!r.v,src:r.src||"customer"}))});
+      reviews:L.slice(0,25).map(r=>({s:+r.s,n:shortName(r.nm),x:r.x||"",t:r.t,v:!!r.v,src:r.src||"customer",photo:r.photo||""}))});
   }
   if(path==="reviews"&&req.method==="POST"){
     const s=await me();if(!s)return J({error:"Log in to rate this product."},401);
     const pid=String(b.pid||""),stars=Math.max(1,Math.min(5,Math.round(+b.stars||0)));
     if(!pid||!stars)return J({error:"Choose a star rating first."},400);
-    const text=cut(String(b.text||"").trim(),500);
+    const text=cut(String(b.text||"").trim(),500),photo=typeof b.photo==="string"&&b.photo.startsWith("data:image/")?b.photo.slice(0,200000):"";
     const all=await getReviews(),i=all.findIndex(r=>String(r.pid)===pid&&r.ph===s.ph);
     const orders=await get("orders",[]),verified=orders.some(o=>!o.cancelled&&last10(o.phone)===s.ph);
-    const rec={id:i>=0?all[i].id:Date.now(),pid,ph:s.ph,nm:cut(s.name,60),s:stars,x:text,t:new Date().toISOString(),v:verified,src:"customer"};
+    const rec={id:i>=0?all[i].id:Date.now(),pid,ph:s.ph,nm:cut(s.name,60),s:stars,x:text,t:new Date().toISOString(),v:verified,src:"customer",photo:photo||""};
     if(i>=0)all[i]=rec;else all.unshift(rec);
     await db.setJSON("reviews",all.slice(0,2000));
     return J({ok:1,review:{s:stars,x:text,v:verified}});
   }
   if(path==="reviews/add"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
-    const pid=String(b.pid||""),name=cut(String(b.name||"").trim(),60),stars=Math.max(1,Math.min(5,Math.round(+b.stars||0))),text=cut(String(b.text||"").trim(),500);
+    const pid=String(b.pid||""),name=cut(String(b.name||"").trim(),60),stars=Math.max(1,Math.min(5,Math.round(+b.stars||0))),text=cut(String(b.text||"").trim(),500),photo=typeof b.photo==="string"&&b.photo.startsWith("data:image/")?b.photo.slice(0,200000):"";
     if(!pid||!name||!stars)return J({error:"Pick a product, add a name and choose stars."},400);
     const prods=await get("products",[]),p=prods.find(x=>String(x.id)===pid);
     const all=await getReviews();
     let when=new Date().toISOString();
     if(b.t){const d=new Date(b.t);if(!isNaN(d.getTime())&&d.getTime()<Date.now())when=d.toISOString()}
-    const rec={id:Date.now(),pid,pn:p?shortN(p.sn||p.n,80):"",ph:"",nm:name,s:stars,x:text,t:when,v:false,src:"shop"};
+    const rec={id:Date.now(),pid,pn:p?shortN(p.sn||p.n,80):"",ph:"",nm:name,s:stars,x:text,t:when,v:false,src:"shop",photo:photo||""};
     all.unshift(rec);await db.setJSON("reviews",all.slice(0,2000));
     return J({ok:1,review:rec});
   }

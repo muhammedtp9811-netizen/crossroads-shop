@@ -638,7 +638,7 @@ async function loadRevs(pid){const box=$("revs");if(!box)return;revPid=String(pi
 function drawRevs(pid,d){const box=$("revs"),sum=$("rsum"),n=+d.count||0,avg=+d.avg||0;
  if(sum)sum.innerHTML=n?`${starRow(avg)}<span>${avg.toFixed(1)} · ${n} rating${n===1?"":"s"}</span>`:`${starRow(0)}<span>No ratings yet</span>`;
  const rows=(d.dist||[]).map(x=>`<div class="rbar"><b>${x.s} ★</b><span><i style="width:${n?Math.round(x.n/n*100):0}%"></i></span><em>${x.n}</em></div>`).join("");
- const list=(d.reviews||[]).map(r=>`<article class="rv"><div class="rvh"><b>${esc(r.n)}</b>${starRow(r.s)}${r.v&&r.src==="customer"?'<span class="vg">Verified customer</span>':""}<time>${esc(ago(r.t))}</time></div>${r.x?`<p>${esc(r.x)}</p>`:""}</article>`).join("");
+ const list=(d.reviews||[]).map(r=>`<article class="rv"><div class="rvh"><b>${esc(r.n)}</b>${starRow(r.s)}${r.v&&r.src==="customer"?"<span class=\"vg\">Verified customer</span>":""}<time>${esc(ago(r.t))}</time></div>${r.x?`<p>${esc(r.x)}</p>`:""}${r.photo?`<img src="${esc(r.photo)}" alt="Review photo" style="max-width:200px;border-radius:8px;margin:6px 0;display:block;cursor:pointer" onclick="this.style.maxWidth=this.style.maxWidth===\x27200px\x27?\x27100%\x27:\x27200px\x27">`:""}</article>`).join("");
  const mine=d.mine&&d.mine.s?+d.mine.s:0;
  const form=ACCT?`<form class="rform" id="rf" novalidate><b>${mine?"Your rating":"Rate this product"}</b><div class="pick" id="rpick">${[1,2,3,4,5].map(i=>`<button type="button" data-r="${i}" class="${i<=mine?"on":""}" aria-label="${i} star${i===1?"":"s"}">★</button>`).join("")}</div><textarea id="rx" rows="3" placeholder="What did you like or not like? (optional)">${esc(d.mine&&d.mine.x||"")}</textarea><div class="err" id="re"></div><button class="btn" type="submit">${mine?"Update my rating":"Post my rating"}</button></form>`:`<div class="rform"><b>Bought this item?</b><p class="muted" style="margin:0">Log in with your name and phone to rate this product.</p><button class="btn alt" id="rLogin" type="button">Log in to rate</button></div>`;
  box.innerHTML=`<h2>Ratings and reviews</h2>${n?`<div class="rhead"><div class="rbig"><b>${avg.toFixed(1)}</b>${starRow(avg)}<small>${n} rating${n===1?"":"s"}</small></div><div>${rows}</div></div>`:'<p class="muted" style="margin:0 0 16px">No ratings yet. Be the first to rate this product.</p>'}${list?`<div class="rlist">${list}</div>`:""}${form}`;
@@ -751,7 +751,7 @@ async function hero3d(){const c=$("c3d");if(!c)return;
 let admP=null;
 async function adm(){const A=$("admin");
  if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
-   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=28";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
+   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=29";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
   try{await admP}
   catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
  window.CRAdmin.open(A)}
