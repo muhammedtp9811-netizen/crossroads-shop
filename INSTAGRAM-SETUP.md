@@ -124,3 +124,20 @@ If the setup feels too heavy:
 - **Meta Business Suite** can schedule Facebook + Instagram posts manually for free.
 - **Buffer / Later / Metricool** have free tiers and can auto-post, but they do not read your website products automatically.
 - The store's **Post to IG** button is the only option that uses your own product data and is free.
+
+---
+
+## Easier option: Semi-automatic posting (no Meta app needed)
+
+If the Meta app setup is too complex, the store already has a built-in fallback:
+
+1. In Admin → Products, click **"Post to IG"** next to any product.
+2. A dialog opens with:
+   - The product photo(s) (right-click → Save Image, or use the Save photo link)
+   - The auto-generated caption with hashtags (click **Copy caption**)
+   - Step-by-step instructions
+3. Click **"Open Instagram"** → create a new post → upload the saved photo → paste the caption → add music (optional) → Share.
+
+This takes ~10 seconds per product and needs no Facebook account, no tokens, no API. The Meta API method above is only needed if you want fully hands-off posting.
+
+When you eventually complete the Meta setup and connect it in Admin → Settings → Instagram, the same "Post to IG" button will auto-post without these steps.

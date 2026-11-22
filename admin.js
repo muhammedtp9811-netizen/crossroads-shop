@@ -379,7 +379,7 @@ async function onClick(e){const b=e.target.closest("[data-act],[data-of],[data-p
  if(a==="odel"){if(confirm("Delete this order for good?")){const r=await api("orders/delete",{id:oid});if(r.ok){S.orders=S.orders.filter(x=>x.id!==oid);S.seen.delete(oid);saveCache();location.hash="#admin/orders";render(true,true)}else say(r.d.error||"Could not delete this order")}return}
  if(a==="mdel"){if(confirm("Delete this message?")){await api("messages/delete",{t:d.t});render(true);S.messages=S.messages.filter(m=>m.t!==d.t);$("adc").innerHTML=pMessages()}return}
  if(a==="igtest"){const el=$("igfe");if(el){el.className="";el.textContent="Checking..."}const r=await api("ig/test",{});if(el){el.className=r.ok?"ok":"err";el.textContent=r.ok?"Connected to @"+(r.d.username||"your account"):(r.d.error||"Could not connect.")}return}
- if(a==="igpost"){say("Posting to Instagram...");const r=await api("ig/post",{id:d.id});if(r.ok)say("Posted to Instagram"+(r.d.posted&&r.d.posted.some(x=>x.startsWith("story:"))?" + Story":""));else say(r.d.error||"Could not post to Instagram.");return}
+ if(a==="igpost"){const igc=S.settings&&S.settings.ig;if(igc&&igc.connected){say("Posting to Instagram...");const r=await api("ig/post",{id:d.id});if(r.ok){say("Posted to Instagram"+(r.d.posted&&r.d.posted.some(x=>x.startsWith("story:"))?" + Story":""));return}say(r.d.error||"Auto-post failed. Opening manual posting...")}showIgPost(d.id);return}
  if(a==="impclear"){impDraft=null;render(true);return}
  if(a==="impsync"){say("Syncing supplier stock...");const r=await api("import/sync",{});if(r.ok){await render(true,true);say("Updated "+r.d.updated+" imported product"+(r.d.updated===1?"":"s")+".")}else say(r.d.error||"Could not sync.");return}
  if(i<0&&a&&a[0]==="p")return;
@@ -405,6 +405,44 @@ async function onSubmit(e){e.preventDefault();
   const o={id:old.id||Date.now(),n,sn:$("psn").value.trim(),c:normCat($("pc").value)||"Fashion",p:pr,o:+$("po").value||0,s:$("ps").value.split(",").map(s=>s.trim()).filter(Boolean),d:$("pdsc").value.trim(),pm:$("ppm").value||"both",sup:(old.sup||((!old.id&&impDraft)?impDraft.sup:null)||undefined),sold:$("pso").checked,tr:$("ptr").checked,hid:$("phd").checked,images:draft.slice(),img:draft[0]||""};
   if(old.id)S.products=S.products.map(p=>p.id===old.id?o:p);else S.products.unshift(o);
   $("pfe").textContent="Saving...";if(await saveP()){impDraft=null;say("Product saved");location.hash="#admin/products";const igc=S.settings&&S.settings.ig;if(igc&&igc.auto){const ir=await api("ig/post",{id:o.id});say(ir.ok?"Posted to Instagram"+(ir.d.posted&&ir.d.posted.some(x=>x.startsWith("story:"))?" + Story":""):"Instagram: "+(ir.d.error||"could not post."))}}else{$("pfe").className="err";$("pfe").textContent="Could not save. Try again."}}}
+
+
+function igCaption(p){
+ const name=String(p.n||"").trim().slice(0,90),desc=String(p.d||"").replace(/\s+/g," ").slice(0,300),price=+p.p||0,old=+p.o||0;
+ const lines=[name,"",desc,"",price?("Price: ₹"+price.toLocaleString("en-IN")+(old>price?" (was ₹"+old.toLocaleString("en-IN")+")":"")):"","Free delivery across India in about 5 days. Cash on Delivery available.","Order here: https://crossroads-shopping.netlify.app/#product/"+p.id,""];
+ const tags=["#CrossroadsShopping","#OnlineShoppingIndia","#IndiaShopping","#ShopNow"];
+ const cat=String(p.c||"").toLowerCase();
+ if(cat.includes("electronic"))tags.push("#electronics","#tech","#gadgets","#techdeals");
+ if(cat.includes("accessor"))tags.push("#accessories","#style","#gifts");
+ if(cat.includes("shirt")||cat.includes("fashion"))tags.push("#fashion","#style","#ootd");
+ if(cat.includes("shoe"))tags.push("#shoes","#sneakers","#footwear");
+ const nameTags=name.toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(w=>w.length>3).slice(0,3).map(w=>"#"+w);
+ return [...lines,...tags,...nameTags].join("\n").slice(0,2100);
+}
+function showIgPost(pid){
+ const p=S.products.find(x=>x.id===pid);if(!p){say("Product not found.");return}
+ const imgs=(p.images&&p.images.length?p.images:[p.img]).filter(Boolean).map(s=>s.startsWith("/")?"https://crossroads-shopping.netlify.app"+s:s);
+ const cap=igCaption(p);
+ const ov=document.createElement("div");ov.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px";
+ const card=document.createElement("div");card.style.cssText="background:var(--card,#fff);color:var(--ink,#111);border-radius:14px;max-width:520px;width:100%;max-height:90vh;overflow:auto;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.4)";
+ card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0;font-size:1.1rem">Post to Instagram</h3><button type="button" id="igclose" class="link" style="font-size:1.2rem;line-height:1">×</button></div>
+ <p class="muted" style="font-size:.85rem;margin:0 0 12px">Semi-automatic: copy the caption, save the photo, then paste into Instagram. Music can be added in the Instagram app after posting.</p>
+ <div style="display:grid;gap:8px;margin-bottom:14px">${imgs.map((s,i)=>`<div style="display:flex;gap:8px;align-items:center"><img src="${esc(s)}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px"><a class="btn sm alt" href="${esc(s)}" target="_blank" rel="noopener" download style="flex:none">Save photo ${i+1}</a></div>`).join("")}</div>
+ <label style="display:block;margin-bottom:6px;font-weight:600;font-size:.85rem">Caption (auto-generated)</label>
+ <textarea id="igcap" readonly style="width:100%;min-height:180px;font-size:.82rem;padding:10px;border:1px solid var(--line,#ddd);border-radius:8px;background:var(--bg,#f7f7f7);color:var(--ink,#111);resize:vertical">${esc(cap)}</textarea>
+ <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+  <button type="button" class="btn sm" id="igcopy">Copy caption</button>
+  <button type="button" class="btn sm alt" id="igopen">Open Instagram</button>
+  <button type="button" class="btn sm alt" id="igclose2">Close</button>
+ </div>
+ <p class="muted" style="font-size:.78rem;margin-top:10px;line-height:1.6"><b>Steps:</b> 1) Save the photo above. 2) Click "Copy caption". 3) Click "Open Instagram" → create a new post → upload the photo → paste caption → add music (optional) → Share.</p>
+ <p class="muted" style="font-size:.78rem;margin-top:4px;line-height:1.6"><b>Tip:</b> If you later connect the Meta API in Settings, "Post to IG" will auto-post without these steps.</p>`;
+ ov.appendChild(card);document.body.appendChild(ov);
+ const close=()=>ov.remove();
+ card.querySelector("#igclose").onclick=close;card.querySelector("#igclose2").onclick=close;ov.onclick=e=>{if(e.target===ov)close()};
+ card.querySelector("#igcopy").onclick=async()=>{try{await navigator.clipboard.writeText(cap);say("Caption copied to clipboard")}catch(e){const t=card.querySelector("#igcap");t.select();document.execCommand("copy");say("Caption copied")}};
+ card.querySelector("#igopen").onclick=()=>window.open("https://www.instagram.com/","_blank");
+}
 
 window.CRAdmin={open(A){root=A;ensureCss();if(!PW){login();return}if(!A.dataset.ready||!A.querySelector(".ad"))shell();hydrate();startPoll();render();refreshAna()},preview:{invoice:invoiceHTML,slip:slipHTML,logo:logoSVG}};
 })();
