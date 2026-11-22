@@ -187,7 +187,18 @@ details{border-top:1px solid var(--line);padding:14px 0}details:last-of-type{bor
 .shake{animation:shake .4s}
 .ck{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:28px;align-items:start;margin-top:18px}
 .sum{position:sticky;top:130px}.fh{font-size:1.25rem;margin:4px 0 6px;font-weight:600}
-.pmo{flex-direction:row;align-items:flex-start;gap:12px;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;cursor:pointer;font-weight:600}.pmo:has(input:checked){border-color:var(--acc)}
+.pmo{flex-direction:row;align-items:center;gap:12px;border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;cursor:pointer;font-weight:500;transition:all .2s ease;position:relative;overflow:hidden}
+.pmo:hover{border-color:var(--acc);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.pmo:has(input:checked){border-color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,var(--card));box-shadow:0 0 0 1px var(--acc)}
+.pmo input{width:auto;margin-top:0;accent-color:var(--acc)}
+.pmo .pm-icon{font-size:1.6rem;flex:none;width:40px;height:40px;display:grid;place-items:center;border-radius:10px;background:var(--bg)}
+.pmo small{display:block;color:var(--mut);font-weight:400;font-size:.8rem;margin-top:2px}
+.pmo span:not(.pm-icon):not(.pm-badge){flex:1}
+.pmo .pm-badge{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:6px;background:var(--acc);color:#fff;flex:none}
+.pmo.pm-online .pm-icon{background:#e8f0fe}
+.pmo.pm-upi .pm-icon{background:#e6f4ea}
+.pmo.pm-cod .pm-icon{background:#fef7e0}
+@media(max-width:500px){.pmo{padding:12px}.pmo .pm-icon{width:36px;height:36px;font-size:1.3rem}.pmo .pm-badge{display:none}}:600}.pmo:has(input:checked){border-color:var(--acc)}
 .pmo input{width:auto;margin-top:5px}.pmo small{display:block;color:var(--mut);font-weight:400}
 .upi{display:grid;gap:10px;justify-items:center;text-align:center;border:1.5px dashed var(--line);border-radius:12px;padding:16px}.upi img{width:200px;max-width:100%;border-radius:10px}.upi label{width:100%;text-align:left}
 .sr{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
@@ -703,9 +714,9 @@ function renderCheckout(){const el=$("checkout");
  <label>Full name<input id="fn" autocomplete="name"></label><label>Phone number<input id="fp" inputmode="tel" autocomplete="tel"></label>
  <label>Email (for your receipt)<input id="fe" type="email" autocomplete="email"></label><label>Full address with pincode<textarea id="fa" rows="3" autocomplete="street-address"></textarea></label>
  <h2 class="fh" style="margin-top:10px">Payment</h2>
- ${ST.online&&showUpi?`<label class="pmo"><input type="radio" name="pm" value="online" ${first==="online"?"checked":""}><span>Pay online<small>Cards, UPI and net banking</small></span></label>`:""}
- ${ST.upi&&showUpi?`<label class="pmo"><input type="radio" name="pm" value="upi" ${first==="upi"?"checked":""}><span>Pay by UPI QR<small>Scan, pay, then enter your transaction ID</small></span></label>`:""}
- ${showCod?`<label class="pmo"><input type="radio" name="pm" value="cod" ${first==="cod"?"checked":""}><span>Cash on Delivery<small>Pay when your order arrives</small></span></label>`:""}
+ ${ST.online&&showUpi?`<label class="pmo pm-online"><input type="radio" name="pm" value="online" ${first==="online"?"checked":""}><span class="pm-icon">💳</span><span>Pay online<small>Cards, UPI, net banking &amp; wallets</small></span><span class="pm-badge">Instant</span></label>`:""}
+ ${ST.upi&&showUpi?`<label class="pmo pm-upi"><input type="radio" name="pm" value="upi" ${first==="upi"?"checked":""}><span class="pm-icon">📱</span><span>Pay by UPI QR<small>Scan &amp; pay with any UPI app</small></span><span class="pm-badge">Popular</span></label>`:""}
+ ${showCod?`<label class="pmo pm-cod"><input type="radio" name="pm" value="cod" ${first==="cod"?"checked":""}><span class="pm-icon">💵</span><span>Cash on Delivery<small>Pay when your order arrives</small></span><span class="pm-badge">Safe</span></label>`:""}
  ${!first?(ST_READY?'<div class="err">Payment is not available yet. Message us on Instagram to order.</div>':'<div class="muted">Loading payment options…</div>'):""}
  <div class="trustbar"><span>&#128274; Secure checkout</span><span>&#128666; Free shipping</span><span>&#8617; Easy returns</span><span>&#9989; Genuine products</span><span>&#128222; WhatsApp support</span></div>
  <p class="muted" style="font-size:.88rem;margin-top:6px">Shipping is free. Orders are dispatched within 24 hours and delivered in about 5 days — never more than 2 weeks. <a href="#delivery">Delivery details</a>.</p>
@@ -833,7 +844,7 @@ async function hero3d(){const c=$("c3d");if(!c)return;
 let admP=null;
 async function adm(){const A=$("admin");
  if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
-   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=35";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
+   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=36";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
   try{await admP}
   catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
  window.CRAdmin.open(A)}
