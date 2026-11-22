@@ -842,6 +842,29 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     await db.setJSON("reviews",(await getReviews()).filter(r=>String(r.id)!==id));
     return J({ok:1});
   }
+  if(path==="welcome"&&req.method==="POST"){
+    const email=String(b.email||"").trim().toLowerCase(),name=cut(String(b.name||"").trim(),60);
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return J({error:"Valid email required."},400);
+    const st=await cfg().catch(()=>({})),key=E.RESEND_API_KEY||st.rsKey||"";
+    if(!key)return J({ok:1,emailed:false,msg:"Email service not configured. Welcome shown on screen only."});
+    const from=E.MAIL_FROM||st.rsFrom||"Crossroads <onboarding@resend.dev>";
+    const subject="Welcome to Crossroads Shopping!";
+    const text="Hi "+(name||"there")+",\n\nWelcome to Crossroads Shopping! We are glad you are here.\n\nHere is what you can do:\n- Browse our latest products at https://crossroads-shopping.netlify.app/\n- Track your orders anytime from the Track Order page\n- Rate and review products you have purchased\n- Get updates on new arrivals and offers\n\nWe deliver free across India in about 5 days.\n\nIf you have any questions, reply to this email or message us on Instagram @crossroads_shopping.\n\nHappy shopping!\nCrossroads Shopping Team";
+    try{await mail(subject,text,{key,to:email,from});return J({ok:1,emailed:true})}catch(e){return J({ok:1,emailed:false,msg:"Could not send email."})}
+  }
+  if(path==="broadcast"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const subject=cut(String(b.subject||"").trim(),80),text=cut(String(b.text||"").trim(),2000);
+    if(!subject||!text)return J({error:"Subject and message are required."},400);
+    const st=await cfg().catch(()=>({})),key=E.RESEND_API_KEY||st.rsKey||"";
+    if(!key)return J({error:"Email service not configured. Set up Resend in Settings."},400);
+    const from=E.MAIL_FROM||st.rsFrom||"Crossroads <onboarding@resend.dev>";
+    const orders=await get("orders",[]);
+    const emails=[...new Set(orders.map(o=>String(o.email||"").trim().toLowerCase()).filter(e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)))];
+    if(!emails.length)return J({error:"No customer emails found."},400);
+    let sent=0;for(const em of emails){try{await mail(subject,text,{key,to:em,from});sent++}catch(e){}}
+    return J({ok:1,sent,total:emails.length});
+  }
   if(path==="pay/create"){
     if(!E.RAZORPAY_KEY_ID||!E.RAZORPAY_KEY_SECRET)return J({error:"Online payment isn't switched on yet."},503);
     const prods=await get("products",[]),c=b.customer||{},lines=[],its=[];let total=0;
