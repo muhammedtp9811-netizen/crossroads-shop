@@ -33,7 +33,7 @@
 {"@context":"https://schema.org","@type":"WebSite","name":"Crossroads Shopping","url":"https://crossroads-shopping.netlify.app/","potentialAction":{"@type":"SearchAction","target":"https://crossroads-shopping.netlify.app/?q={search_term_string}","query-input":"required name=search_term_string"}}
 </script>
 
-<!-- <script src="https://accounts.google.com/gsi/client" async defer></script> -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -625,9 +625,14 @@ function accRender(msg){const b=$("accBody");if(!b)return;const head=`<div class
  $("accX").onclick=()=>{stopAccTimer();$("accD").close()};
  $("accF").onsubmit=async e=>{e.preventDefault();const name=$("an").value.trim(),ph=$("ap").value.replace(/\D/g,""),er=$("ae");er.className="err";if(name.length<2){er.textContent="Enter your name.";return}if(ph.length!==10){er.textContent="Enter a valid 10-digit phone number.";return}er.className="";er.textContent="Sending code…";const r=await post("auth/start",{name,phone:ph}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not send the code.";return}accName=name;accPhone=ph;accCode=r.d.demo&&r.d.code?String(r.d.code):"";accStep="otp";accRender()}}
 const GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLIENT_ID";
-function accGoogleLogin(){if(!window.google||!google.accounts){toast("Google Sign-In is loading, try again in a moment.");return}
- google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:(resp)=>{try{const parts=resp.credential.split(".");const payload=JSON.parse(atob(parts[1].replace(/-/g,"+").replace(/_/g,"/")));const name=payload.name||payload.given_name||"Customer";const email=payload.email||"";const pic=payload.picture||"";const token="g_"+btoa(email||name).replace(/=/g,"");acctSet({token,name,phone:"",email,pic,provider:"google"});$("accD").close();toast("Logged in as "+name);if(email){post("welcome",{name,email}).catch(()=>{})}prefillCk();refreshRevs()}catch(e){toast("Google login failed. Try again.")}},auto_select:false});
- google.accounts.id.prompt()}
+function accGoogleLogin(){
+ if(GOOGLE_CLIENT_ID==="YOUR_GOOGLE_CLIENT_ID"){toast("Google login not set up yet. Add your Google Client ID in the code (search GOOGLE_CLIENT_ID). See GOOGLE-SETUP.md.");return}
+ if(!window.google||!google.accounts){toast("Google Sign-In is loading, try again in a moment.");return}
+ try{
+  google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:(resp)=>{try{const parts=resp.credential.split(".");const payload=JSON.parse(atob(parts[1].replace(/-/g,"+").replace(/_/g,"/")));const name=payload.name||payload.given_name||"Customer";const email=payload.email||"";const pic=payload.picture||"";const token="g_"+btoa(email||name).replace(/=/g,"");acctSet({token,name,phone:"",email,pic,provider:"google"});$("accD").close();toast("Logged in as "+name);if(email){post("welcome",{name,email}).catch(()=>{})}prefillCk();refreshRevs()}catch(e){toast("Google login failed. Try again.")}},auto_select:false});
+  google.accounts.id.prompt()
+ }catch(e){toast("Google Sign-In error: "+(e&&e.message||"unknown"))}
+}
 
 function openAcc(){if(!$("accBody")||!$("accD"))return;stopAccTimer();accStep="start";accCode="";accRender();$("accD").showModal();if($("gLogin"))$("gLogin").onclick=()=>{accGoogleLogin()}}
 $("accD").addEventListener("close",stopAccTimer);
@@ -828,7 +833,7 @@ async function hero3d(){const c=$("c3d");if(!c)return;
 let admP=null;
 async function adm(){const A=$("admin");
  if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
-   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=34";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
+   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=35";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
   try{await admP}
   catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
  window.CRAdmin.open(A)}
