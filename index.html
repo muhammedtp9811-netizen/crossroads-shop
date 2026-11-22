@@ -321,6 +321,7 @@ gtag('config','YOUR_GA_ID');
 </header>
 
 <div id="shop">
+<canvas id="c3d2" aria-hidden="true" style="position:absolute;top:0;left:0;width:100%;height:200px;pointer-events:none;z-index:1;opacity:.6"></canvas>
 <section class="hero" id="hero"><canvas id="c3d" aria-hidden="true"></canvas><div class="wrap hi"><p class="kick">New collection</p><h2>Wear the drop.</h2><p class="hs">Fashion, trending items and shoes delivered to your door.</p><button class="btn" id="heroCta" type="button">Shop now</button></div></section>
 <div class="mq" aria-hidden="true"><div><span>NEW DROP</span><span>FASHION</span><span>TRENDING</span><span>SHOES</span><span>NEW DROP</span><span>FASHION</span><span>TRENDING</span><span>SHOES</span><span>NEW DROP</span><span>FASHION</span><span>TRENDING</span><span>SHOES</span><span>NEW DROP</span><span>FASHION</span><span>TRENDING</span><span>SHOES</span></div></div>
 <div class="wrap">
@@ -783,7 +784,7 @@ $("mf").onsubmit=async e=>{e.preventDefault();const t=$("mt").value.trim();if(!t
 function tilt(root){let raf=0;root.addEventListener("pointermove",e=>{if(e.pointerType!=="mouse")return;if(raf)return;raf=requestAnimationFrame(()=>{raf=0;const c=document.elementFromPoint(e.clientX,e.clientY)?.closest?.(".card");if(!c||c.classList.contains("sk"))return;const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;c.style.setProperty("--ry",(x*12).toFixed(2)+"deg");c.style.setProperty("--rx",(-y*12).toFixed(2)+"deg");c.style.setProperty("--gx",(x*100+50).toFixed(0)+"%");c.style.setProperty("--gy",(y*100+50).toFixed(0)+"%")})},{passive:true});
  root.addEventListener("pointerout",e=>{const c=e.target.closest(".card");if(c&&!c.contains(e.relatedTarget)){c.style.setProperty("--ry","0deg");c.style.setProperty("--rx","0deg")}})}
 tilt($("grid"));tilt($("product"));
-let h3=false;function maybeHero(){if(!h3&&view()==="shop"){h3=true;const go=()=>hero3d();if("requestIdleCallback" in window)requestIdleCallback(go,{timeout:2500});else setTimeout(go,1200)}}
+let h3=false;function maybeHero(){if(!h3&&view()==="shop"){h3=true;const go=()=>{hero3d();hero3d2()};if("requestIdleCallback" in window)requestIdleCallback(go,{timeout:2500});else setTimeout(go,1200)}}
 async function hero3d(){const c=$("c3d");if(!c)return;
  if(matchMedia("(prefers-reduced-motion:reduce)").matches||(navigator.connection&&navigator.connection.saveData)||(navigator.connection&&/2g/.test(navigator.connection.effectiveType||""))){c.remove();return}
  try{const THREE=await import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js");
@@ -805,12 +806,29 @@ async function hero3d(){const c=$("c3d");if(!c)return;
   document.addEventListener("themechange",()=>{knot.material.color.copy(col());wire.material.color.copy(col())});
   const clock=new THREE.Clock();
   let last=-99;(function loop(now){requestAnimationFrame(loop);if(!vis||document.hidden)return;if(now-last<32)return;last=now;if(c.clientWidth&&c.clientWidth!==lw)fit();const t=clock.getElapsedTime();knot.rotation.x=t*.25+my*.6;knot.rotation.y=t*.35+mx*.8;wire.rotation.y=-t*.12;pts.rotation.y=t*.05;g.position.y=Math.sin(t*.8)*.12;r.render(sc,cam)})(0);
- }catch(e){c.remove()}}
-/* ---------- Owner admin: open yourwebsite/#admin (code loads from /admin.js only when needed) ---------- */
+  }catch(e){c.remove()}}
+ async function hero3d2(){const c=document.getElementById("c3d2");if(!c)return;
+  if(matchMedia("(prefers-reduced-motion:reduce)").matches||(navigator.connection&&navigator.connection.saveData)||(navigator.connection&&/2g/.test(navigator.connection.effectiveType||""))){c.remove();return}
+  try{const THREE=await import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js");
+   const r=new THREE.WebGLRenderer({canvas:c,antialias:true,alpha:true,powerPreference:"low-power"});r.setPixelRatio(Math.min(devicePixelRatio||1,1.25));
+   const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(50,1,.1,100);cam.position.set(0,0,6);
+   const col=()=>new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue("--acc").trim()||"#3F6DFF");
+   const g=new THREE.Group();sc.add(g);
+   const ico=new THREE.Mesh(new THREE.IcosahedronGeometry(1.2,1),new THREE.MeshStandardMaterial({color:col(),metalness:.6,roughness:.3,transparent:true,opacity:.7,wireframe:true}));g.add(ico);
+   const sphere=new THREE.Mesh(new THREE.SphereGeometry(.6,16,16),new THREE.MeshStandardMaterial({color:col(),metalness:.8,roughness:.15,transparent:true,opacity:.5}));g.add(sphere);
+   sc.add(new THREE.HemisphereLight(0xffffff,0x223355,.9));
+   const l1=new THREE.PointLight(0xffffff,40,30);l1.position.set(3,3,5);sc.add(l1);
+   let vis=true;new IntersectionObserver(e=>{vis=e[0].isIntersecting}).observe(document.getElementById("hero")||c);
+   const fit=()=>{const w=c.clientWidth,h=c.clientHeight||200;if(!w)return;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()};
+   fit();window.addEventListener("resize",fit,{passive:true});
+   const clock=new THREE.Clock();let last=-99;
+   (function loop(now){requestAnimationFrame(loop);if(!vis||document.hidden)return;if(now-last<40)return;last=now;const t=clock.getElapsedTime();ico.rotation.x=t*.3;ico.rotation.y=t*.4;sphere.rotation.y=-t*.5;sphere.scale.setScalar(1+Math.sin(t*2)*.08);r.render(sc,cam)})(0);
+  }catch(e){c.remove()}}
+ /* ---------- Owner admin: open yourwebsite/#admin (code loads from /admin.js only when needed) ---------- */
 let admP=null;
 async function adm(){const A=$("admin");
  if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
-   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=32";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
+   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=33";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
   try{await admP}
   catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
  window.CRAdmin.open(A)}
