@@ -420,7 +420,7 @@ function igCaption(p){
  return [...lines,...tags,...nameTags].join("\n").slice(0,2100);
 }
 function showIgPost(pid){
- const p=S.products.find(x=>x.id===pid);if(!p){say("Product not found.");return}
+ const p=S.products.find(x=>String(x.id)===String(pid));if(!p){say("Product not found.");return}
  const imgs=(p.images&&p.images.length?p.images:[p.img]).filter(Boolean).map(s=>s.startsWith("/")?"https://crossroads-shopping.netlify.app"+s:s);
  const cap=igCaption(p);
  const ov=document.createElement("div");ov.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px";
