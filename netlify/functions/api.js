@@ -178,6 +178,35 @@ async function jvecProduct(u){
     sup:{s:"jvecomb2b",id:row.id||"",slug:row.slug||slug,cost,stock:+(row.on_hand_stock??row.stock??0)||0,u:u.href}};
 }
 
+/* ---------- Instagram publishing (official Graph API) ---------- */
+const IG_VER="v21.0",IG_BASE="https://crossroads-shopping.netlify.app";
+const IG_TAGS={Electronics:["#electronics","#tech","#gadgets","#techdeals"],Accessories:["#accessories","#style","#gifts"],Shirts:["#shirts","#fashion","#menswear"],Fashion:["#fashion","#style","#ootd"],Shoes:["#shoes","#sneakers","#footwear"]};
+function igCaption(p){
+  const name=cut(String(p.n||"").trim(),90),desc=plainText(p.d||"").replace(/\s+/g," ").slice(0,300),price=+p.p||0,old=+p.o||0;
+  const lines=[name,"",desc,"",price?("Price: ₹"+price.toLocaleString("en-IN")+(old>price?" (was ₹"+old.toLocaleString("en-IN")+")":"")):"","Free delivery across India in about 5 days. Cash on Delivery available.","Order here: "+IG_BASE+"/#product/"+p.id,""];
+  const tags=["#CrossroadsShopping","#OnlineShoppingIndia","#IndiaShopping","#ShopNow"];
+  const cat=String(p.c||"").toLowerCase();Object.keys(IG_TAGS).forEach(k=>{if(cat.includes(k.toLowerCase()))tags.push(...IG_TAGS[k])});
+  const nameTags=name.toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(w=>w.length>3).slice(0,3).map(w=>"#"+w);
+  const out=[...lines,...tags,...nameTags].join("\n");
+  return out.length>2100?out.slice(0,2100):out;
+}
+async function igCall(url,opt){
+  const r=await fetch(url,opt),d=await r.json().catch(()=>({}));
+  if(!r.ok||!d||d.error)throw new Error((d&&d.error&&d.error.message)||("Instagram error "+r.status));
+  return d;
+}
+async function igVerify(user,token){return igCall("https://graph.facebook.com/"+IG_VER+"/"+encodeURIComponent(user)+"?fields=username,name&access_token="+encodeURIComponent(token))}
+async function igCreate(user,token,params){
+  const body=new URLSearchParams(Object.assign({},params,{access_token:token}));
+  const d=await igCall("https://graph.facebook.com/"+IG_VER+"/"+encodeURIComponent(user)+"/media",{method:"POST",body});
+  if(!d.id)throw new Error("Instagram did not return a media ID.");return d.id;
+}
+async function igPublish(user,token,id){
+  const body=new URLSearchParams({creation_id:id,access_token:token});
+  const d=await igCall("https://graph.facebook.com/"+IG_VER+"/"+encodeURIComponent(user)+"/media_publish",{method:"POST",body});
+  if(!d.id)throw new Error("Instagram did not publish the media.");return d.id;
+}
+
 export default async(req,context)=>{
   const db=getStore({name:"shop",consistency:"strong"}), path=new URL(req.url).pathname.replace(/^\/api\/?/,"");
   const get=async(k,d)=>(await db.get(k,{type:"json"}))??d;
@@ -367,6 +396,10 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(b.f2sKey!==undefined&&String(b.f2sKey).trim())nxt.f2sKey=cut(String(b.f2sKey).trim(),120);
     if(b.f2sKey==="")delete nxt.f2sKey;
     if(b.f2sRoute!==undefined)nxt.f2sRoute=String(b.f2sRoute)==="otp"?"otp":"q";
+    if(b.igUser!==undefined)nxt.igUser=cut(String(b.igUser).trim(),40);
+    if(b.igToken!==undefined){const t=String(b.igToken).trim();if(t)nxt.igToken=cut(t,500);else delete nxt.igToken}
+    if(b.igAuto!==undefined)nxt.igAuto=!!b.igAuto;
+    if(b.igStory!==undefined)nxt.igStory=!!b.igStory;
     await db.setJSON("settings",nxt);cfgCache={t:0,v:null};return J({ok:1});
   }
   if(path==="notify"&&req.method==="GET"){
@@ -564,6 +597,31 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const r=await db.getWithMetadata("img/"+id,{type:"arrayBuffer"});if(!r)return J({error:"Not found"},404);
     return new Response(r.data,{headers:{"content-type":(r.metadata&&r.metadata.type)||"image/jpeg","cache-control":"public, max-age=31536000, immutable"}});
   }
+  if(path==="ig/test"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const s=await get("settings",{}),user=E.IG_USER_ID||s.igUser||"",token=E.IG_TOKEN||s.igToken||"";
+    if(!user||!token)return J({error:"Add your Instagram user ID and access token first."},400);
+    try{const d=await igVerify(user,token);return J({ok:1,username:d.username||"",name:d.name||""})}
+    catch(e){return J({error:String((e&&e.message)||e)},400)}
+  }
+  if(path==="ig/post"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const s=await get("settings",{}),user=E.IG_USER_ID||s.igUser||"",token=E.IG_TOKEN||s.igToken||"";
+    if(!user||!token)return J({error:"Instagram is not connected. Add your user ID and token in Settings."},400);
+    const list=await get("products",[]),p=list.find(x=>String(x.id)===String(b.id));
+    if(!p)return J({error:"Product not found."},404);
+    let img=(p.images&&p.images[0])||p.img||"";
+    if(img.startsWith("/"))img=IG_BASE+img;
+    if(!/^https:\/\//i.test(img))return J({error:"This product needs a public photo before it can be posted to Instagram."},400);
+    const cap=igCaption(p),done=[];
+    try{
+      const id=await igCreate(user,token,{image_url:img,caption:cap});
+      done.push("post:"+await igPublish(user,token,id));
+      if(b.story||s.igStory){try{const sid=await igCreate(user,token,{media_type:"STORIES",image_url:img});done.push("story:"+await igPublish(user,token,sid))}catch(e){done.push("story-error:"+String((e&&e.message)||e))}}
+      p.ig={t:Date.now(),ids:done};await db.setJSON("products",list);
+      return J({ok:1,posted:done,caption:cap});
+    }catch(e){return J({error:String((e&&e.message)||e)},502)}
+  }
   if(path==="import/product"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
     const raw=String(b.url||"").trim();let u;try{u=new URL(raw)}catch(e){return J({error:"Paste the full product link, starting with https://"},400)}
@@ -602,7 +660,8 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     [...orders].reverse().forEach(o=>{if(!o.no){o.no=++mx;ch=true}if(!o.method)o.method=o.manual?"upi":"online"});
     if(ch)await db.setJSON("orders",orders);
     const tgTok=E.TELEGRAM_BOT_TOKEN||settings.tgToken||"",tgChat=E.TELEGRAM_CHAT_ID||settings.tgChat||"";
-    const safe={upi:settings.upi||"",name:settings.name||"",qr:settings.qr||"",brand:settings.brand||null,paymentMethod:settings.paymentMethod||"both"};
+    const igUser=settings.igUser||"",igTok=E.IG_TOKEN||settings.igToken||"";
+    const safe={upi:settings.upi||"",name:settings.name||"",qr:settings.qr||"",brand:settings.brand||null,paymentMethod:settings.paymentMethod||"both",ig:{connected:!!(igUser&&igTok),user:igUser,auto:!!settings.igAuto,story:!!settings.igStory}};
     const acctMap={};(sessions||[]).forEach(s=>{const k=String(s.ph||"").replace(/\D/g,"").slice(-10);if(!k)return;if(!acctMap[k]||new Date(s.t||0)>new Date(acctMap[k].t||0))acctMap[k]={name:s.name||"Customer",phone:s.ph,t:s.t};});const accounts=Object.values(acctMap).sort((a,b)=>new Date(b.t||0)-new Date(a.t||0));
     return J({orders,messages,products,settings:safe,feedback,codes,reviews,accounts,
       notify:{whatsapp:!!(E.CALLMEBOT_KEY||settings.waKey),whatsapp_number:String(E.WA_NUMBER||settings.waPhone||WA).replace(/\D/g,""),

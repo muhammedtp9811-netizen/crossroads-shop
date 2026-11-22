@@ -34,7 +34,7 @@
 </script>
 
 <script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("cr_theme")||"dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#F4F6FB;--card:#fff;--ink:#0E1220;--mut:#586078;--line:#E1E5EF;--navy:#0E1220;--acc:#2548E6;--hot:#FF5C39;--err:#C0261B;--ok:#127A45;--sh:0 18px 44px rgba(14,18,32,.13)}
@@ -531,9 +531,11 @@ async function loadP(){let ok=true;try{const r=await fetch("/api/products");P=aw
  if(!P.length&&["127.0.0.1","localhost"].includes(location.hostname))P=[{id:11,n:"Sample linen shirt with a really long product title to test how it wraps",c:"Fashion",p:1299,o:1799,s:["S","M","L","XL"],tr:true,d:"Preview only. Add your real products from #admin once the site is online."},{id:12,n:"Sample sneakers",c:"Shoes",p:1899,o:0,s:["7","8","9","10"]},{id:13,n:"Sample watch",c:"Accessories",p:1499,o:1999,s:["One size"]},{id:14,n:"Sample wallet",c:"Accessories",p:599,o:0,s:["One size"],sold:true}];
  return true}
 
-function cats(){const V=P.filter(p=>!p.hid),c=["All",...(V.some(p=>p.tr)?["Trending"]:[]),...new Set(V.map(p=>p.c).filter(Boolean))],v=view();
+const CATN={electronics:"Electronics",electronic:"Electronics",gadgets:"Electronics",gadget:"Electronics",shirts:"Shirts",shirt:"Shirts"};
+const catName=c=>{const t=String(c||"").trim().replace(/\s+/g," ");if(!t)return"";const k=t.toLowerCase();return CATN[k]||t};
+function cats(){const V=P.filter(p=>!p.hid),seen=new Set(),cs=[];V.forEach(p=>{const n=catName(p.c);if(n&&!seen.has(n.toLowerCase())){seen.add(n.toLowerCase());cs.push(n)}});const c=["All",...(V.some(p=>p.tr)?["Trending"]:[]),...cs],v=view();
  $("cats").innerHTML=c.map(x=>`<button data-c="${esc(x)}" aria-current="${v==="shop"&&x===cat}">${esc(x)}</button>`).join("")+`<a href="#about" aria-current="${v==="about"?"page":"false"}">About</a><a href="#delivery" aria-current="${v==="delivery"?"page":"false"}">Delivery</a><a href="#policy" aria-current="${v==="policy"?"page":"false"}">Policy</a><a href="#contact" aria-current="${v==="contact"?"page":"false"}">Contact</a>`}
-function list(){let L=P.filter(p=>!p.hid&&(cat==="All"||(cat==="Trending"?p.tr:p.c===cat))&&(!Q||((p.n||"")+" "+(p.c||"")).toLowerCase().includes(Q)));
+function list(){let L=P.filter(p=>!p.hid&&(cat==="All"||(cat==="Trending"?p.tr:catName(p.c)===cat))&&(!Q||((p.n||"")+" "+(p.c||"")).toLowerCase().includes(Q)));
  if(SO==="l")L=[...L].sort((a,b)=>a.p-b.p);else if(SO==="h")L=[...L].sort((a,b)=>b.p-a.p);return L}
 const pname=p=>(p&&(p.sn||p.n))||"";
 function card(p,i){const m=imgs(p),dc=+p.o>p.p?Math.round((1-p.p/p.o)*100):0;
@@ -667,8 +669,10 @@ function renderCheckout(){const el=$("checkout");
  if(!cart.length){el.innerHTML=`<div class="wrap narrow"><h1>Your bag is empty</h1><p>Add something you like, then come back to check out.</p><p style="margin-top:16px"><a class="btn" href="./" data-nav="" style="max-width:240px">Continue shopping</a></p></div>`;return}
  const pm=ST.paymentMethod||"both";
  const cartPms=cart.map(i=>{const p=P.find(x=>x.id===i.id);return p&&p.pm?p.pm:"both"});
- const showCod=cartPms.some(x=>x==="cod"||x==="both")||(pm==="cod"||pm==="both");
- const showUpi=cartPms.some(x=>x==="upi"||x==="both")||(pm==="upi"||pm==="both");
+ const allowCod=cartPms.every(x=>x!=="upi"),allowUpi=cartPms.every(x=>x!=="cod");
+ let showCod=(pm==="cod"||pm==="both")&&allowCod,showUpi=(pm==="upi"||pm==="both")&&allowUpi;
+ if(!showCod&&!showUpi){showCod=allowCod;showUpi=allowUpi}
+ if(!showCod&&!showUpi){showCod=true;showUpi=true}
  const first=ST.online&&showUpi?"online":ST.upi&&showUpi?"upi":showCod?"cod":"";
  el.innerHTML=`<div class="wrap"><nav class="bc" aria-label="Breadcrumb"><a href="./" data-nav="">Home</a><span>/</span><b>Checkout</b></nav><h1 style="font-size:clamp(1.8rem,4vw,2.4rem)">Checkout</h1>
  <div class="ck"><form id="f" novalidate class="cardx"><h2 class="fh">Delivery details</h2>
@@ -720,15 +724,15 @@ $("mf").onsubmit=async e=>{e.preventDefault();const t=$("mt").value.trim();if(!t
 function tilt(root){root.addEventListener("pointermove",e=>{if(e.pointerType!=="mouse")return;const c=e.target.closest(".card");if(!c||c.classList.contains("sk"))return;const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;c.style.setProperty("--ry",(x*12).toFixed(2)+"deg");c.style.setProperty("--rx",(-y*12).toFixed(2)+"deg");c.style.setProperty("--gx",(x*100+50).toFixed(0)+"%");c.style.setProperty("--gy",(y*100+50).toFixed(0)+"%")});
  root.addEventListener("pointerout",e=>{const c=e.target.closest(".card");if(c&&!c.contains(e.relatedTarget)){c.style.setProperty("--ry","0deg");c.style.setProperty("--rx","0deg")}})}
 tilt($("grid"));tilt($("product"));
-let h3=false;function maybeHero(){if(!h3&&view()==="shop"){h3=true;hero3d()}}
+let h3=false;function maybeHero(){if(!h3&&view()==="shop"){h3=true;const go=()=>hero3d();if("requestIdleCallback" in window)requestIdleCallback(go,{timeout:2500});else setTimeout(go,1200)}}
 async function hero3d(){const c=$("c3d");if(!c)return;
  if(matchMedia("(prefers-reduced-motion:reduce)").matches||(navigator.connection&&navigator.connection.saveData)){c.remove();return}
  try{const THREE=await import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js");
-  const r=new THREE.WebGLRenderer({canvas:c,antialias:true,alpha:true,powerPreference:"low-power"});r.setPixelRatio(Math.min(devicePixelRatio||1,1.75));
+  const r=new THREE.WebGLRenderer({canvas:c,antialias:true,alpha:true,powerPreference:"low-power"});r.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
   const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(38,1,.1,100);cam.position.set(0,0,8);
   const col=()=>new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue("--acc").trim()||"#3F6DFF");
   const g=new THREE.Group();sc.add(g);
-  const knot=new THREE.Mesh(new THREE.TorusKnotGeometry(1.15,.34,140,20),new THREE.MeshStandardMaterial({color:col(),metalness:.7,roughness:.25}));g.add(knot);
+  const knot=new THREE.Mesh(new THREE.TorusKnotGeometry(1.15,.34,96,14),new THREE.MeshStandardMaterial({color:col(),metalness:.7,roughness:.25}));g.add(knot);
   const wire=new THREE.Mesh(new THREE.IcosahedronGeometry(2.1,1),new THREE.MeshBasicMaterial({color:col(),wireframe:true,transparent:true,opacity:.22}));g.add(wire);
   const N=180,pa=new Float32Array(N*3);for(let i=0;i<N;i++){const a=Math.random()*6.283,b=Math.acos(2*Math.random()-1),d=3+Math.random()*3.5;pa[i*3]=d*Math.sin(b)*Math.cos(a);pa[i*3+1]=d*Math.sin(b)*Math.sin(a);pa[i*3+2]=d*Math.cos(b)}
   const pg=new THREE.BufferGeometry();pg.setAttribute("position",new THREE.BufferAttribute(pa,3));
@@ -741,13 +745,13 @@ async function hero3d(){const c=$("c3d");if(!c)return;
   new IntersectionObserver(e=>{vis=e[0].isIntersecting}).observe($("hero"));
   document.addEventListener("themechange",()=>{knot.material.color.copy(col());wire.material.color.copy(col())});
   const clock=new THREE.Clock();
-  (function loop(){requestAnimationFrame(loop);if(!vis||document.hidden)return;if(c.clientWidth&&c.clientWidth!==lw)fit();const t=clock.getElapsedTime();knot.rotation.x=t*.25+my*.6;knot.rotation.y=t*.35+mx*.8;wire.rotation.y=-t*.12;pts.rotation.y=t*.05;g.position.y=Math.sin(t*.8)*.12;r.render(sc,cam)})();
+  let last=-99;(function loop(now){requestAnimationFrame(loop);if(!vis||document.hidden)return;if(now-last<32)return;last=now;if(c.clientWidth&&c.clientWidth!==lw)fit();const t=clock.getElapsedTime();knot.rotation.x=t*.25+my*.6;knot.rotation.y=t*.35+mx*.8;wire.rotation.y=-t*.12;pts.rotation.y=t*.05;g.position.y=Math.sin(t*.8)*.12;r.render(sc,cam)})(0);
  }catch(e){c.remove()}}
 /* ---------- Owner admin: open yourwebsite/#admin (code loads from /admin.js only when needed) ---------- */
 let admP=null;
 async function adm(){const A=$("admin");
  if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
-  if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=21";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
+  if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=22";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
   try{await admP}
   catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
  window.CRAdmin.open(A)}
