@@ -188,6 +188,7 @@ details{border-top:1px solid var(--line);padding:14px 0}details:last-of-type{bor
 .shake{animation:shake .4s}
 .ck{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:28px;align-items:start;margin-top:18px}
 .sum{position:sticky;top:130px}.fh{font-size:1.25rem;margin:4px 0 6px;font-weight:600}
+.upi-apps{display:flex;flex-direction:row;gap:8px;margin:10px 0;width:100%}.upi-apps .btn{flex:1 1 0;min-width:0;text-align:center;padding:10px 4px;font-size:.82rem;line-height:1.2;white-space:nowrap}.upi-apps .ua{display:block;font-size:1.1rem;font-weight:700;margin-bottom:2px}@media(max-width:420px){.upi-apps{gap:5px}.upi-apps .btn{font-size:.72rem;padding:8px 2px}.upi-apps .ua{font-size:1rem}}
 .pmo{flex-direction:row;align-items:center;gap:12px;border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;cursor:pointer;font-weight:500;transition:all .2s ease;position:relative;overflow:hidden}
 .pmo:hover{border-color:var(--acc);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
 .pmo:has(input:checked){border-color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,var(--card));box-shadow:0 0 0 1px var(--acc)}
@@ -691,16 +692,14 @@ function loadRzp(){return new Promise((ok,no)=>{if(window.Razorpay)return ok();c
 function sumHTML(){return cart.map(i=>{const p=P.find(x=>x.id===i.id),m=p?imgs(p):[];return `<div class="sr"><div class="t0">${m[0]?`<img src="${m[0]}" alt="">`:""}</div><div><b>${esc(i.n)}</b><small>Size: ${esc(i.s)} · Qty: ${i.q}</small></div><b>${money(i.p*i.q)}</b></div>`}).join("")+`<div class="total" style="padding:14px 0 0"><span>Total${DISC.off?' <small class="ok" style="font-size:.8rem;font-weight:600">code applied</small>':""}</span><span>${money(payable())}</span></div>`}
 function upiHTML(){const amt=payable(),upi=ST.upi,pn=encodeURIComponent(ST.name||"Crossroads"),am=amt,tn=encodeURIComponent("Crossroads order"),pa=encodeURIComponent(upi);
  const base=`pa=${pa}&pn=${pn}&am=${am}&cu=INR&tn=${tn}`;
- const generic="upi://pay?"+base;
  const gpay="tez://upi/pay?"+base;
  const phonepe="phonepe://pay?"+base;
  const paytm="paytmmp://pay?"+base;
  return `<div class="upi">${ST.qr?`<img src="${ST.qr}" alt="UPI QR code">`:""}<p>UPI ID: <b>${esc(ST.upi)}</b></p><p class="sub" style="margin:6px 0">Pay exactly ${money(amt)}, then enter the UPI transaction ID (UTR) shown in your payment app.</p>
- <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:10px 0">
-  <a class="btn alt" href="${generic}" style="text-align:center;padding:10px 6px"><span style="display:block;font-size:1.1rem">📱</span>Any UPI app</a>
-  <a class="btn alt" href="${gpay}" style="text-align:center;padding:10px 6px;background:#4285f4;color:#fff;border-color:#4285f4"><span style="display:block;font-size:1.1rem">G</span>Google Pay</a>
-  <a class="btn alt" href="${phonepe}" style="text-align:center;padding:10px 6px;background:#5f259f;color:#fff;border-color:#5f259f"><span style="display:block;font-size:1.1rem">P</span>PhonePe</a>
-  <a class="btn alt" href="${paytm}" style="text-align:center;padding:10px 6px;background:#00baf2;color:#fff;border-color:#00baf2"><span style="display:block;font-size:1.1rem">₹</span>Paytm</a>
+ <div class="upi-apps">
+  <a class="btn alt" href="${gpay}" style="background:#4285f4;color:#fff;border-color:#4285f4"><span class="ua">G</span>Google Pay</a>
+  <a class="btn alt" href="${phonepe}" style="background:#5f259f;color:#fff;border-color:#5f259f"><span class="ua">P</span>PhonePe</a>
+  <a class="btn alt" href="${paytm}" style="background:#00baf2;color:#fff;border-color:#00baf2"><span class="ua">₹</span>Paytm</a>
  </div>
  <label>UPI transaction ID (UTR)<input id="ut" inputmode="numeric" autocomplete="off" placeholder="12-digit UTR from your payment app"></label></div>`}
 function renderCheckout(){const el=$("checkout");
@@ -847,7 +846,7 @@ async function hero3d(){const c=$("c3d");if(!c)return;
 let admP=null;
 async function adm(){const A=$("admin");
  if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
-   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=38";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
+   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=39";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
   try{await admP}
   catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
  window.CRAdmin.open(A)}
