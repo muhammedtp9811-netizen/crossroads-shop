@@ -231,7 +231,7 @@ async function meeshoProduct(u){
   if(!id) throw new Error("Could not find a product ID in that link. Paste the full Meesho product link (it should contain /p/).");
   const guess = meeshoShardForServer(id);
   if(guess < 0) throw new Error("Product not found in Meesho catalogue.");
-  const shards = [guess, guess+1].filter(sh => sh >= 0);
+  const shards = [guess].filter(sh => sh >= 0);
   for(const sh of shards){
     try {
       const r = await fetch("https://r.jina.ai/https://www.meesho.com/sitemap/pdp/"+sh+".xml", {headers:{"x-return-format":"html"}, signal:AbortSignal.timeout(15000)});
