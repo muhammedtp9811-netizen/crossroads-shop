@@ -738,6 +738,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     try{const r=await fetch(u.href,{headers:UA,redirect:"follow",signal:AbortSignal.timeout(10000)});return J({ok:1,url:r.url||u.href})}
     catch(e){return J({error:String((e&&e.message)||e)},502)}
   }
+  if(path==="proxy/img"&&req.method==="GET"){
     let target="";try{target=new URL(req.url).searchParams.get("u")||""}catch(e){}
     let tu;try{tu=new URL(target)}catch(e){return J({error:"Bad image URL"},400)}
     if(!/^https?:$/.test(tu.protocol))return J({error:"Bad image URL"},400);
