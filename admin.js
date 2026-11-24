@@ -80,6 +80,51 @@ const need=()=>S.orders.filter(o=>!o.cancelled&&((o.manual&&!o.paid)||(o.paid&&!
 function badge(){const e=$("nb-orders");if(e){const n=need();e.textContent=n?String(n):""}}
 function beep(){try{if(localStorage.getItem("cr_snd")==="0")return;const a=new(window.AudioContext||window.webkitAudioContext)(),t=a.currentTime;[880,1175].forEach((f,i)=>{const o=a.createOscillator(),g=a.createGain();o.frequency.value=f;o.connect(g);g.connect(a.destination);g.gain.setValueAtTime(.18,t+i*.16);g.gain.exponentialRampToValueAtTime(.001,t+i*.16+.3);o.start(t+i*.16);o.stop(t+i*.16+.32)})}catch(e){}}
 function urlFromText(t){const m=String(t||"").match(/https?:\/\/[^\s"'<>]+/i);return m?m[0]:""}
+function guessCat(n){const t=String(n||"").toLowerCase();
+ if(/watch|smart ?watch|chronograph/.test(t))return"Watches";
+ if(/shoe|sneaker|sandal|slipper|heel|footwear|loafer|boot|flip ?flop/.test(t))return"Shoes";
+ if(/bag|backpack|purse|wallet|clutch|handbag|trolley|sling/.test(t))return"Bags";
+ if(/earring|necklace|jewell?ery|bracelet|\bring\b|pendant|anklet|bangle|chain|kada|mangalsutra/.test(t))return"Accessories";
+ if(/kurti|kurta|saree|sari|lehenga|dress|shirt|tshirt|t-shirt|jeans|trouser|top|blouse|suit|jacket|hoodie|skirt|dupatta|co-?ord|nightsuit|night ?suit/.test(t))return"Fashion";
+ return""}
+let _mIdx=null,_mIdxP=null;
+function meeshoIndex(){
+ if(_mIdx)return _mIdx;
+ if(!_mIdxP)_mIdxP=fetch("/meesho-index.json",{cache:"force-cache"}).then(r=>r.json()).then(j=>{_mIdx=Object.keys(j).map(k=>({s:+k,v:parseInt(j[k],36)})).sort((a,b)=>a.v-b.v);return _mIdx}).catch(()=>{_mIdxP=null;return null});
+ return _mIdxP}
+function meeshoId(t){const m=/\/p\/([A-Za-z0-9_-]{4,})/.exec(String(t||""))||/[?&](?:product_id|pid|productId)=([A-Za-z0-9_-]{4,})/i.exec(String(t||""));return m?m[1]:""}
+async function meeshoLookup(raw,note){
+ const id=meeshoId(raw);if(!id)return null;
+ const list=await meeshoIndex();if(!list||!list.length)return null;
+ const target=parseInt(id,36);if(!isFinite(target))return null;
+ let lo=0,hi=list.length-1,j=-1;
+ while(lo<=hi){const mid=(lo+hi)>>1;if(list[mid].v<=target){j=mid;lo=mid+1}else hi=mid-1}
+ if(j<0)return null;
+ const cands=[list[j].s,list[j+1]&&list[j+1].s,list[j+2]&&list[j+2].s].filter(x=>typeof x==="number");
+ for(let k=0;k<cands.length;k++){
+  if(note)note("Reading the Meesho catalogue… "+(k+1)+" of "+cands.length);
+  let xml="";
+  try{const r=await fetch("https://r.jina.ai/https://www.meesho.com/sitemap/pdp/"+cands[k]+".xml",{headers:{"x-return-format":"html"}});if(!r.ok)continue;xml=await r.text()}catch(e){continue}
+  const at=xml.indexOf("/p/"+id+"<");if(at<0)continue;
+  const st=xml.lastIndexOf("<url>",at),en=xml.indexOf("</url>",at);
+  const block=xml.slice(st<0?Math.max(0,at-2000):st,en<0?Math.min(xml.length,at+4000):en);
+  const loc=(/<loc>([^<]+)<\/loc>/i.exec(block)||[])[1]||"";
+  const imgs=[];let m;const re=/<image:loc>([^<]+)<\/image:loc>/gi;
+  while((m=re.exec(block))){
+   let x=m[1].trim();if(x.startsWith("//"))x="https:"+x;
+   if(!/^https?:\/\//.test(x))continue;
+   x=x.replace(/\.avif(\?|$)/i,".jpg$1");
+   if(/[?&]width=\d+/i.test(x))x=x.replace(/([?&])width=\d+/i,"$1width=1024");
+   else x+=(x.includes("?")?"&":"?")+"width=1024";
+   if(imgs.indexOf(x)<0)imgs.push(x);
+  }
+  const sm=/meesho\.com\/([^/]+)\/p\//i.exec(loc);
+  let name=sm?decodeURIComponent(sm[1]).replace(/[-_]+/g," ").replace(/\s+/g," ").trim():"";
+  if(!name||name.length<3)continue;
+  name=name.replace(/\b[a-z]/g,c=>c.toUpperCase());
+  return{n:name.slice(0,120),sn:name.slice(0,60),c:guessCat(name),d:"",images:imgs.slice(0,6),cost:0,sup:{s:"meesho",id,u:raw}};
+ }
+ return null}
 function rrPath(x,a,b,w,h,r){r=Math.max(0,Math.min(r,h/2));x.beginPath();x.moveTo(a+r,b);x.lineTo(a+w-r,b);x.arcTo(a+w,b,a+w,b+r,r);x.lineTo(a+w,b+h-r);x.arcTo(a+w,b+h,a+w-r,b+h,r);x.lineTo(a+r,b+h);x.arcTo(a,b+h,a,b+h-r,r);x.lineTo(a,b+r);x.arcTo(a,b,a+r,b,r);x.closePath()}
 async function brandWatermark(url){
   const b=getBrand(),label=String(b.name||"Crossroads Shopping").trim().slice(0,26)||"Crossroads",ac=/^#[0-9a-f]{3,8}$/i.test(b.ac||"")?(b.ac||"#c9a227"):"#c9a227";
@@ -470,7 +515,7 @@ async function onSubmit(e){e.preventDefault();
  if(e.target.id==="nf"){const ph=$("nw").value.replace(/\D/g,""),k=$("nk").value.trim(),body={waPhone:ph};if(k)body.waKey=k;const r=await api("settings",body);if(r.ok){say("WhatsApp alerts saved");render()}else{$("nfe").className="err";$("nfe").textContent=r.d.error||"Could not save."}return}
  if(e.target.id==="tf"){const tok=$("tt").value.trim(),el=$("tfe");if(el){el.className="";el.textContent="Connecting…"}const r=await api("notify/telegram",tok?{token:tok}:{});if(r.ok){say("Telegram connected"+(r.d.bot?" to @"+r.d.bot:""));render()}else if(el){el.className="err";el.textContent=r.d.error||"Could not connect Telegram."}return}
  if(e.target.id==="ef"){const k=$("ek").value.trim(),to=$("ee").value.trim(),from=$("efrom").value.trim(),el=$("efe");if(el){el.className="";el.textContent="Sending…"}const body={to};if(k)body.key=k;if(from)body.from=from;const r=await api("notify/email",body);if(r.ok){say("Test email sent to "+r.d.to);render()}else if(el){el.className="err";el.textContent=r.d.error||"Could not send the email."}return}
- if(e.target.id==="impf"){const el=$("impe"),btn=$("impbtn");const url=urlFromText($("impu").value)||$("impu").value.trim(),mk=+$("impm").value||2,px=+$("impp").value||0,wm=$("impwm")?$("impwm").checked:true;if(!/^https?:\/\//i.test(url)){el.className="err";el.textContent="Paste the full product link (starting with https://).";return}el.className="";el.textContent="Reading the product…";if(btn){btn.disabled=true;btn.textContent="Fetching…"}const r=await api("import/product",{url,markup:mk,price:px});if(btn){btn.disabled=false;btn.textContent="Fetch product"}if(!r.ok){el.className="err";el.textContent=r.d.error||"Could not import that link.";return}const prod=Object.assign({pm:"both"},r.d.product);if(wm&&prod.images&&prod.images.length){prod.images=await watermarkList(prod.images,(i,n)=>{el.className="";el.textContent="Adding your brand watermark… "+i+"/"+n})}const dup=(S.products||[]).find(p=>String(p.n||"").trim().toLowerCase()===String(prod.n||"").trim().toLowerCase());if(dup&&!confirm("You already have \""+dup.n+"\". Import it again as a copy?")){el.textContent="";return}impDraft=prod;location.hash="#admin/products/new";say("Product fetched. Check it, then tap Add product.");return}
+ if(e.target.id==="impf"){const el=$("impe"),btn=$("impbtn");const url=urlFromText($("impu").value)||$("impu").value.trim(),mk=+$("impm").value||2,px=+$("impp").value||0,wm=$("impwm")?$("impwm").checked:true;if(!/^https?:\/\//i.test(url)){el.className="err";el.textContent="Paste the full product link (starting with https://).";return}el.className="";el.textContent="Reading the product…";if(btn){btn.disabled=true;btn.textContent="Fetching…"}let got=null;if(/meesho/i.test(url)){el.textContent="Reading the product from Meesho…";got=await meeshoLookup(url,t=>{el.className="";el.textContent=t})}if(!got){const r=await api("import/product",{url,markup:mk,price:px});if(btn){btn.disabled=false;btn.textContent="Fetch product"}if(!r.ok){el.className="err";el.textContent=r.d.error||"Could not import that link.";return}got=r.d.product}else if(btn){btn.disabled=false;btn.textContent="Fetch product"}const prod=Object.assign({pm:"both"},got);if(wm&&prod.images&&prod.images.length){prod.images=await watermarkList(prod.images,(i,n)=>{el.className="";el.textContent="Adding your brand watermark… "+i+"/"+n})}const dup=(S.products||[]).find(p=>String(p.n||"").trim().toLowerCase()===String(prod.n||"").trim().toLowerCase());if(dup&&!confirm("You already have \""+dup.n+"\". Import it again as a copy?")){el.textContent="";return}impDraft=prod;location.hash="#admin/products/new";say("Product fetched. Check it, then tap Add product.");return}
  if(e.target.id==="igf"){const el=$("igfe"),user=$("igu").value.trim(),tok=$("igt").value.trim(),auto=$("iga").checked,story=$("igs").checked;el.className="";el.textContent="Saving...";const body={igUser:user,igAuto:auto,igStory:story};if(tok)body.igToken=tok;const r=await api("settings",body);if(r.ok){S.settings.ig={connected:!!(tok||(S.settings.ig&&S.settings.ig.connected)),user,auto,story};saveCache();say("Instagram settings saved");render()}else{el.className="err";el.textContent=r.d.error||"Could not save."}return}
  if(e.target.id==="gf"){const g=$("gcid").value.trim(),el=$("gfe");el.className="";el.textContent="Saving...";const r=await api("settings",{googleClientId:g});if(r.ok){el.className="ok";el.textContent="Saved. Customers can now sign in with Google.";say("Google login updated")}else{el.className="err";el.textContent=r.d.error||"Could not save."}return}
  if(e.target.id==="bcastf"){const subj=$("bcastsubj").value.trim(),msg=$("bcastmsg").value.trim(),el=$("bcaste");if(!subj||!msg){if(el){el.className="err";el.textContent="Subject and message are required."}return}if(el){el.className="";el.textContent="Sending..."}const r=await api("broadcast",{subject:subj,text:msg});if(r.ok){if(el){el.className="ok";el.textContent="Sent to "+r.d.sent+" of "+r.d.total+" customers."}say("Update sent to "+r.d.sent+" customers.")}else if(el){el.className="err";el.textContent=r.d.error||"Could not send."}return}

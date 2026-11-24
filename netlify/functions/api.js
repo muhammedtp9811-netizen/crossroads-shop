@@ -224,55 +224,6 @@ function parseMeeshoHtml(html,u,id){
   if(!title)return null;
   return{n:cut(title,120),sn:cut(title,60),c:guessCat(title),d:plainText(meta["og:description"]||meta.description||""),images:cleanImgList(ldImages(meta["og:image"]||meta["twitter:image"])),cost:price,sup:{s:"meesho",id:id||"",u:u.href}};
 }
-/* Meesho's product pages sit behind a strict bot filter, but its sitemaps are open.
-   Sitemaps are split into ~500 shards, each covering a range of product ids, so we
-   binary-search the shard and read the product's name + photos from it. */
-async function meeshoSitemap(id,u){
-  const target=parseInt(id,36);
-  if(!isFinite(target)||target<=0)return null;
-  const head=async s=>{
-    try{
-      const r=await fetch("https://www.meesho.com/sitemap/pdp/"+s+".xml",{headers:{...UA,range:"bytes=0-600"},signal:AbortSignal.timeout(7000)});
-      if(!r.ok)return"";
-      const m=/\/p\/([A-Za-z0-9]+)</.exec(await r.text());
-      return m?m[1]:"";
-    }catch(e){return""}
-  };
-  let lo=0,hi=520,ans=-1;
-  while(lo<=hi){
-    const mid=(lo+hi)>>1,h=await head(mid);
-    if(!h){hi=mid-1;continue}
-    if(parseInt(h,36)<=target){ans=mid;lo=mid+1}else hi=mid-1;
-  }
-  if(ans<0)return null;
-  for(const s of [ans,ans+1,ans-1]){
-    if(s<0||s>520)continue;
-    try{
-      const r=await fetch("https://www.meesho.com/sitemap/pdp/"+s+".xml",{headers:UA,signal:AbortSignal.timeout(16000)});
-      if(!r.ok)continue;
-      const xml=await r.text(),at=xml.indexOf("/p/"+id+"<");
-      if(at<0)continue;
-      const st=xml.lastIndexOf("<url>",at),en=xml.indexOf("</url>",at);
-      const block=xml.slice(st<0?Math.max(0,at-2000):st,en<0?Math.min(xml.length,at+4000):en);
-      const loc=(/<loc>([^<]+)<\/loc>/i.exec(block)||[])[1]||"";
-      const imgs=[];let m;const re=/<image:loc>([^<]+)<\/image:loc>/gi;
-      while((m=re.exec(block))){
-        let x=m[1].trim();if(x.startsWith("//"))x="https:"+x;
-        if(!/^https?:\/\//.test(x))continue;
-        x=x.replace(/\.avif(\?|$)/i,".jpg$1");
-        if(/[?&]width=\d+/i.test(x))x=x.replace(/([?&])width=\d+/i,"$1width=1024");
-        else x+=(x.includes("?")?"&":"?")+"width=1024";
-        if(imgs.indexOf(x)<0)imgs.push(x);
-      }
-      const sm=/meesho\.com\/([^/]+)\/p\//i.exec(loc);
-      let name=sm?decodeURIComponent(sm[1]).replace(/[-_]+/g," ").replace(/\s+/g," ").trim():"";
-      if(!name||name.length<3)continue;
-      name=name.replace(/\b[a-z]/g,c=>c.toUpperCase());
-      return{n:cut(name,120),sn:cut(name,60),c:guessCat(name),d:"",images:imgs.slice(0,6),cost:0,sup:{s:"meesho",id,u:u.href}};
-    }catch(e){}
-  }
-  return null;
-}
 async function meeshoProduct(u){
   let id=probeId(u.pathname);
   if(!id)for(const k of ["$canonical_url","deep_link_value","deeplink","url","link","redirect","target_url","$desktop_url","af_dp","pid","product_id"]){const pid=probeId(u.searchParams.get(k)||"");if(pid){id=pid;break}}
@@ -280,25 +231,16 @@ async function meeshoProduct(u){
     try{const r=await fetch(u.href,{headers:UA,redirect:"follow",signal:AbortSignal.timeout(8000)});id=probeId(r.url)||"";if(!id)id=probeId(await r.text())||""}catch(e){}
   }
   if(id){
-    const direct=(async()=>{
-      for(const api of ["https://www.meesho.com/api/v1/products/","https://www.meesho.com/api/v1/product/"]){
-        try{const r=await fetch(api+encodeURIComponent(id),{headers:MEESHO_HEADERS,signal:AbortSignal.timeout(6000)});
-          if(r.ok){const p=normMeesho(await r.json().catch(()=>null),u,id);if(p&&p.n)return p}
-        }catch(e){}
-      }
-      for(const page of ["https://www.meesho.com/p/"+encodeURIComponent(id),u.href]){
-        try{const r=await fetch(page,{headers:UA,redirect:"follow",signal:AbortSignal.timeout(6000)});
-          if(r.ok){const p=parseMeeshoHtml(await r.text(),u,id);if(p&&p.n&&p.n.length>3)return p}
-        }catch(e){}
-      }
-      return null;
-    })();
-    const both=await Promise.allSettled([direct,meeshoSitemap(id,u)]);
-    const q=both[0].status==="fulfilled"?both[0].value:null;
-    const sp=both[1].status==="fulfilled"?both[1].value:null;
-    if(q&&sp)return{n:(q.n&&q.n.length>3)?q.n:sp.n,sn:(q.n&&q.n.length>3)?cut(q.n,60):sp.sn,c:q.c||sp.c,d:q.d||sp.d,images:(q.images&&q.images.length)?q.images:sp.images,cost:q.cost||sp.cost,sup:sp.sup};
-    if(q)return q;
-    if(sp)return sp;
+    for(const api of ["https://www.meesho.com/api/v1/products/","https://www.meesho.com/api/v1/product/"]){
+      try{const r=await fetch(api+encodeURIComponent(id),{headers:MEESHO_HEADERS,signal:AbortSignal.timeout(6000)});
+        if(r.ok){const p=normMeesho(await r.json().catch(()=>null),u,id);if(p&&p.n)return p}
+      }catch(e){}
+    }
+    for(const page of ["https://www.meesho.com/p/"+encodeURIComponent(id),u.href]){
+      try{const r=await fetch(page,{headers:UA,redirect:"follow",signal:AbortSignal.timeout(6000)});
+        if(r.ok){const p=parseMeeshoHtml(await r.text(),u,id);if(p&&p.n&&p.n.length>3)return p}
+      }catch(e){}
+    }
     return null;
   }
   try{const r=await fetch(u.href,{headers:UA,redirect:"follow",signal:AbortSignal.timeout(8000)});if(r.ok){const p=parseMeeshoHtml(await r.text(),u,id);if(p)return p}}catch(e){}
