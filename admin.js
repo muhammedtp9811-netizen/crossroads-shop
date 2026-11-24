@@ -138,8 +138,10 @@ async function meeshoLookup(raw,note){
  for(let k=0;k<results.length;k++){
   const xml=results[k];if(!xml)continue;
   const at=xml.indexOf("/p/"+id+"<");if(at<0)continue;
+  console.log("Found /p/"+id+" at position", at, "in shard", cands[k]);
   const st=xml.lastIndexOf("<url>",at),en=xml.indexOf("</url>",at);
   const block=xml.slice(st<0?Math.max(0,at-2000):st,en<0?Math.min(xml.length,at+4000):en);
+  console.log("Block length:", block.length, "loc:", (/<loc>([^<]+)<\/loc>/i.exec(block)||[])[1]);
   const loc=(/<loc>([^<]+)<\/loc>/i.exec(block)||[])[1]||"";
   const imgs=[];let m;const re=/<image:loc>([^<]+)<\/image:loc>/gi;
   while((m=re.exec(block))){
