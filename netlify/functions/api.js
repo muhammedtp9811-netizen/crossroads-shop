@@ -309,13 +309,19 @@ async function meeshoProduct(u){
     const mid = (lo+hi)>>1, seg = arr[mid], c = seg.indexOf(":");
     if(parseInt(seg.slice(c+1), 36) <= target){ guess = +seg.slice(0,c); lo = mid+1; } else hi = mid-1;
   }
+  const maxFirst = Math.max.apply(null,arr.map(s => parseInt(String(s).slice(String(s).indexOf(":")+1),36)));
+  const fromSlug = meeshoNameFromUrl(u,id);
+  // IDs above every sitemap range are brand-new and cannot be in the public catalogue.
+  // Meesho blocks the product page from server IPs, so make a clean editable draft instead of waiting/timing out.
+  if(target > maxFirst){
+    if(fromSlug) return{n:fromSlug.n,sn:fromSlug.sn,c:guessCatServer(fromSlug.n),d:"",images:[],cost:0,partial:true,hidden:true,sup:{s:"meesho",id,u:rawUrl}};
+    throw new Error("Could not read this new Meesho product. Paste the full Share text, or add it manually.");
+  }
   if(guess < 0) throw new Error("Product not found in Meesho catalogue.");
   let fetchedAny = false;
-  if(guess >= 0){
-    const res = await fetchMeeshoShard(guess,id,u,3);
-    fetchedAny = !!(res && res.ok);
-    if(res && res.p) return res.p;
-  }
+  const res = await fetchMeeshoShard(guess,id,u,2);
+  fetchedAny = !!(res && res.ok);
+  if(res && res.p) return res.p;
   // New products may sit in a shard added after this function was built.
   const live = await liveMeeshoShards();
   const known = new Set(arr.map(s => +String(s).split(":")[0]));
@@ -326,16 +332,13 @@ async function meeshoProduct(u){
     if(guess+d < arr.length) near.push(+String(arr[guess+d]).split(":")[0]);
   }
   const tail = live.slice(-8);
-  const candidates = [...new Set([...tail, ...extra, ...near])].filter(sh => isFinite(sh) && sh >= 0 && sh !== guess).slice(0,12);
-  for(let i=0; i<candidates.length; i+=6){
-    const ress = await Promise.all(candidates.slice(i,i+6).map(sh => fetchMeeshoShard(sh,id,u,2)));
-    const found = ress.find(x => x && x.p);
-    if(found) return found.p;
-    if(ress.some(x => x && x.ok)) fetchedAny = true;
-  }
+  const candidates = [...new Set([...tail, ...extra, ...near])].filter(sh => isFinite(sh) && sh >= 0 && sh !== guess).slice(0,10);
+  const ress = await Promise.all(candidates.map(sh => fetchMeeshoShard(sh,id,u,1)));
+  const found = ress.find(x => x && x.p);
+  if(found) return found.p;
+  if(ress.some(x => x && x.ok)) fetchedAny = true;
   const direct = await tryMeeshoHtml(rawUrl,u,id);
   if(direct) return direct;
-  const fromSlug = meeshoNameFromUrl(u,id);
   if(fetchedAny && fromSlug) return{n:fromSlug.n,sn:fromSlug.sn,c:guessCatServer(fromSlug.n),d:"",images:[],cost:0,partial:true,sup:{s:"meesho",id,u:rawUrl}};
   throw new Error("Meesho catalogue is busy right now. Try again in a moment.");
 }
