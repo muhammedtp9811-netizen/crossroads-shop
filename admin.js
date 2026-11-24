@@ -11,7 +11,7 @@ const dur=s=>s<60?s+"s":Math.floor(s/60)+"m "+(s%60)+"s";
 const imgs=p=>p.images&&p.images.length?p.images:(p.imgs&&p.imgs.length?p.imgs:(p.img?[p.img]:[]));
 let PW=sessionStorage.getItem("cr_pw")||"",root=null,draft=[],impDraft=null;
 const H=()=>({"x-admin":PW,"content-type":"application/json"});
-async function api(p,b){const o=b===undefined?{headers:H(),cache:"no-store"}:{method:"POST",headers:H(),body:JSON.stringify(b)};try{const r=await fetch("/api/"+p,o);let d={};try{d=await r.json()}catch(e){}return{ok:r.ok,s:r.status,d}}catch(e){return{ok:false,s:0,d:{error:"No connection"}}}}
+async function api(p,b){const o=b===undefined?{headers:H(),cache:"no-store"}:{method:"POST",headers:H(),body:JSON.stringify(b)};try{const r=await xhrFetch("/api/"+p,o);let d={};try{d=await r.json()}catch(e){}return{ok:r.ok,s:r.status,d}}catch(e){return{ok:false,s:0,d:{error:"No connection"}}}}
 const S={orders:[],messages:[],products:[],feedback:[],codes:[],settings:{},notify:{},known:new Set(),seen:new Set(),range:7,of:"all",oq:"",pq:"",pf:"all",vf:"all",poll:null,loaded:false,t:0,hydrated:false,ana:null,reviews:[],otp:{},accounts:[]};
 try{S.seen=new Set(JSON.parse(localStorage.getItem("cr_seen")||"[]"))}catch(e){}
 const BRAND_DEF={name:"Crossroads Shopping",tag:"Your next favourite find is here.",mono:"CS",bg:"#111318",fg:"#ffffff",ac:"#c9a227",shape:"rounded"};
