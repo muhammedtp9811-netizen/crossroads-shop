@@ -132,11 +132,21 @@ async function meeshoLookup(raw,note){
  let lo=0,hi=list.length-1,j=-1;
  while(lo<=hi){const mid=(lo+hi)>>1;if(list[mid].v<=target){j=mid;lo=mid+1}else hi=mid-1}
  if(j<0){if(note)note("Product not found in Meesho catalogue.");return null}
- const cands=[list[j].s,list[j+1]&&list[j+1].s,list[j+2]&&list[j+2].s].filter(x=>typeof x==="number");
+ const cands=[list[j].s,list[j+1]&&list[j+1].s].filter(x=>typeof x==="number");
  if(note)note("Reading the Meesho catalogue...");
- const results=await Promise.all(cands.map(async(sh)=>{
-  try{const r=await fetch("https://r.jina.ai/https://www.meesho.com/sitemap/pdp/"+sh+".xml",{headers:{"x-return-format":"html"}});if(!r.ok)return null;return await r.text()}catch(e){return null}
- }));
+ // fetch shards one at a time to avoid overwhelming the browser
+ const results=[];
+ for(const sh of cands){
+  try{
+   const controller=new AbortController();
+   const timer=setTimeout(()=>controller.abort(),12000);
+   const r=await fetch("https://r.jina.ai/https://www.meesho.com/sitemap/pdp/"+sh+".xml",{headers:{"x-return-format":"html"},signal:controller.signal});
+   clearTimeout(timer);
+   if(!r.ok){results.push(null);continue}
+   const t=await r.text();
+   results.push(t);
+  }catch(e){results.push(null)}
+ }
  for(let k=0;k<results.length;k++){
   const xml=results[k];if(!xml)continue;
   const at=xml.indexOf("/p/"+id+"<");if(at<0)continue;
