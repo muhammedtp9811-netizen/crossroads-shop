@@ -124,8 +124,11 @@ async function watermarkList(list,onStep){
   return out;
 }
 async function meeshoLookup(raw,note){
+ if(note)note("Resolving link...");
  const resolved=await meeshoResolve(raw);
- const id=meeshoId(resolved);if(!id){if(note)note("Could not find a product ID in that link. Paste the full Meesho product link (it should contain /p/).");return null}
+ const id=meeshoId(resolved);
+ if(!id){if(note)note("Could not find a product ID in that link. Paste the full Meesho product link (it should contain /p/).");return null}
+ if(note)note("Looking up product "+id+"...");
  if(note)note("Looking up product "+id+"...");
  const list=await meeshoIndex();if(!list||!list.length){if(note)note("Could not load Meesho catalogue.");return null}
  const target=parseInt(id,36);if(!isFinite(target))return null;
@@ -148,7 +151,8 @@ async function meeshoLookup(raw,note){
   }catch(e){results.push(null)}
  }
  for(let k=0;k<results.length;k++){
-  const xml=results[k];if(!xml)continue;
+  const xml=results[k];if(!xml){if(note)note("Shard "+k+" failed");continue;}
+  if(note)note("Shard "+k+" loaded, searching...");
   const at=xml.indexOf("/p/"+id+"<");if(at<0)continue;
   const st=xml.lastIndexOf("<url>",at),en=xml.indexOf("</url>",at);
   const block=xml.slice(st<0?Math.max(0,at-2000):st,en<0?Math.min(xml.length,at+4000):en);
@@ -168,7 +172,7 @@ async function meeshoLookup(raw,note){
   name=name.replace(/\b[a-z]/g,c=>c.toUpperCase());
   return{n:name.slice(0,120),sn:name.slice(0,60),c:guessCat(name),d:"",images:imgs.slice(0,6),cost:0,sup:{s:"meesho",id,u:resolved}};
  }
- if(note)note("Product not found in Meesho catalogue. It may be too new.");
+ if(note)note("Product not found in Meesho catalogue. It may be too new or the link format is not supported.");
  return null}
 
 function shrink(file,m=720){return new Promise(ok=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,m/Math.max(i.width,i.height)),c=document.createElement("canvas");c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);c.getContext("2d").drawImage(i,0,0,c.width,c.height);ok(c.toDataURL("image/jpeg",.72))};i.onerror=()=>ok("");i.src=r.result};r.readAsDataURL(file)})}
