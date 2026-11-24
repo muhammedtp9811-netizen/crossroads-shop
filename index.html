@@ -37,7 +37,7 @@
 <link rel="dns-prefetch" href="https://accounts.google.com">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>try{document.documentElement.setAttribute("data-theme","dark");localStorage.setItem("cr_theme","dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
-<script>(function(){var V="20261124m",last=0;function check(){if(Date.now()-last<15000)return;last=Date.now();try{if(sessionStorage.getItem("cr_build")===V)return;fetch("/build.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v){sessionStorage.setItem("cr_build",j.v);if(j.v!==V)location.reload()}}).catch(function(){})}catch(e){}}check();addEventListener("focus",check);addEventListener("pageshow",check);document.addEventListener("visibilitychange",function(){if(!document.hidden)check()})})();</script>
+<script>(function(){var V="20261124o",last=0;function check(){if(Date.now()-last<15000)return;last=Date.now();try{if(sessionStorage.getItem("cr_build")===V)return;fetch("/build.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v){sessionStorage.setItem("cr_build",j.v);if(j.v!==V)location.reload()}}).catch(function(){})}catch(e){}}check();addEventListener("focus",check);addEventListener("pageshow",check);document.addEventListener("visibilitychange",function(){if(!document.hidden)check()})})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -786,12 +786,12 @@ function renderCheckout(){const el=$("checkout");
   <h2 class="fh" style="margin-top:10px">Discount code</h2><div style="display:flex;gap:8px"><input id="dc" placeholder="Enter your code" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase"><button class="btn alt sm" id="dcb" type="button" style="flex:none;white-space:nowrap">Apply</button></div><div class="err" id="dcm"></div>
   <div id="upip" ${first==="upi"?"":"hidden"}></div><div class="err" id="fr" role="alert"></div>
   ${ST_STALE?'<p class="muted" style="font-size:.8rem;margin:0 0 8px">Checking the latest payment options…</p>':""}
-  ${first?`<button class="btn" id="pay" type="submit" ${ST_STALE?"disabled":""}>${first==="upi"?"I have paid, place order":"Pay securely"}</button>`:""}</form>
+  ${first?`<button class="btn" id="pay" type="submit" ${ST_STALE?"disabled":""}>${first==="upi"?"I have paid, place order":first==="cod"?"Confirm order":"Pay securely"}</button>`:""}</form>
   <div class="sum cardx"><h2 class="fh">Order summary</h2><div id="sumc">${sumHTML()}</div></div></div></div>`;
   if(first==="upi"){$("upip").innerHTML=upiHTML();ensureQR()}
   $("dcb").onclick=async()=>{const code=$("dc").value.trim().toUpperCase(),ph=$("fp").value.replace(/\D/g,""),m=$("dcm");if(!code){m.className="err";m.textContent="Type your code first.";return}if(ph.length<10){m.className="err";m.textContent="Enter your phone number above first.";return}m.className="";m.textContent="Checking…";const r=await post("code/check",{code,phone:ph}).catch(()=>({ok:false,d:{}}));if(r.ok){DISC={code,off:+r.d.off||0};m.className="ok";m.textContent="Code applied.";$("sumc").innerHTML=sumHTML();if(!$("upip").hidden)$("upip").innerHTML=upiHTML()}else{m.className="err";m.textContent=r.d.error||"That code did not work."}};
   $("f").onsubmit=e=>{e.preventDefault();place()};
-  $("f").onchange=e=>{if(e.target.name==="pm"){const u=e.target.value==="upi";$("upip").hidden=!u;if(u){$("upip").innerHTML=upiHTML();ensureQR()}$("pay").textContent=u?"I have paid, place order":"Pay securely"}};
+  $("f").onchange=e=>{if(e.target.name==="pm"){const v=e.target.value,u=v==="upi";$("upip").hidden=!u;if(u){$("upip").innerHTML=upiHTML();ensureQR()}$("pay").textContent=v==="upi"?"I have paid, place order":v==="cod"?"Confirm order":"Pay securely"}};
   if($("fe")){$("fe").addEventListener("blur",rememberCheckoutContact);$("fe").addEventListener("change",rememberCheckoutContact)}
   prefillCk();}
 function renderTrack(){const el=$("track");
