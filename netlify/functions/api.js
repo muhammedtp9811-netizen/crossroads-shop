@@ -734,9 +734,16 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
   if(path==="resolve"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
     const raw=String(b.url||"").trim();let u;try{u=new URL(raw)}catch(e){return J({error:"Bad URL"},400)}
-    // follow redirects server-side (no CORS)
     try{const r=await fetch(u.href,{headers:UA,redirect:"follow",signal:AbortSignal.timeout(10000)});return J({ok:1,url:r.url||u.href})}
     catch(e){return J({error:String((e&&e.message)||e)},502)}
+  }
+  if(path==="proxy/jina"&&req.method==="GET"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const target=new URL(req.url).searchParams.get("u")||"";
+    try{const r=await fetch("https://r.jina.ai/"+target,{headers:{"x-return-format":"html",accept:"*/*"},signal:AbortSignal.timeout(20000)});
+      const t=await r.text();
+      return new Response(t,{headers:{"content-type":"text/plain","cache-control":"no-store","access-control-allow-origin":"*"}});
+    }catch(e){return J({error:String((e&&e.message)||e)},502)}
   }
   if(path==="proxy/img"&&req.method==="GET"){
     let target="";try{target=new URL(req.url).searchParams.get("u")||""}catch(e){}
