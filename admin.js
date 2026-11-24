@@ -119,33 +119,22 @@ function meeshoId(t){const s=String(t||"");
 async function meeshoLookup(raw,note){
  if(note)note("Resolving link...");
  const resolved=await meeshoResolve(raw);
- console.log("Meesho resolved URL:", resolved);
  const id=meeshoId(resolved);
- console.log("Meesho extracted ID:", id);
  if(!id){if(note)note("Could not find a product ID in that link. Paste the full Meesho product link (it should contain /p/).");return null}
  if(note)note("Looking up product "+id+"...");
- const list=await meeshoIndex();console.log("Meesho index loaded:", list&&list.length);
- if(!list||!list.length){console.log("Meesho: index empty");return null}
- const target=parseInt(id,36);console.log("Meesho target:", target, "id:", id);
  if(!isFinite(target))return null;
  let lo=0,hi=list.length-1,j=-1;
  while(lo<=hi){const mid=(lo+hi)>>1;if(list[mid].v<=target){j=mid;lo=mid+1}else hi=mid-1}
- console.log("Meesho binary search result j:", j, "shard:", j>=0?list[j].s:"none");
- if(j<0){console.log("Meesho: no shard found");return null}
  const cands=[list[j].s,list[j+1]&&list[j+1].s,list[j+2]&&list[j+2].s].filter(x=>typeof x==="number");
- console.log("Meesho candidates:", cands);
  if(note)note("Reading the Meesho catalogue…");
  // fetch all candidate shards in parallel for speed
  const results=await Promise.all(cands.map(async(s)=>{
-  try{const r=await fetch("https://r.jina.ai/https://www.meesho.com/sitemap/pdp/"+s+".xml",{headers:{"x-return-format":"html"}});if(!r.ok){console.log("Shard",s,"fetch failed:",r.status);return null}const t=await r.text();console.log("Shard",s,"fetched, len:",t.length,"has target:",t.includes("/p/"+id+"<"));return t}catch(e){console.log("Shard",s,"error:",e.message);return null}
  }));
  for(let k=0;k<results.length;k++){
   const xml=results[k];if(!xml)continue;
   const at=xml.indexOf("/p/"+id+"<");if(at<0)continue;
-  console.log("Found /p/"+id+" at position", at, "in shard", cands[k]);
   const st=xml.lastIndexOf("<url>",at),en=xml.indexOf("</url>",at);
   const block=xml.slice(st<0?Math.max(0,at-2000):st,en<0?Math.min(xml.length,at+4000):en);
-  console.log("Block length:", block.length, "loc:", (/<loc>([^<]+)<\/loc>/i.exec(block)||[])[1]);
   const loc=(/<loc>([^<]+)<\/loc>/i.exec(block)||[])[1]||"";
   const imgs=[];let m;const re=/<image:loc>([^<]+)<\/image:loc>/gi;
   while((m=re.exec(block))){
