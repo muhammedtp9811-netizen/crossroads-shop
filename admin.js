@@ -109,11 +109,18 @@ async function meeshoResolve(raw){
 function meeshoId(t){const s=String(t||"");
   let m=/\/p\/([A-Za-z0-9_-]{4,})/.exec(s);if(m)return m[1];
   m=/\/(?:product|products)\/([A-Za-z0-9_-]{4,})/.exec(s);if(m)return m[1];
-  m=/[?&](?:product_id|pid|productId|id|deep_link_value)=([A-Za-z0-9_-]{4,})/i.exec(s);if(m)return m[1];
+  m=/[?&](?:product_id|pid|productId|id|deep_link_value|catalog_id)=([A-Za-z0-9_-]{4,})/i.exec(s);if(m)return m[1];
+  // Meesho app sometimes shares links with the ID in the path without /p/
+  m=/meesho\.com\/[^\/]*?([a-z0-9]{5,8})(?:[?#]|$)/i.exec(s);if(m&&m[1].length>=5&&m[1].length<=8)return m[1];
   return""}
 async function meeshoLookup(raw,note){
+ if(note)note("Resolving link...");
  const resolved=await meeshoResolve(raw);
- const id=meeshoId(resolved);if(!id){if(note)note("Could not find a product ID in that link. Make sure you copied the full Meesho product link (it should contain /p/).");return null}
+ console.log("Meesho resolved URL:", resolved);
+ const id=meeshoId(resolved);
+ console.log("Meesho extracted ID:", id);
+ if(!id){if(note)note("Could not find a product ID in that link. Paste the full Meesho product link (it should contain /p/).");return null}
+ if(note)note("Looking up product "+id+"...");
  const list=await meeshoIndex();if(!list||!list.length)return null;
  const target=parseInt(id,36);if(!isFinite(target))return null;
  let lo=0,hi=list.length-1,j=-1;
@@ -123,7 +130,7 @@ async function meeshoLookup(raw,note){
  if(note)note("Reading the Meesho catalogue…");
  // fetch all candidate shards in parallel for speed
  const results=await Promise.all(cands.map(async(s)=>{
-  try{const r=await fetch("https://r.jina.ai/https://www.meesho.com/sitemap/pdp/"+s+".xml",{headers:{"x-return-format":"html"}});if(!r.ok)return null;return await r.text()}catch(e){return null}
+  try{const r=await fetch("https://r.jina.ai/https://www.meesho.com/sitemap/pdp/"+s+".xml",{headers:{"x-return-format":"html"}});if(!r.ok){console.log("Shard",s,"fetch failed:",r.status);return null}const t=await r.text();console.log("Shard",s,"fetched, len:",t.length,"has target:",t.includes("/p/"+id+"<"));return t}catch(e){console.log("Shard",s,"error:",e.message);return null}
  }));
  for(let k=0;k<results.length;k++){
   const xml=results[k];if(!xml)continue;
