@@ -563,7 +563,7 @@ function grid(){if(loading&&!P.length){$("grid").innerHTML=Array.from({length:8}
  $("grid").innerHTML=L.length?L.map(card).join(""):`<div class="empty">${P.some(p=>!p.hid)?"No products match your search.":"New arrivals are on the way. Message us on Instagram to ask what is coming."}</div>`;reveal()}
 $("cats").onclick=e=>{const b=e.target.closest("button[data-c]");if(!b)return;cat=b.dataset.c;log("Browsed category: "+cat);if(view()!=="shop"){history.pushState(null,"",location.pathname);route()}else{cats();grid()}};
 $("q").oninput=e=>{Q=e.target.value.trim().toLowerCase();grid()};$("so").onchange=e=>{SO=e.target.value;grid()};
-let lastImgTap={id:null,t:0};$("grid").onclick=e=>{const b=e.target.closest(".card");if(!b)return;const onImg=!!e.target.closest(".im");if(onImg){const now=Date.now();if(lastImgTap.id===b.dataset.id&&now-lastImgTap.t<380){lastImgTap={id:null,t:0};location.hash="#p/"+b.dataset.id} else {lastImgTap={id:b.dataset.id,t:now}}return}location.hash="#p/"+b.dataset.id};
+$("grid").onclick=e=>{const b=e.target.closest(".card");if(!b)return;location.hash="#p/"+b.dataset.id};
 function home(e){e.preventDefault();cat="All";history.pushState(null,"",location.pathname);route()}
 ["logo","goShop","fHome"].forEach(i=>$(i).onclick=home);
 
