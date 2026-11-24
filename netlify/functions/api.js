@@ -269,6 +269,19 @@ async function tryMeeshoHtml(rawUrl,u,id){
     return p&&p.images&&p.images.length?p:null;
   }catch(e){return null}
 }
+function meeshoNameFromUrl(u,id){
+  try{
+    const parts=String((u&&u.pathname)||"").split("/").filter(Boolean);
+    const pi=parts.indexOf("p");
+    let slug=(pi>0?parts[pi-1]:parts[0]||"");
+    slug=decodeURIComponent(slug).replace(/[-_]+/g," ").replace(/\s+/g," ").trim();
+    const pk=/ pack of \d+/i.exec(slug);
+    if(pk&&pk.index>10)slug=slug.slice(0,pk.index+pk[0].length);
+    if(slug.length<3)return null;
+    const name=cut(slug.replace(/\b[a-z]/g,c=>c.toUpperCase()),120);
+    return{n:name,sn:cut(name,60)};
+  }catch(e){return null}
+}
 async function meeshoProduct(u){
   const rawUrl = (u && u.href) ? u.href : String(u||"");
   let id = probeId((u && u.pathname) || "");
@@ -310,7 +323,9 @@ async function meeshoProduct(u){
   }
   const direct = await tryMeeshoHtml(rawUrl,u,id);
   if(direct) return direct;
-  throw new Error("This new Meesho product is not in the public catalogue yet. Paste the full Share text again, or add the product manually.");
+  const fromSlug = meeshoNameFromUrl(u,id);
+  if(fromSlug) return{n:fromSlug.n,sn:fromSlug.sn,c:guessCatServer(fromSlug.n),d:"",images:[],cost:0,partial:true,sup:{s:"meesho",id,u:rawUrl}};
+  throw new Error("Could not read this Meesho link. Paste the full Share text, or add the product manually.");
 }
 function guessCatServer(n){
   const t = String(n||"").toLowerCase();
