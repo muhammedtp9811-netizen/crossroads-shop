@@ -146,8 +146,8 @@ async function meeshoLookup(raw,note){
    let x=m[1].trim();if(x.startsWith("//"))x="https:"+x;
    if(!/^https?:\/\//.test(x))continue;
    x=x.replace(/\.avif(\?|$)/i,".jpg$1");
-   if(/[?&]width=\d+/i.test(x))x=x.replace(/([?&])width=\d+/i,"$1width=1024");
-   else x+=(x.includes("?")?"&":"?")+"width=1024";
+   if(/[?&]width=\d+/i.test(x))x=x.replace(/([?&])width=\d+/i,"$1width=1200");
+   else x+=(x.includes("?")?"&":"?")+"width=1200";
    if(imgs.indexOf(x)<0)imgs.push(x);
   }
   const sm=/meesho\.com\/([^/]+)\/p\//i.exec(loc);
@@ -165,10 +165,10 @@ async function brandWatermark(url){
   const blob=await res.blob();
   let src;try{src=await createImageBitmap(blob)}catch(e){src=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=URL.createObjectURL(blob)})}
   const iw=src.width||src.naturalWidth,ih=src.height||src.naturalHeight;
-  const max=1000,sc=Math.min(1,max/Math.max(iw,ih));
+  const max=1200,sc=Math.min(1,max/Math.max(iw,ih));
   const w=Math.max(1,Math.round(iw*sc)),h=Math.max(1,Math.round(ih*sc));
   const cv=document.createElement("canvas");cv.width=w;cv.height=h;
-  const x=cv.getContext("2d");x.drawImage(src,0,0,w,h);
+  const x=cv.getContext("2d");x.imageSmoothingEnabled=true;x.imageSmoothingQuality="high";x.drawImage(src,0,0,w,h);
   const fs=Math.max(14,Math.round(w*0.034)),pad=Math.round(fs*.72),dot=Math.round(fs*.5);
   x.font="600 "+fs+"px Inter,Arial,sans-serif";
   const lw=x.measureText(label).width;
@@ -180,7 +180,7 @@ async function brandWatermark(url){
   x.fillStyle=ac;x.beginPath();x.arc(bx+pad+dot/2,by+bh/2,dot/2,0,Math.PI*2);x.fill();
   x.fillStyle="#fff";x.textBaseline="middle";x.font="600 "+fs+"px Inter,Arial,sans-serif";x.fillText(label,bx+pad*1.6+dot,by+bh/2+1);
   x.restore();
-  return cv.toDataURL("image/jpeg",.8);
+  return cv.toDataURL("image/jpeg",.85);
 }
 async function watermarkList(list,onStep){
   const out=[];
