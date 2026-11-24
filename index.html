@@ -37,7 +37,7 @@
 <link rel="dns-prefetch" href="https://accounts.google.com">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>try{document.documentElement.setAttribute("data-theme","dark");localStorage.setItem("cr_theme","dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
-<script>(function(){var V="20261124k",last=0;function check(){if(Date.now()-last<15000)return;last=Date.now();try{if(sessionStorage.getItem("cr_build")===V)return;fetch("/build.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v){sessionStorage.setItem("cr_build",j.v);if(j.v!==V)location.reload()}}).catch(function(){})}catch(e){}}check();addEventListener("focus",check);addEventListener("pageshow",check);document.addEventListener("visibilitychange",function(){if(!document.hidden)check()})})();</script>
+<script>(function(){var V="20261124l",last=0;function check(){if(Date.now()-last<15000)return;last=Date.now();try{if(sessionStorage.getItem("cr_build")===V)return;fetch("/build.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v){sessionStorage.setItem("cr_build",j.v);if(j.v!==V)location.reload()}}).catch(function(){})}catch(e){}}check();addEventListener("focus",check);addEventListener("pageshow",check);document.addEventListener("visibilitychange",function(){if(!document.hidden)check()})})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -547,7 +547,8 @@ document.querySelectorAll(".ig-t").forEach(e=>e.textContent="@"+IG);document.que
 $("host").textContent=location.host||"crossroadsshoppings.in";document.querySelectorAll(".host-t").forEach(e=>e.textContent=location.host||"crossroadsshoppings.in");$("yr").textContent=new Date().getFullYear();
 
 let P=[],cat="All",cart=[],cur=null,size=null,Q="",SO="n",ST={upi:"",name:"",qr:"",online:false,paymentMethod:"both"},ST_READY=false,ST_ERROR=false,ST_STALE=false,DISC={code:"",off:0},wasAdmin=false,loading=true;
-function loadSettings(){ST_ERROR=false;return fetch("/api/settings",{cache:"no-store"}).then(async r=>{if(!r.ok)throw 0;return r.json()}).then(x=>{ST=Object.assign(ST,x);ST_READY=true;ST_ERROR=false;ST_STALE=false;try{localStorage.setItem("cr_st",JSON.stringify(x))}catch(e){}}).catch(()=>{ST_READY=false;ST_ERROR=true;ST_STALE=false})}
+let LAST_ST=0;
+function loadSettings(){LAST_ST=Date.now();ST_ERROR=false;return fetch("/api/settings",{cache:"no-store"}).then(async r=>{if(!r.ok)throw 0;return r.json()}).then(x=>{ST=Object.assign(ST,x);ST_READY=true;ST_ERROR=false;ST_STALE=false;try{localStorage.setItem("cr_st",JSON.stringify(x))}catch(e){}}).catch(()=>{ST_READY=false;ST_ERROR=true;ST_STALE=false})}
 try{cart=JSON.parse(localStorage.getItem("cr_cart")||"[]")}catch(e){}
 const save=()=>{try{localStorage.setItem("cr_cart",JSON.stringify(cart));localStorage.setItem("cr_cart_t",String(Date.now()))}catch(e){}};
 function rememberCheckoutContact(){try{const f=$("fe"),n=$("fn");if(f&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.value.trim())){localStorage.setItem("cr_ck_email",f.value.trim().toLowerCase());if(n)localStorage.setItem("cr_ck_name",n.value.trim())}}catch(e){}}
@@ -692,6 +693,10 @@ function gisInit(cid){
 }
 function renderGoogleBtn(){const box=$("gBtn");if(!box||!GIS_READY)return false;try{box.innerHTML="";google.accounts.id.renderButton(box,{theme:"outline",size:"large",width:Math.min(340,box.clientWidth||340),text:"continue_with",shape:"rect",logo_alignment:"left"});return true}catch(e){return false}}
 function startGBtnRetry(){if(G_BTN_TIMER)return;let n=0;G_BTN_TIMER=setInterval(()=>{if(!$("gBtn")||renderGoogleBtn()||++n>20){clearInterval(G_BTN_TIMER);G_BTN_TIMER=null}},300)}
+async function refreshSettings(force){const now=Date.now();if(!force&&now-LAST_ST<5000)return;await loadSettings();if(view()==="checkout")renderCheckout()}
+addEventListener("focus",()=>refreshSettings());
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshSettings()});
+setInterval(()=>{if(view()==="checkout"&&!document.hidden)refreshSettings(true)},20000);
 function accGoogleLogin(){
  const cid=gClientId();
  if(!cid){accGoogleHelp("Google login is not set up yet. Please use the email code option below.");return}
@@ -903,7 +908,7 @@ async function hero3d(){const c=$("c3d");if(!c)return;
 let admP=null;
 async function adm(){const A=$("admin");
  if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
-   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=46";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
+   if(!admP)admP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="/admin.js?v=47";s.onload=ok;s.onerror=no;document.head.appendChild(s)}).catch(e=>{admP=null;throw e});
   try{await admP}
   catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
  window.CRAdmin.open(A)}
