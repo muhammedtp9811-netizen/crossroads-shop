@@ -37,7 +37,7 @@
 <link rel="dns-prefetch" href="https://accounts.google.com">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>try{document.documentElement.setAttribute("data-theme","dark");localStorage.setItem("cr_theme","dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
-<script>(function(){var V="20261124g",last=0;function check(){if(Date.now()-last<15000)return;last=Date.now();try{if(sessionStorage.getItem("cr_build")===V)return;fetch("/build.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v){sessionStorage.setItem("cr_build",j.v);if(j.v!==V)location.reload()}}).catch(function(){})}catch(e){}}check();addEventListener("focus",check);addEventListener("pageshow",check);document.addEventListener("visibilitychange",function(){if(!document.hidden)check()})})();</script>
+<script>(function(){var V="20261124h",last=0;function check(){if(Date.now()-last<15000)return;last=Date.now();try{if(sessionStorage.getItem("cr_build")===V)return;fetch("/build.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v){sessionStorage.setItem("cr_build",j.v);if(j.v!==V)location.reload()}}).catch(function(){})}catch(e){}}check();addEventListener("focus",check);addEventListener("pageshow",check);document.addEventListener("visibilitychange",function(){if(!document.hidden)check()})})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -547,6 +547,7 @@ document.querySelectorAll(".ig-t").forEach(e=>e.textContent="@"+IG);document.que
 $("host").textContent=location.host||"crossroadsshoppings.in";document.querySelectorAll(".host-t").forEach(e=>e.textContent=location.host||"crossroadsshoppings.in");$("yr").textContent=new Date().getFullYear();
 
 let P=[],cat="All",cart=[],cur=null,size=null,Q="",SO="n",ST={upi:"",name:"",qr:"",online:false,paymentMethod:"both"},ST_READY=false,ST_ERROR=false,DISC={code:"",off:0},wasAdmin=false,loading=true;
+function loadSettings(){ST_ERROR=false;return fetch("/api/settings",{cache:"no-store"}).then(async r=>{if(!r.ok)throw 0;return r.json()}).then(x=>{ST=Object.assign(ST,x);ST_READY=true;ST_ERROR=false}).catch(()=>{ST_READY=false;ST_ERROR=true})}
 try{cart=JSON.parse(localStorage.getItem("cr_cart")||"[]")}catch(e){}
 const save=()=>{try{localStorage.setItem("cr_cart",JSON.stringify(cart));localStorage.setItem("cr_cart_t",String(Date.now()))}catch(e){}};
 function rememberCheckoutContact(){try{const f=$("fe"),n=$("fn");if(f&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.value.trim())){localStorage.setItem("cr_ck_email",f.value.trim().toLowerCase());if(n)localStorage.setItem("cr_ck_name",n.value.trim())}}catch(e){}}
@@ -621,7 +622,7 @@ function renderProduct(id){
   <div><b>${S.length===1?"Size":"Select size"}</b><div class="sizes" id="sz">${S.map(s=>`<button type="button" data-s="${esc(s)}" aria-pressed="${s===size}">${esc(s)}</button>`).join("")}</div></div>
   <div><b>Quantity</b><div class="qty"><button type="button" data-q="-1" aria-label="Less">−</button><b id="qv">1</b><button type="button" data-q="1" aria-label="More">+</button></div></div>
   <div class="acts">${btns}</div>
-  <ul class="tr"><li>Free delivery across India</li><li>Delivered within 5 days</li><li>Questions? Message us on Instagram</li></ul>
+  <ul class="tr"><li>Free delivery across India</li><li>Estimated delivery: within 5 days</li><li>Questions? Message us on Instagram</li></ul>
   <details><summary>Delivery and payment</summary><p>Shipping is free. Payment options follow the store setting; UPI QR payments are payment pending until verified. We confirm your order the same day, dispatch within 24 hours, and deliver within 5 days. <a href="#delivery">See delivery details</a>.</p></details>
   <details><summary>Need help?</summary><p>Message us on <a href="https://ig.me/m/${IG}" target="_blank" rel="noopener">Instagram</a> or email <a href="mailto:${MAIL}">${MAIL}</a>.</p></details></div></div>
   ${videoHTML(cur)}
@@ -728,7 +729,7 @@ function render(){const c=cart.reduce((a,i)=>a+i.q,0);$("cnt").textContent=c;$("
  if(!cart.length){$("items").innerHTML=`<div class="cempty">Your bag is empty.<br>Add a product to get started.</div>`;$("co").innerHTML="";return}
  $("items").innerHTML=cart.map(i=>{const p=P.find(x=>x.id===i.id),m=p?imgs(p):[];
   return `<div class="it"><div class="t0">${m[0]?`<img src="${m[0]}" alt="">`:""}</div><div><b>${esc(i.n)}</b><small>Size: ${esc(i.s)}</small><div class="q"><button data-k="${i.k}" data-d="-1" aria-label="Decrease">−</button>${i.q}<button data-k="${i.k}" data-d="1" aria-label="Increase">+</button></div></div><div class="pr"><b>${money(i.p*i.q)}</b><button class="link" data-k="${i.k}" data-d="x">Remove</button></div></div>`}).join("");
- $("co").innerHTML=`<div class="total"><span>Total</span><span>${money(total())}</span></div><div class="fm"><button class="btn" id="goCk" type="button">Checkout</button><button class="btn alt" id="goCont" type="button">Continue shopping</button></div>`;
+ $("co").innerHTML=`<p class="muted" style="font-size:.82rem;margin:0 0 10px">Estimated delivery: within 5 days (free across India).</p><div class="total"><span>Total</span><span>${money(total())}</span></div><div class="fm"><button class="btn" id="goCk" type="button">Checkout</button><button class="btn alt" id="goCont" type="button">Continue shopping</button></div>`;
  $("goCk").onclick=()=>{closeCart();ev("buy","Checkout "+money(total()));location.hash="#checkout"};$("goCont").onclick=closeCart}
 $("items").onclick=e=>{const b=e.target.closest("[data-k]");if(!b)return;const i=cart.find(x=>x.k===b.dataset.k);if(!i)return;
  if(b.dataset.d==="x")cart=cart.filter(x=>x!==i);else{i.q+=+b.dataset.d;if(i.q<1)cart=cart.filter(x=>x!==i)}save();render()};
@@ -759,6 +760,7 @@ function ensureQR(){
 }
 function renderCheckout(){const el=$("checkout");
   if(!cart.length){el.innerHTML=`<div class="wrap narrow"><h2 style="font-size:clamp(1.8rem,4vw,2.4rem)">Your bag is empty</h2><p>Add something you like, then come back to check out.</p><p style="margin-top:16px"><a class="btn" href="./" data-nav="" style="max-width:240px">Continue shopping</a></p></div>`;return}
+  if(ST_ERROR){el.innerHTML=`<div class="wrap narrow"><p class="err" style="padding:40px 0 0">We could not load the payment options. Please try again.</p><button class="btn" id="retryPay" type="button">Retry</button></div>`;$("retryPay").onclick=async()=>{const b=$("retryPay");b.disabled=true;b.textContent="Retrying…";await loadSettings();if(view()==="checkout")renderCheckout()};return}
   if(!ST_READY){el.innerHTML=`<div class="wrap narrow"><p class="muted" style="padding:60px 0">Loading payment options…</p></div>`;return}
   const pm=ST.paymentMethod||"both";
   const cartPms=cart.map(i=>{const p=P.find(x=>x.id===i.id);return p&&p.pm?p.pm:"both"});
@@ -918,7 +920,7 @@ addEventListener("hashchange",route);addEventListener("popstate",route);
   try{const c=JSON.parse(localStorage.getItem("cr_pc")||"[]");if(Array.isArray(c)&&c.length){P=c;loading=false}}catch(e){}
   render();const first=route();
   if(view()==="product"){const pid=String(location.hash.slice(3));fetchRevs(pid).then(v=>{if(v)revStore(pid,v)}).catch(()=>{})}
-  const st=fetch("/api/settings",{cache:"no-store"}).then(async r=>{if(!r.ok)throw 0;return r.json()}).then(x=>{ST=x;ST_READY=true;ST_ERROR=false}).catch(()=>{ST_READY=true;ST_ERROR=true});
+  const st=loadSettings();
   const ch=await loadP();const was=loading;loading=false;
   if(view()!=="admin"&&(ch||was)){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout();if(view()==="track")renderTrack()}
   await st;gisInit(gClientId());if(!GIS_READY){const gi=setInterval(()=>{gisInit(gClientId());if(GIS_READY)clearInterval(gi)},400);setTimeout(()=>clearInterval(gi),8000)}
