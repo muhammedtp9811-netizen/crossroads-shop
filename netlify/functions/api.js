@@ -773,6 +773,22 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     }
     return J({ok:1});
   }
+  if(path==="dbg/meesho"&&req.method==="GET"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const out={};
+    const probe=async(label,url,headers)=>{
+      const t0=Date.now();
+      try{const r=await fetch(url,{headers,signal:AbortSignal.timeout(8000)});
+        const t=await r.text();
+        out[label]={s:r.status,ms:Date.now()-t0,len:t.length,ct:r.headers.get("content-type"),head:t.slice(0,120).replace(/\s+/g," ")};
+      }catch(e){out[label]={err:String((e&&e.message)||e).slice(0,140),ms:Date.now()-t0}}
+    };
+    await probe("index","https://www.meesho.com/sitemap.xml",{...UA});
+    await probe("shard7","https://www.meesho.com/sitemap/pdp/7.xml",{...UA,range:"bytes=0-600"});
+    await probe("page","https://www.meesho.com/p/1izwjr",{...UA});
+    await probe("img","https://images.meesho.com/images/products/92374407/2sayp.jpg?width=512",{...UA});
+    return J(out);
+  }
   if(path==="proxy/img"&&req.method==="GET"){
     let target="";try{target=new URL(req.url).searchParams.get("u")||""}catch(e){}
     let tu;try{tu=new URL(target)}catch(e){return J({error:"Bad image URL"},400)}
