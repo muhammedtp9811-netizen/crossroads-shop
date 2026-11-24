@@ -1,4 +1,4 @@
-﻿import {getStore} from "@netlify/blobs";
+import {getStore} from "@netlify/blobs";
 import crypto from "node:crypto";
 export const config={path:"/api/*"};
 const E=process.env, WA=E.WA_NUMBER||"918281036836";
@@ -281,6 +281,71 @@ function guessCatServer(n){
   if(/kurti|kurta|saree|sari|lehenga|dress|shirt|tshirt|t-shirt|jeans|trouser|top|blouse|suit|jacket|hoodie|skirt|dupatta|co-?ord|nightsuit|night ?suit/.test(t)) return "Fashion";
   return "";
 }
+
+let jvCred={t:0,url:"",key:""},jvCat={t:0,map:{}};
+async function jvecCreds(){
+  if(jvCred.url&&Date.now()-jvCred.t<6*3600*1000)return jvCred;
+  const home=await fetch("https://www.jvecomb2b.com/",{headers:UA});
+  if(!home.ok)throw new Error("The supplier site is not reachable right now.");
+  const html=await home.text(),m=/<script[^>]+src\s*=\s*["']([^"']*\/assets\/[^"']+\.js)["']/i.exec(html);
+  if(!m)throw new Error("The supplier page changed. Open the product and copy the link again.");
+  const js=await(await fetch(m[1].startsWith("http")?m[1]:"https://www.jvecomb2b.com"+m[1],{headers:UA})).text();
+  const url=(js.match(/https:\/\/[a-z0-9]+\.supabase\.co/)||[])[0],key=(js.match(/eyJ[A-Za-z0-9_\-.]{60,}/)||[])[0];
+  if(!url||!key)throw new Error("Could not reach the supplier catalogue.");
+  jvCred={t:Date.now(),url,key};return jvCred;
+}
+async function jvecFetch(creds,path){
+  const r=await fetch(creds.url+"/rest/v1/"+path,{headers:{apikey:creds.key,authorization:"Bearer "+creds.key}});
+  if(!r.ok)return null;return r.json().catch(()=>null);
+}
+async function jvecProduct(u){
+  const parts=u.pathname.split("/").filter(Boolean);let slug=parts[0]==="product"&&parts[1]?decodeURIComponent(parts[1]):"";
+  if(!slug&&parts[0]==="products"&&parts.length>1)slug=decodeURIComponent(parts[parts.length-1]);
+  if(!slug)slug=u.searchParams.get("slug")||u.searchParams.get("id")||"";
+  if(!slug)throw new Error("Open one product, not the whole list, and copy that product link (it contains /product/).");
+  const creds=await jvecCreds();
+  let row=null;
+  if(/^[0-9a-f-]{36}$/i.test(slug)){const rr=await jvecFetch(creds,"products?id=eq."+encodeURIComponent(slug)+"&select=*&limit=1");row=rr&&rr[0]}
+  if(!row){const rr=await jvecFetch(creds,"products?slug=eq."+encodeURIComponent(slug)+"&select=*&limit=1");row=rr&&rr[0]}
+  if(!row)return null;
+  if(Date.now()-jvCat.t>6*3600*1000){const rows=await jvecFetch(creds,"categories?select=id,name&limit=500");const map={};(rows||[]).forEach(c=>{if(c&&c.id)map[c.id]=c.name||""});jvCat={t:Date.now(),map}}
+  const cost=[+row.discounted_price,+row.original_price].filter(x=>x>0).sort((a,b)=>a-b)[0]||0;
+  const images=[row.image].concat(Array.isArray(row.images)?row.images:[]).filter(x=>x&&/^https?:\/\//.test(x)).filter((x,i,a)=>a.indexOf(x)===i).slice(0,5);
+  const name=String(row.name||"").replace(/\s+/g," ").trim();
+  if(!name)return null;
+  return{n:cut(name,120),sn:cut(name,60),c:jvCat.map[row.category_id]||"",d:plainText(row.description),images,cost,
+    sup:{s:"jvecomb2b",id:row.id||"",slug:row.slug||slug,cost,stock:+(row.on_hand_stock??row.stock??0)||0,u:u.href}};
+}
+
+/* ---------- Instagram publishing (official Graph API) ---------- */
+const IG_VER="v21.0",IG_BASE="https://crossroads-shopping.netlify.app";
+const IG_TAGS={Electronics:["#electronics","#tech","#gadgets","#techdeals"],Accessories:["#accessories","#style","#gifts"],Shirts:["#shirts","#fashion","#menswear"],Fashion:["#fashion","#style","#ootd"],Shoes:["#shoes","#sneakers","#footwear"]};
+function igCaption(p){
+  const name=cut(String(p.n||"").trim(),90),desc=plainText(p.d||"").replace(/\s+/g," ").slice(0,300),price=+p.p||0,old=+p.o||0;
+  const lines=[name,"",desc,"",price?("Price: ₹"+price.toLocaleString("en-IN")+(old>price?" (was ₹"+old.toLocaleString("en-IN")+")":"")):"","Free delivery across India in about 5 days. Cash on Delivery available.","Order here: "+IG_BASE+"/#product/"+p.id,""];
+  const tags=["#CrossroadsShopping","#OnlineShoppingIndia","#IndiaShopping","#ShopNow"];
+  const cat=String(p.c||"").toLowerCase();Object.keys(IG_TAGS).forEach(k=>{if(cat.includes(k.toLowerCase()))tags.push(...IG_TAGS[k])});
+  const nameTags=name.toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(w=>w.length>3).slice(0,3).map(w=>"#"+w);
+  const out=[...lines,...tags,...nameTags].join("\n");
+  return out.length>2100?out.slice(0,2100):out;
+}
+async function igCall(url,opt){
+  const r=await fetch(url,opt),d=await r.json().catch(()=>({}));
+  if(!r.ok||!d||d.error)throw new Error((d&&d.error&&d.error.message)||("Instagram error "+r.status));
+  return d;
+}
+async function igVerify(user,token){return igCall("https://graph.facebook.com/"+IG_VER+"/"+encodeURIComponent(user)+"?fields=username,name&access_token="+encodeURIComponent(token))}
+async function igCreate(user,token,params){
+  const body=new URLSearchParams(Object.assign({},params,{access_token:token}));
+  const d=await igCall("https://graph.facebook.com/"+IG_VER+"/"+encodeURIComponent(user)+"/media",{method:"POST",body});
+  if(!d.id)throw new Error("Instagram did not return a media ID.");return d.id;
+}
+async function igPublish(user,token,id){
+  const body=new URLSearchParams({creation_id:id,access_token:token});
+  const d=await igCall("https://graph.facebook.com/"+IG_VER+"/"+encodeURIComponent(user)+"/media_publish",{method:"POST",body});
+  if(!d.id)throw new Error("Instagram did not publish the media.");return d.id;
+}
+
 export default async(req,context)=>{
   const db=getStore({name:"shop",consistency:"strong"}), path=new URL(req.url).pathname.replace(/^\/api\/?/,"");
   const get=async(k,d)=>(await db.get(k,{type:"json"}))??d;
