@@ -6,16 +6,31 @@ functions = "netlify/functions"
 node_bundler = "esbuild"
 
 [[headers]]
+for = "/*"
+[headers.values]
+Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
 for = "/*.js"
 [headers.values]
-Cache-Control = "public, max-age=31536000, immutable"
+Cache-Control = "public, max-age=0, must-revalidate"
 
 [[headers]]
 for = "/*.css"
 [headers.values]
-Cache-Control = "public, max-age=31536000, immutable"
+Cache-Control = "public, max-age=0, must-revalidate"
 
 [[headers]]
-for = "/*"
+for = "/"
 [headers.values]
-Cache-Control = "public, max-age=0, must-revalidate"
+Cache-Control = "no-store"
+
+[[headers]]
+for = "/index.html"
+[headers.values]
+Cache-Control = "no-store"
+
+[[headers]]
+for = "/build.json"
+[headers.values]
+Cache-Control = "no-store"

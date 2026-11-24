@@ -37,6 +37,7 @@
 <link rel="dns-prefetch" href="https://accounts.google.com">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>try{document.documentElement.setAttribute("data-theme","dark");localStorage.setItem("cr_theme","dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
+<script>(function(){var V="20261124c";try{if(sessionStorage.getItem("cr_build")===V)return;fetch("/build.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==V){sessionStorage.setItem("cr_build",V);location.reload()}}).catch(function(){})}catch(e){}})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -563,7 +564,12 @@ function grid(){if(loading&&!P.length){$("grid").innerHTML=Array.from({length:8}
  $("grid").innerHTML=L.length?L.map(card).join(""):`<div class="empty">${P.some(p=>!p.hid)?"No products match your search.":"New arrivals are on the way. Message us on Instagram to ask what is coming."}</div>`;reveal()}
 $("cats").onclick=e=>{const b=e.target.closest("button[data-c]");if(!b)return;cat=b.dataset.c;log("Browsed category: "+cat);if(view()!=="shop"){history.pushState(null,"",location.pathname);route()}else{cats();grid()}};
 $("q").oninput=e=>{Q=e.target.value.trim().toLowerCase();grid()};$("so").onchange=e=>{SO=e.target.value;grid()};
-$("grid").onclick=e=>{const b=e.target.closest(".card");if(!b)return;location.hash="#p/"+b.dataset.id};
+let cardTap={id:null,x:0,y:0,t:0};
+function cardFrom(e){const t=e.target;return t&&t.closest?t.closest(".card"):null}
+function openCard(b){if(!b||b.classList.contains("sk"))return;const id=b.dataset.id;if(id)location.hash="#p/"+id}
+$("grid").addEventListener("pointerdown",e=>{const b=cardFrom(e);if(b)cardTap={id:b.dataset.id,x:e.clientX,y:e.clientY,t:Date.now()}},{passive:true});
+$("grid").addEventListener("pointerup",e=>{const b=cardFrom(e);if(b&&cardTap.id===b.dataset.id&&Math.abs(e.clientX-cardTap.x)<14&&Math.abs(e.clientY-cardTap.y)<14&&Date.now()-cardTap.t<900)openCard(b)},{passive:true});
+$("grid").onclick=e=>{openCard(cardFrom(e))};
 function home(e){e.preventDefault();cat="All";history.pushState(null,"",location.pathname);route()}
 ["logo","goShop","fHome"].forEach(i=>$(i).onclick=home);
 

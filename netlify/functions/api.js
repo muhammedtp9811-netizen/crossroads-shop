@@ -224,6 +224,51 @@ function parseMeeshoHtml(html,u,id){
   if(!title)return null;
   return{n:cut(title,120),sn:cut(title,60),c:guessCat(title),d:plainText(meta["og:description"]||meta.description||""),images:cleanImgList(ldImages(meta["og:image"]||meta["twitter:image"])),cost:price,sup:{s:"meesho",id:id||"",u:u.href}};
 }
+function meeshoXmlProduct(xml,u,id){
+  const at=xml.indexOf("/p/"+id+"<");if(at<0)return null;
+  const st=xml.lastIndexOf("<url>",at),en=xml.indexOf("</url>",at);
+  const block=xml.slice(st<0?Math.max(0,at-2000):st,en<0?Math.min(xml.length,at+4000):en);
+  const loc=(/<loc>([^<]+)<\/loc>/i.exec(block)||[])[1]||"";
+  const imgs=[];let m;const re=/<image:loc>([^<]+)<\/image:loc>/gi;
+  while((m=re.exec(block))){
+    let x=m[1].trim();if(x.startsWith("//"))x="https:"+x;
+    if(!/^https?:\/\//.test(x))continue;
+    x=x.replace(/\.avif(\?|$)/i,".jpg$1");
+    if(/[?&]width=\d+/i.test(x))x=x.replace(/([?&])width=\d+/i,"$1width=1200");
+    else x+=(x.includes("?")?"&":"?")+"width=1200";
+    if(imgs.indexOf(x)<0)imgs.push(x);
+  }
+  const sm=/meesho\.com\/([^/]+)\/p\//i.exec(loc);
+  let name=sm?decodeURIComponent(sm[1]).replace(/[-_]+/g," ").replace(/\s+/g," ").trim():"";
+  if(!name||name.length<3)return null;
+  name=name.replace(/\b[a-z]/g,c=>c.toUpperCase());
+  return{n:cut(name,120),sn:cut(name,60),c:guessCatServer(name),d:"",images:imgs.slice(0,6),cost:0,sup:{s:"meesho",id,u:u&&u.href||String(u||"")}};
+}
+async function fetchMeeshoShard(sh,id,u){
+  try{
+    const r=await fetch("https://r.jina.ai/https://www.meesho.com/sitemap/pdp/"+sh+".xml",{headers:{"x-return-format":"html"},signal:AbortSignal.timeout(15000)});
+    if(!r.ok)return null;
+    return meeshoXmlProduct(await r.text(),u,id);
+  }catch(e){return null}
+}
+async function liveMeeshoShards(){
+  try{
+    const r=await fetch("https://r.jina.ai/https://www.meesho.com/sitemap.xml",{headers:{"x-return-format":"html"},signal:AbortSignal.timeout(10000)});
+    if(!r.ok)return [];
+    const xml=await r.text();
+    return [...xml.matchAll(/<loc>\s*https:\/\/www\.meesho\.com\/sitemap\/pdp\/(\d+)\.xml\s*<\/loc>/gi)].map(m=>+m[1]).filter(n=>isFinite(n)).sort((a,b)=>a-b);
+  }catch(e){return []}
+}
+async function tryMeeshoHtml(rawUrl,u,id){
+  try{
+    const r=await fetch("https://r.jina.ai/"+rawUrl,{headers:{"x-return-format":"html"},signal:AbortSignal.timeout(9000)});
+    if(!r.ok)return null;
+    const html=await r.text();
+    if(/Access Denied/i.test(html))return null;
+    const p=parseMeeshoHtml(html,u,id);
+    return p&&p.images&&p.images.length?p:null;
+  }catch(e){return null}
+}
 async function meeshoProduct(u){
   const rawUrl = (u && u.href) ? u.href : String(u||"");
   let id = probeId((u && u.pathname) || "");
@@ -243,35 +288,28 @@ async function meeshoProduct(u){
     if(parseInt(seg.slice(c+1), 36) <= target){ guess = +seg.slice(0,c); lo = mid+1; } else hi = mid-1;
   }
   if(guess < 0) throw new Error("Product not found in Meesho catalogue.");
-  const shards = [guess].filter(sh => sh >= 0);
-  for(const sh of shards){
-    try {
-      const r = await fetch("https://r.jina.ai/https://www.meesho.com/sitemap/pdp/"+sh+".xml", {headers:{"x-return-format":"html"}, signal:AbortSignal.timeout(15000)});
-      if(!r.ok) continue;
-      const xml = await r.text();
-      const at = xml.indexOf("/p/"+id+"<");
-      if(at < 0) continue;
-      const st = xml.lastIndexOf("<url>", at), en = xml.indexOf("</url>", at);
-      const block = xml.slice(st < 0 ? Math.max(0, at-2000) : st, en < 0 ? Math.min(xml.length, at+4000) : en);
-      const loc = (/<loc>([^<]+)<\/loc>/i.exec(block) || [])[1] || "";
-      const imgs = []; let m; const re = /<image:loc>([^<]+)<\/image:loc>/gi;
-      while((m = re.exec(block))){
-        let x = m[1].trim(); if(x.startsWith("//")) x = "https:"+x;
-        if(!/^https?:\/\//.test(x)) continue;
-        x = x.replace(/\.avif(\?|$)/i, ".jpg$1");
-        if(/[?&]width=\d+/i.test(x)) x = x.replace(/([?&])width=\d+/i, "$1width=1200");
-        else x += (x.includes("?") ? "&" : "?") + "width=1200";
-        if(imgs.indexOf(x) < 0) imgs.push(x);
-      }
-      const sm = /meesho\.com\/([^/]+)\/p\//i.exec(loc);
-      let name = sm ? decodeURIComponent(sm[1]).replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim() : "";
-      if(!name || name.length < 3) continue;
-      name = name.replace(/\b[a-z]/g, c => c.toUpperCase());
-      const cat = guessCatServer(name);
-      return {n: cut(name,120), sn: cut(name,60), c: cat, d: "", images: imgs.slice(0,6), cost: 0, sup: {s: "meesho", id, u: rawUrl}};
-    } catch(e) {}
+  if(guess >= 0){
+    const p = await fetchMeeshoShard(guess,id,u);
+    if(p) return p;
   }
-  throw new Error("Product not found in Meesho catalogue. It may be too new.");
+  // New products may sit in a shard added after this function was built.
+  const live = await liveMeeshoShards();
+  const known = new Set(arr.map(s => +String(s).split(":")[0]));
+  const extra = live.filter(sh => !known.has(sh));
+  const near = [];
+  for(let d=1; d<=3; d++){
+    if(guess-d >= 0) near.push(guess-d);
+    if(guess+d < arr.length) near.push(+String(arr[guess+d]).split(":")[0]);
+  }
+  const tail = live.slice(-8);
+  const candidates = [...new Set([...near, ...extra, ...tail])].filter(sh => isFinite(sh) && sh >= 0).slice(0,12);
+  for(const sh of candidates){
+    const p = await fetchMeeshoShard(sh,id,u);
+    if(p) return p;
+  }
+  const direct = await tryMeeshoHtml(rawUrl,u,id);
+  if(direct) return direct;
+  throw new Error("This new Meesho product is not in the public catalogue yet. Paste the full Share text again, or add the product manually.");
 }
 function guessCatServer(n){
   const t = String(n||"").toLowerCase();
