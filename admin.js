@@ -124,12 +124,16 @@ async function meeshoLookup(raw,note){
  console.log("Meesho extracted ID:", id);
  if(!id){if(note)note("Could not find a product ID in that link. Paste the full Meesho product link (it should contain /p/).");return null}
  if(note)note("Looking up product "+id+"...");
- const list=await meeshoIndex();if(!list||!list.length)return null;
- const target=parseInt(id,36);if(!isFinite(target))return null;
+ const list=await meeshoIndex();console.log("Meesho index loaded:", list&&list.length);
+ if(!list||!list.length){console.log("Meesho: index empty");return null}
+ const target=parseInt(id,36);console.log("Meesho target:", target, "id:", id);
+ if(!isFinite(target))return null;
  let lo=0,hi=list.length-1,j=-1;
  while(lo<=hi){const mid=(lo+hi)>>1;if(list[mid].v<=target){j=mid;lo=mid+1}else hi=mid-1}
- if(j<0)return null;
+ console.log("Meesho binary search result j:", j, "shard:", j>=0?list[j].s:"none");
+ if(j<0){console.log("Meesho: no shard found");return null}
  const cands=[list[j].s,list[j+1]&&list[j+1].s,list[j+2]&&list[j+2].s].filter(x=>typeof x==="number");
+ console.log("Meesho candidates:", cands);
  if(note)note("Reading the Meesho catalogue…");
  // fetch all candidate shards in parallel for speed
  const results=await Promise.all(cands.map(async(s)=>{
