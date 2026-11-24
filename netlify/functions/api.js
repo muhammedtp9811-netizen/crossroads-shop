@@ -321,9 +321,9 @@ async function meeshoProduct(u){
   const fromSlug = meeshoNameFromUrl(u,id);
   const knownImgs = KNOWN_MEESHO_IMAGES[id];
   if(knownImgs && knownImgs.length){
-    const nm = id==="i60h0j"
-      ? cut("Atix Fancy Analog Round Black Dial ALPHABET R Trendy Black Silicone Strap Classic Wrist Watch for Men and Boys | Pack of 1 | ALPHA-R-AVO-BLK-CDBLK",120)
-      : (fromSlug && fromSlug.n) || "";
+    const nm = (fromSlug && fromSlug.n) || (id==="i60h0j"
+      ? cut("Atix Fancy Analog Round Black Dial ALPHABET R Trendy Black Silicone Strap Classic Wrist Watch for Men and Boys | Pack of 1",120)
+      : "");
     if(nm) return{n:nm,sn:cut(nm,60),c:guessCatServer(nm)||"Watches",d:"",images:knownImgs.slice(0,6),cost:0,sup:{s:"meesho",id,u:rawUrl}};
   }
   // IDs above every sitemap range are brand-new and cannot be in the public catalogue.
