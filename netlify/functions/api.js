@@ -228,7 +228,8 @@ async function meeshoProduct(u){
   const rawUrl = (u && u.href) ? u.href : String(u||"");
   let id = probeId((u && u.pathname) || "");
   if(!id) for(const k of ["$canonical_url","deep_link_value","deeplink","url","link","redirect","target_url","$desktop_url","af_dp","pid","product_id"]){const pid=probeId((u && u.searchParams ? u.searchParams.get(k) : "")||"");if(pid){id=pid;break}}
-  if(!id && /(^|\.)(meesho\.link|app\.link|meesho\.app\.link)$/i.test((u&&u.hostname)||"")){
+  if(!id && u && u.searchParams){for(const [k,v] of u.searchParams.entries()){const pid=probeId(v)||"";if(pid){id=pid;break}}}
+  if(!id && /meesho/i.test(rawUrl)){
     try{const r=await fetch(rawUrl,{headers:UA,redirect:"follow",signal:AbortSignal.timeout(8000)});id=probeId(r.url)||"";if(!id)id=probeId(await r.text())||""}catch(e){}
   }
   if(!id) throw new Error("Could not find a product ID in that link. Paste the full Meesho product link (it should contain /p/).");
