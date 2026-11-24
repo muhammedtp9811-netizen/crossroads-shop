@@ -244,12 +244,21 @@ function meeshoXmlProduct(xml,u,id){
   name=name.replace(/\b[a-z]/g,c=>c.toUpperCase());
   return{n:cut(name,120),sn:cut(name,60),c:guessCatServer(name),d:"",images:imgs.slice(0,6),cost:0,sup:{s:"meesho",id,u:u&&u.href||String(u||"")}};
 }
-async function fetchMeeshoShard(sh,id,u){
-  try{
-    const r=await fetch("https://r.jina.ai/https://www.meesho.com/sitemap/pdp/"+sh+".xml",{headers:{"x-return-format":"html"},signal:AbortSignal.timeout(15000)});
-    if(!r.ok)return null;
-    return meeshoXmlProduct(await r.text(),u,id);
-  }catch(e){return null}
+async function fetchMeeshoShard(sh,id,u,tries){
+  tries=tries||1;
+  for(let a=0;a<tries;a++){
+    try{
+      const r=await fetch("https://r.jina.ai/https://www.meesho.com/sitemap/pdp/"+sh+".xml",{headers:{"x-return-format":"html"},signal:AbortSignal.timeout(15000)});
+      if(!r.ok)throw new Error("http "+r.status);
+      const xml=await r.text();
+      if(!xml||/Access Denied/i.test(xml))throw new Error("blocked");
+      return{ok:true,p:meeshoXmlProduct(xml,u,id)};
+    }catch(e){
+      if(a===tries-1)return{ok:false,p:null};
+      await new Promise(ok=>setTimeout(ok,400*(a+1)));
+    }
+  }
+  return{ok:false,p:null};
 }
 async function liveMeeshoShards(){
   try{
@@ -301,9 +310,11 @@ async function meeshoProduct(u){
     if(parseInt(seg.slice(c+1), 36) <= target){ guess = +seg.slice(0,c); lo = mid+1; } else hi = mid-1;
   }
   if(guess < 0) throw new Error("Product not found in Meesho catalogue.");
+  let fetchedAny = false;
   if(guess >= 0){
-    const p = await fetchMeeshoShard(guess,id,u);
-    if(p) return p;
+    const res = await fetchMeeshoShard(guess,id,u,3);
+    fetchedAny = !!(res && res.ok);
+    if(res && res.p) return res.p;
   }
   // New products may sit in a shard added after this function was built.
   const live = await liveMeeshoShards();
@@ -315,17 +326,18 @@ async function meeshoProduct(u){
     if(guess+d < arr.length) near.push(+String(arr[guess+d]).split(":")[0]);
   }
   const tail = live.slice(-8);
-  const candidates = [...new Set([...tail, ...extra, ...near])].filter(sh => isFinite(sh) && sh >= 0).slice(0,12);
+  const candidates = [...new Set([...tail, ...extra, ...near])].filter(sh => isFinite(sh) && sh >= 0 && sh !== guess).slice(0,12);
   for(let i=0; i<candidates.length; i+=6){
-    const batch = candidates.slice(i,i+6).map(sh => fetchMeeshoShard(sh,id,u));
-    const p = await (Promise.any ? Promise.any(batch) : Promise.all(batch).then(a => a.find(Boolean))).catch(() => null);
-    if(p) return p;
+    const ress = await Promise.all(candidates.slice(i,i+6).map(sh => fetchMeeshoShard(sh,id,u,2)));
+    const found = ress.find(x => x && x.p);
+    if(found) return found.p;
+    if(ress.some(x => x && x.ok)) fetchedAny = true;
   }
   const direct = await tryMeeshoHtml(rawUrl,u,id);
   if(direct) return direct;
   const fromSlug = meeshoNameFromUrl(u,id);
-  if(fromSlug) return{n:fromSlug.n,sn:fromSlug.sn,c:guessCatServer(fromSlug.n),d:"",images:[],cost:0,partial:true,sup:{s:"meesho",id,u:rawUrl}};
-  throw new Error("Could not read this Meesho link. Paste the full Share text, or add the product manually.");
+  if(fetchedAny && fromSlug) return{n:fromSlug.n,sn:fromSlug.sn,c:guessCatServer(fromSlug.n),d:"",images:[],cost:0,partial:true,sup:{s:"meesho",id,u:rawUrl}};
+  throw new Error("Meesho catalogue is busy right now. Try again in a moment.");
 }
 function guessCatServer(n){
   const t = String(n||"").toLowerCase();
