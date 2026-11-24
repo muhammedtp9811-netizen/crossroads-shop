@@ -80,6 +80,7 @@ const need=()=>S.orders.filter(o=>!o.cancelled&&((o.manual&&!o.paid)||(o.paid&&!
 function badge(){const e=$("nb-orders");if(e){const n=need();e.textContent=n?String(n):""}}
 function beep(){try{if(localStorage.getItem("cr_snd")==="0")return;const a=new(window.AudioContext||window.webkitAudioContext)(),t=a.currentTime;[880,1175].forEach((f,i)=>{const o=a.createOscillator(),g=a.createGain();o.frequency.value=f;o.connect(g);g.connect(a.destination);g.gain.setValueAtTime(.18,t+i*.16);g.gain.exponentialRampToValueAtTime(.001,t+i*.16+.3);o.start(t+i*.16);o.stop(t+i*.16+.32)})}catch(e){}}
 function urlFromText(t){const m=String(t||"").match(/https?:\/\/[^\s"'<>]+/i);return m?m[0]:""}
+function xhrFetch(url,opts){opts=opts||{};return new Promise((ok,no)=>{const x=new XMLHttpRequest();x.open(opts.method||"GET",url,true);if(opts.headers){Object.keys(opts.headers).forEach(k=>x.setRequestHeader(k,opts.headers[k]))}x.onload=()=>{const r={ok:x.status>=200&&x.status<300,status:x.status,text:()=>Promise.resolve(x.responseText),json:()=>{try{return Promise.resolve(JSON.parse(x.responseText))}catch(e){return Promise.reject(e)}},headers:new Map([["content-type",x.getResponseHeader("content-type")||""]])};ok(r)};x.onerror=()=>no(new Error("Network error"));x.ontimeout=()=>no(new Error("Timeout"));if(opts.signal){opts.signal.addEventListener("abort",()=>x.abort())}if(opts.timeout){x.timeout=opts.timeout}if(opts.body)x.send(opts.body);else x.send()})}
 function guessCat(n){const t=String(n||"").toLowerCase();
  if(/watch|smart ?watch|chronograph/.test(t))return"Watches";
  if(/shoe|sneaker|sandal|slipper|heel|footwear|loafer|boot|flip ?flop/.test(t))return"Shoes";
@@ -90,7 +91,7 @@ function guessCat(n){const t=String(n||"").toLowerCase();
 let _mIdx=null,_mIdxP=null;
 function meeshoIndex(){
  if(_mIdx)return _mIdx;
- if(!_mIdxP)_mIdxP=fetch("/meesho-index.json",{cache:"force-cache"}).then(r=>r.json()).then(j=>{_mIdx=Object.keys(j).map(k=>({s:+k,v:parseInt(j[k],36)})).sort((a,b)=>a.v-b.v);return _mIdx}).catch(()=>{_mIdxP=null;return null});
+ if(!_mIdxP)_mIdxP=xhrFetch("/meesho-index.json").then(r=>r.json()).then(j=>{_mIdx=Object.keys(j).map(k=>({s:+k,v:parseInt(j[k],36)})).sort((a,b)=>a.v-b.v);return _mIdx}).catch(()=>{_mIdxP=null;return null});
  return _mIdxP}
 async function meeshoResolve(raw){
   let u=String(raw||"").trim();
@@ -100,14 +101,14 @@ async function meeshoResolve(raw){
   // try client-side redirect resolution (CORS)
   for(let i=0;i<3;i++){
     if(/\/p\//i.test(u))break;
-    try{const r=await fetch(u,{method:"GET",redirect:"follow",mode:"cors"});if(r.url&&r.url!==u){u=r.url;break}}catch(e){break}
+    try{const r=await xhrFetch(u,{method:"GET"});if(r.url&&r.url!==u){u=r.url;break}}catch(e){break}
   }
   if(/\/p\//i.test(u))return u;
   // try server-side redirect resolution (no CORS)
-  try{const r=await fetch("/api/resolve",{method:"POST",headers:{"content-type":"application/json","x-admin":sessionStorage.getItem("cr_pw")||""},body:JSON.stringify({url:u})});const d=await r.json();if(d.ok&&d.url)u=d.url}catch(e){}
+  try{const r=await xhrFetch("/api/resolve",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({url:u})});const d=await r.json();if(d.ok&&d.url)u=d.url}catch(e){}
   if(/\/p\//i.test(u))return u;
   // if still no /p/, try reading the page HTML for a product link
-  try{const r=await fetch(u,{method:"GET",redirect:"follow",mode:"cors"});const t=await r.text();const m=t.match(/https?:\/\/www\.meesho\.com\/[^"\s<>]*\/p\/([A-Za-z0-9_-]{4,})/i);if(m)u=m[0]}catch(e){}
+  try{const r=await xhrFetch(u,{method:"GET"});const t=await r.text();const m=t.match(/https?:\/\/www\.meesho\.com\/[^"\s<>]*\/p\/([A-Za-z0-9_-]{4,})/i);if(m)u=m[0]}catch(e){}
   return u}
 function meeshoId(t){const s=String(t||"");
   let m=/\/p\/([A-Za-z0-9_-]{4,})/.exec(s);if(m)return m[1];
@@ -143,7 +144,7 @@ async function meeshoLookup(raw,note){
   try{
    const controller=new AbortController();
    const timer=setTimeout(()=>controller.abort(),12000);
-   const r=await fetch("/api/proxy/jina?u="+encodeURIComponent("https://www.meesho.com/sitemap/pdp/"+sh+".xml"),{headers:{"x-admin":sessionStorage.getItem("cr_pw")||""},signal:controller.signal});
+   const r=await xhrFetch("/api/proxy/jina?u="+encodeURIComponent("https://www.meesho.com/sitemap/pdp/"+sh+".xml"),{signal:controller.signal});
    clearTimeout(timer);
    if(!r.ok){results.push(null);continue}
    const t=await r.text();

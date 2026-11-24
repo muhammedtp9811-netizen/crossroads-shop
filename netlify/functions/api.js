@@ -743,6 +743,14 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       return new Response(t,{headers:{"content-type":"text/plain","cache-control":"no-store","access-control-allow-origin":"*"}});
     }catch(e){return J({error:String((e&&e.message)||e)},502)}
   }
+  // test: can the server fetch jina?
+  if(path==="test/jina"&&req.method==="GET"){
+    if(!admin())return J({error:"Wrong password"},401);
+    try{const r=await fetch("https://r.jina.ai/https://www.meesho.com/sitemap/pdp/7.xml",{headers:{"x-return-format":"html"},signal:AbortSignal.timeout(20000)});
+      const t=await r.text();
+      return J({ok:1,len:t.length,hasTarget:t.includes("/p/1nnri7<")});
+    }catch(e){return J({error:String((e&&e.message)||e)},502)}
+  }
   if(path==="proxy/img"&&req.method==="GET"){
     let target="";try{target=new URL(req.url).searchParams.get("u")||""}catch(e){}
     let tu;try{tu=new URL(target)}catch(e){return J({error:"Bad image URL"},400)}
