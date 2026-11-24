@@ -302,9 +302,10 @@ async function meeshoProduct(u){
     if(guess+d < arr.length) near.push(+String(arr[guess+d]).split(":")[0]);
   }
   const tail = live.slice(-8);
-  const candidates = [...new Set([...near, ...extra, ...tail])].filter(sh => isFinite(sh) && sh >= 0).slice(0,12);
-  for(const sh of candidates){
-    const p = await fetchMeeshoShard(sh,id,u);
+  const candidates = [...new Set([...tail, ...extra, ...near])].filter(sh => isFinite(sh) && sh >= 0).slice(0,12);
+  for(let i=0; i<candidates.length; i+=6){
+    const batch = candidates.slice(i,i+6).map(sh => fetchMeeshoShard(sh,id,u));
+    const p = await (Promise.any ? Promise.any(batch) : Promise.all(batch).then(a => a.find(Boolean))).catch(() => null);
     if(p) return p;
   }
   const direct = await tryMeeshoHtml(rawUrl,u,id);
