@@ -119,11 +119,45 @@ function meeshoId(t){const s=String(t||"");
   const ids=s.match(/\b([a-z0-9]{5,8})\b/gi);
   if(ids){for(const id of ids){if(/^[a-z0-9]+$/i.test(id)&&!/^(utm|http|https|www|meesho|com|share|app|link|source|campaign|medium|product)$/i.test(id))return id}}
   return""}
+function hexA(h,a){let s=String(h||"#111318").replace("#","");if(s.length===3)s=s.split("").map(c=>c+c).join("");if(!/^[0-9a-f]{6}$/i.test(s))s="111318";const n=parseInt(s,16);return "rgba("+((n>>16)&255)+","+((n>>8)&255)+","+(n&255)+","+a+")"}
+function rr(c,x,y,w,h,r){r=Math.min(r,w/2,h/2);c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);c.lineTo(x+w,y+h-r);c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);c.lineTo(x+r,y+h);c.quadraticCurveTo(x,y+h,x,y+h-r);c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);c.closePath()}
+function canvasSrc(src){const s=String(src||"");if(/^(data:|blob:|\/)/i.test(s))return s;if(/^https?:\/\//i.test(s))return "/api/proxy/img?u="+encodeURIComponent(s);return s}
+function loadCanvasImage(src){return new Promise((ok,no)=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>i.naturalWidth?ok(i):no(new Error("Empty image"));i.onerror=()=>no(new Error("Image blocked"));i.src=canvasSrc(src)})}
+async function brandWatermark(src){
+  const img=await loadCanvasImage(src),br=getBrand();
+  const k=Math.min(1,1200/Math.max(img.naturalWidth,img.naturalHeight)),w=Math.max(1,Math.round(img.naturalWidth*k)),h=Math.max(1,Math.round(img.naturalHeight*k));
+  const c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d");x.imageSmoothingQuality="high";x.drawImage(img,0,0,w,h);
+  const bh=Math.max(46,Math.round(h*.085)),by=h-bh,s=Math.round(bh*.62),sx=Math.max(12,Math.round(w*.012)),sy=by+Math.round((bh-s)/2);
+  x.fillStyle=hexA(br.bg,.87);x.fillRect(0,by,w,bh);
+  x.fillStyle=br.ac;rr(x,sx,sy,s,s,br.shape==="circle"?s/2:br.shape==="square"?4:Math.round(s*.25));x.fill();
+  x.fillStyle=br.fg;x.font="700 "+Math.round(s*.44)+"px Georgia,serif";x.textAlign="center";x.textBaseline="middle";x.fillText(short(br.mono,3),sx+s/2,sy+s/2+1);
+  const tx=sx+s+Math.max(10,Math.round(s*.45));
+  x.textAlign="left";x.fillStyle="#fff";x.font="700 "+Math.max(15,Math.round(bh*.29))+"px Arial,Helvetica,sans-serif";x.fillText(short(br.name,26),tx,by+bh*.40);
+  x.fillStyle=br.ac;x.font=Math.max(11,Math.round(bh*.19))+"px Arial,Helvetica,sans-serif";x.fillText(short(br.tag,48),tx,by+bh*.73);
+  return c.toDataURL("image/jpeg",.85);
+}
 async function watermarkList(list,onStep){
   const out=[];
   for(let i=0;i<list.length;i++){if(onStep)onStep(i+1,list.length);try{out.push(await brandWatermark(list[i]))}catch(e){out.push(list[i])}}
   return out;
 }
+function wrapLines(c,text,maxW,maxLines){const words=String(text||"").split(/\s+/).filter(Boolean),lines=[];let line="";for(const w of words){const t=line?line+" "+w:w;if(c.measureText(t).width>maxW&&line){lines.push(line);line=w;if(lines.length>=maxLines)break}else line=t}if(line&&lines.length<maxLines)lines.push(line);if(lines.length>=maxLines){let l=lines[maxLines-1]||"";while(l.length>1&&c.measureText(l+"…").width>maxW)l=l.slice(0,-1);lines[maxLines-1]=l+"…"}return lines}
+async function brandCard(title,variant){
+  const br=getBrand(),c=document.createElement("canvas");c.width=c.height=1080;const x=c.getContext("2d");
+  x.fillStyle=br.bg;x.fillRect(0,0,1080,1080);
+  const g=x.createRadialGradient(760+variant*90,200,30,540,540,920);g.addColorStop(0,hexA(br.ac,.42));g.addColorStop(1,hexA(br.ac,0));x.fillStyle=g;x.fillRect(0,0,1080,1080);
+  x.globalAlpha=.14;x.strokeStyle=br.ac;x.lineWidth=16;for(let i=0;i<3;i++){x.beginPath();x.arc(540+variant*70,540,230+i*115,-.8+variant*.35,1.6+variant*.35);x.stroke()}x.globalAlpha=1;
+  x.globalAlpha=.07;x.fillStyle=br.fg;x.font="700 420px Georgia,serif";x.textAlign="center";x.textBaseline="middle";x.fillText(short(br.mono,3),540,545);x.globalAlpha=1;
+  x.fillStyle=hexA(br.bg,.92);rr(x,66,66,948,122,28);x.fill();
+  x.fillStyle=br.ac;rr(x,90,86,82,82,22);x.fill();x.fillStyle=br.fg;x.font="700 39px Georgia,serif";x.fillText(short(br.mono,3),131,127);
+  x.textAlign="left";x.fillStyle="#fff";x.font="700 39px Georgia,serif";x.fillText(short(br.name,27),194,132);
+  const lines=wrapLines(x,String(title||"Your product").trim(),850,5);x.textAlign="center";x.fillStyle="#fff";x.font="700 60px Georgia,serif";const y0=400-(lines.length-1)*38;lines.forEach((l,i)=>x.fillText(l,540,y0+i*76));
+  x.fillStyle=br.ac;x.fillRect(405,690,270,5);x.fillStyle=hexA("#ffffff",.84);x.font="32px Arial,Helvetica,sans-serif";x.fillText(short(br.tag,60),540,756);
+  x.fillStyle=hexA("#ffffff",.52);x.font="23px Arial,Helvetica,sans-serif";x.fillText("Curated by "+short(br.name,30),540,812);
+  x.fillStyle=hexA(br.ac,.95);x.font="700 23px Arial,Helvetica,sans-serif";x.fillText("PHOTO COMING SOON",540,930);
+  return c.toDataURL("image/jpeg",.85);
+}
+async function brandCards(prod,onStep){const title=(prod&&(prod.sn||prod.n))||"Your product",out=[];for(let i=0;i<3;i++){if(onStep)onStep(i+1,3);out.push(await brandCard(title,i))}return out}
 async function meeshoLookup(raw,note){
  if(note)note("Resolving link...");
  const resolved=await meeshoResolve(raw);
@@ -538,7 +572,27 @@ async function onSubmit(e){e.preventDefault();
  if(e.target.id==="nf"){const ph=$("nw").value.replace(/\D/g,""),k=$("nk").value.trim(),body={waPhone:ph};if(k)body.waKey=k;const r=await api("settings",body);if(r.ok){say("WhatsApp alerts saved");render()}else{$("nfe").className="err";$("nfe").textContent=r.d.error||"Could not save."}return}
  if(e.target.id==="tf"){const tok=$("tt").value.trim(),el=$("tfe");if(el){el.className="";el.textContent="Connecting…"}const r=await api("notify/telegram",tok?{token:tok}:{});if(r.ok){say("Telegram connected"+(r.d.bot?" to @"+r.d.bot:""));render()}else if(el){el.className="err";el.textContent=r.d.error||"Could not connect Telegram."}return}
  if(e.target.id==="ef"){const k=$("ek").value.trim(),to=$("ee").value.trim(),from=$("efrom").value.trim(),el=$("efe");if(el){el.className="";el.textContent="Sending…"}const body={to};if(k)body.key=k;if(from)body.from=from;const r=await api("notify/email",body);if(r.ok){say("Test email sent to "+r.d.to);render()}else if(el){el.className="err";el.textContent=r.d.error||"Could not send the email."}return}
- if(e.target.id==="impf"){const el=$("impe"),btn=$("impbtn");const url=urlFromText($("impu").value)||$("impu").value.trim(),mk=+$("impm").value||2,px=+$("impp").value||0,wm=$("impwm")?$("impwm").checked:true;if(!/^https?:\/\//i.test(url)){el.className="err";el.textContent="Paste the full product link (starting with https://).";return}el.className="";el.textContent="Reading the product…";if(btn){btn.disabled=true;btn.textContent="Fetching…"}let got=null,why="";if(/meesho/i.test(url)){el.textContent="Reading the product from Meesho (this may take 10-20 seconds)...";const r=await api("import/product",{url,markup:mk,price:px});if(btn){btn.disabled=false;btn.textContent="Fetch product"}if(!r.ok){el.className="err";el.textContent=r.d.error||"Could not read this Meesho product. Try copying the link from the Meesho website instead, or add the product manually.";return}got=r.d.product}else if(btn){btn.disabled=false;btn.textContent="Fetch product"}const prod=Object.assign({pm:"both"},got);if(wm&&prod.images&&prod.images.length){prod.images=await watermarkList(prod.images,(i,n)=>{el.className="";el.textContent="Adding your brand watermark… "+i+"/"+n})}const dup=(S.products||[]).find(p=>String(p.n||"").trim().toLowerCase()===String(prod.n||"").trim().toLowerCase());if(dup&&!confirm("You already have \""+dup.n+"\". Import it again as a copy?")){el.textContent="";return}impDraft=prod;location.hash="#admin/products/new";if(prod.partial){el.className="ok";el.textContent="Meesho hid this new product's photos. Name is ready — add images in the editor.";setTimeout(function(){say("Meesho hid the photos. Add images in the editor.")},400)}else say("Product fetched. Check it, then tap Add product.");return}
+  if(e.target.id==="impf"){
+    const el=$("impe"),btn=$("impbtn"),raw=$("impu").value||"";
+    const url=urlFromText(raw)||raw.trim(),mk=+$("impm").value||2,px=+$("impp").value||0,wm=$("impwm")?$("impwm").checked:true;
+    if(!/^https?:\/\//i.test(url)){el.className="err";el.textContent="Paste the full product link (starting with https://).";return}
+    el.className="";el.textContent=/meesho/i.test(url)?"Reading the product from Meesho (this may take 10-20 seconds)...":"Reading the product...";
+    if(btn){btn.disabled=true;btn.textContent="Fetching…"}
+    let r;try{r=await api("import/product",{url,markup:mk,price:px})}catch(err){r={ok:false,d:{error:"Could not reach the import service."}}}
+    if(btn){btn.disabled=false;btn.textContent="Fetch product"}
+    if(!r.ok){el.className="err";el.textContent=r.d.error||"Could not read this product. Paste the full link again, or add it manually.";return}
+    const prod=Object.assign({pm:"both"},r.d.product||{}),real=(prod.images||[]).slice(0,5);
+    prod.images=wm&&real.length?await watermarkList(real,(i,n)=>{el.className="";el.textContent="Adding your brand watermark… "+i+"/"+n}):real;
+    let madeBrand=false;
+    if(!prod.images.length){prod.images=await brandCards(prod,(i,n)=>{el.className="";el.textContent="Making your brand photos… "+i+"/"+n});madeBrand=true}
+    const dup=(S.products||[]).find(p=>String(p.n||"").trim().toLowerCase()===String(prod.n||"").trim().toLowerCase());
+    if(dup&&!confirm("You already have \""+dup.n+"\". Import it again as a copy?")){el.textContent="";return}
+    impDraft=prod;location.hash="#admin/products/new";
+    if(madeBrand){el.className="ok";el.textContent="Supplier sent text only. Your branded photos are ready — replace them with real product photos anytime.";setTimeout(()=>say("Branded photos added."),350)}
+    else if(prod.partial){el.className="ok";el.textContent="Partial details only. Check the photos and price before adding.";setTimeout(()=>say("Partial details — check photos and price."),350)}
+    else say("Product fetched. Check it, then tap Add product.");
+    return
+  }
  if(e.target.id==="igf"){const el=$("igfe"),user=$("igu").value.trim(),tok=$("igt").value.trim(),auto=$("iga").checked,story=$("igs").checked;el.className="";el.textContent="Saving...";const body={igUser:user,igAuto:auto,igStory:story};if(tok)body.igToken=tok;const r=await api("settings",body);if(r.ok){S.settings.ig={connected:!!(tok||(S.settings.ig&&S.settings.ig.connected)),user,auto,story};saveCache();say("Instagram settings saved");render()}else{el.className="err";el.textContent=r.d.error||"Could not save."}return}
  if(e.target.id==="gf"){const g=$("gcid").value.trim(),el=$("gfe");el.className="";el.textContent="Saving...";const r=await api("settings",{googleClientId:g});if(r.ok){el.className="ok";el.textContent="Saved. Customers can now sign in with Google.";say("Google login updated")}else{el.className="err";el.textContent=r.d.error||"Could not save."}return}
  if(e.target.id==="bcastf"){const subj=$("bcastsubj").value.trim(),msg=$("bcastmsg").value.trim(),el=$("bcaste");if(!subj||!msg){if(el){el.className="err";el.textContent="Subject and message are required."}return}if(el){el.className="";el.textContent="Sending..."}const r=await api("broadcast",{subject:subj,text:msg});if(r.ok){if(el){el.className="ok";el.textContent="Sent to "+r.d.sent+" of "+r.d.total+" customers."}say("Update sent to "+r.d.sent+" customers.")}else if(el){el.className="err";el.textContent=r.d.error||"Could not send."}return}
