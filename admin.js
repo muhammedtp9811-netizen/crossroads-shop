@@ -143,7 +143,7 @@ async function meeshoLookup(raw,note){
   try{
    const controller=new AbortController();
    const timer=setTimeout(()=>controller.abort(),12000);
-   const r=await fetch("https://r.jina.ai/https://www.meesho.com/sitemap/pdp/"+sh+".xml",{headers:{"x-return-format":"html"},signal:controller.signal});
+   const r=await fetch("/api/proxy/jina?u="+encodeURIComponent("https://www.meesho.com/sitemap/pdp/"+sh+".xml"),{headers:{"x-admin":sessionStorage.getItem("cr_pw")||""},signal:controller.signal});
    clearTimeout(timer);
    if(!r.ok){results.push(null);continue}
    const t=await r.text();
