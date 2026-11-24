@@ -37,7 +37,7 @@
 <link rel="dns-prefetch" href="https://accounts.google.com">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>try{document.documentElement.setAttribute("data-theme","dark");localStorage.setItem("cr_theme","dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
-<script>(function(){var V="20261124i",last=0;function check(){if(Date.now()-last<15000)return;last=Date.now();try{if(sessionStorage.getItem("cr_build")===V)return;fetch("/build.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v){sessionStorage.setItem("cr_build",j.v);if(j.v!==V)location.reload()}}).catch(function(){})}catch(e){}}check();addEventListener("focus",check);addEventListener("pageshow",check);document.addEventListener("visibilitychange",function(){if(!document.hidden)check()})})();</script>
+<script>(function(){var V="20261124j",last=0;function check(){if(Date.now()-last<15000)return;last=Date.now();try{if(sessionStorage.getItem("cr_build")===V)return;fetch("/build.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v){sessionStorage.setItem("cr_build",j.v);if(j.v!==V)location.reload()}}).catch(function(){})}catch(e){}}check();addEventListener("focus",check);addEventListener("pageshow",check);document.addEventListener("visibilitychange",function(){if(!document.hidden)check()})})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -676,30 +676,32 @@ function accRender(msg){const b=$("accBody");if(!b)return;const head=`<div class
    rb.onclick=async()=>{const er=$("ae");er.className="";er.textContent="Sending a new code…";const r=await post("auth/start",{name:accName,email:accEmail,phone:accPhone}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not send a new code.";return}accRender();toast("New code sent")};
    $("accF").onsubmit=async e=>{e.preventDefault();const code=$("ao").value.replace(/\D/g,""),er=$("ae");er.className="err";if(code.length!==6){er.textContent="Enter the 6-digit code.";return}er.className="";er.textContent="Checking…";const r=await post("auth/verify",{email:accEmail,code}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not verify that code.";return}stopAccTimer();acctSet({token:r.d.token,name:r.d.name,phone:r.d.phone||"",email:r.d.email||accEmail});$("accD").close();toast("Logged in as "+r.d.name);prefillCk();refreshRevs()};
    return}
-  b.innerHTML=head+`<div class="acct"><h2>Log in or create an account</h2><p class="fine">Optional — you can shop without one. Enter your name and email and we will email you a 6-digit code.</p><form id="accF" class="fl" novalidate><label>Your name<input id="an" autocomplete="name" value="${esc(accName)}"></label><label>Email address<input id="aem" type="email" autocomplete="email" value="${esc(accEmail)}" placeholder="you@example.com"></label><label>Phone number (optional)<input id="ap" inputmode="numeric" autocomplete="tel" maxlength="10" value="${esc(accPhone)}" placeholder="10-digit mobile number"></label><div class="err" id="ae"></div><button class="btn" type="submit">Email me a code</button></form><div style="margin-top:12px;text-align:center"><div style="font-size:.8rem;color:var(--mut);margin-bottom:8px">or continue with</div><button class="btn alt" id="gLogin" type="button" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" style="width:18px;height:18px">Continue with Google</button><div class="err" id="gHelp" hidden style="margin-top:10px;text-align:left"></div></div></div>`;
+  b.innerHTML=head+`<div class="acct"><h2>Log in or create an account</h2><p class="fine">Optional — you can shop without one. Enter your name and email and we will email you a 6-digit code.</p><form id="accF" class="fl" novalidate><label>Your name<input id="an" autocomplete="name" value="${esc(accName)}"></label><label>Email address<input id="aem" type="email" autocomplete="email" value="${esc(accEmail)}" placeholder="you@example.com"></label><label>Phone number (optional)<input id="ap" inputmode="numeric" autocomplete="tel" maxlength="10" value="${esc(accPhone)}" placeholder="10-digit mobile number"></label><div class="err" id="ae"></div><button class="btn" type="submit">Email me a code</button></form><div style="margin-top:12px;text-align:center"><div style="font-size:.8rem;color:var(--mut);margin-bottom:8px">or continue with</div><div id="gBtn" style="margin-top:2px;min-height:44px"><button class="btn alt" id="gLogin" type="button" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" style="width:18px;height:18px">Continue with Google</button></div><div class="err" id="gHelp" hidden style="margin-top:10px;text-align:left"></div></div></div>`;
   $("accX").onclick=()=>{stopAccTimer();$("accD").close()};
   $("accF").onsubmit=async e=>{e.preventDefault();const name=$("an").value.trim(),email=$("aem").value.trim().toLowerCase(),ph=$("ap").value.replace(/\D/g,""),er=$("ae");er.className="err";if(name.length<2){er.textContent="Enter your name.";return}if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){er.textContent="Enter a valid email address.";return}if(ph&&ph.length!==10){er.textContent="Enter a valid 10-digit phone number, or leave it blank.";return}er.className="";er.textContent="Sending code…";const r=await post("auth/start",{name,email,phone:ph}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not send the code.";return}accName=name;accEmail=email;accPhone=ph;accCode="";accStep="code";accRender();toast("Code sent to your email")};
-  const gb=$("gLogin");if(gb)gb.onclick=accGoogleLogin;}
+  const gb=$("gLogin");if(gb)gb.onclick=accGoogleLogin;renderGoogleBtn();if(!GIS_READY)startGBtnRetry();}
 function gClientId(){return (typeof ST!=="undefined"&&ST&&ST.googleClientId)||""}
-let GIS_READY=false,GIS_CID="";
+let GIS_READY=false,GIS_CID="",G_BTN_TIMER=null;
 function gisInit(cid){
  if(GIS_READY&&GIS_CID===cid)return;
  if(!cid||!window.google||!google.accounts||!google.accounts.id)return;
  try{
    google.accounts.id.initialize({client_id:cid,callback:async(resp)=>{try{const r=await post("auth/google",{credential:resp.credential}).catch(()=>({ok:false,d:{}}));if(!r.ok)throw new Error(r.d.error||"Could not sign in");acctSet({token:r.d.token,name:r.d.name,phone:"",email:r.d.email||"",provider:"google"});$("accD").close();toast("Logged in as "+r.d.name);prefillCk();refreshRevs()}catch(e){toast((e&&e.message)||"Google login failed. Try again.")}},auto_select:false,ux_mode:"popup",itp_support:true});
-  GIS_READY=true;GIS_CID=cid
- }catch(e){}
+  GIS_READY=true;GIS_CID=cid;startGBtnRetry();renderGoogleBtn()
+  }catch(e){}
 }
+function renderGoogleBtn(){const box=$("gBtn");if(!box||!GIS_READY)return false;try{box.innerHTML="";google.accounts.id.renderButton(box,{theme:"outline",size:"large",width:Math.min(340,box.clientWidth||340),text:"continue_with",shape:"rect",logo_alignment:"left"});return true}catch(e){return false}}
+function startGBtnRetry(){if(G_BTN_TIMER)return;let n=0;G_BTN_TIMER=setInterval(()=>{if(!$("gBtn")||renderGoogleBtn()||++n>20){clearInterval(G_BTN_TIMER);G_BTN_TIMER=null}},300)}
 function accGoogleLogin(){
  const cid=gClientId();
  if(!cid){accGoogleHelp("Google login is not set up yet. Please use the email code option below.");return}
  gisInit(cid);
- if(!GIS_READY){toast("Google Sign-In is loading, try again in a moment.");window.addEventListener("load",()=>gisInit(gClientId()),{once:true});return}
- try{google.accounts.id.prompt((notif)=>{if(notif&&notif.isNotDisplayed&&notif.isNotDisplayed()&&notif.getNotDisplayedReason&&notif.getNotDisplayedReason()==="opt_out_or_no_session"){toast("Google sign-in popup was blocked. Allow popups and try again.")}})}catch(e){toast("Google Sign-In error: "+(e&&e.message||"unknown"))}
+ if(!GIS_READY){accGoogleHelp("Google sign-in is loading. Try again in a moment.");gisInit(cid);startGBtnRetry();return}
+ try{google.accounts.id.prompt((notif)=>{if(notif&&notif.isNotDisplayed&&notif.isNotDisplayed()){accGoogleHelp("Google sign-in popup did not open. Allow popups and try again, or use the email code below.")}})}catch(e){toast("Google Sign-In error: "+(e&&e.message||"unknown"))}
 }
 function accGoogleHelp(msg){const el=$("gHelp");if(el){el.className="err";el.textContent=msg;el.hidden=false;el.scrollIntoView({block:"nearest"})}else toast(msg)}
 
-function openAcc(){if(!$("accBody")||!$("accD"))return;stopAccTimer();accStep="start";accCode="";accRender();$("accD").showModal();if($("gLogin"))$("gLogin").onclick=()=>{accGoogleLogin()}}
+function openAcc(){if(!$("accBody")||!$("accD"))return;stopAccTimer();accStep="start";accCode="";accRender();$("accD").showModal();gisInit(gClientId());renderGoogleBtn();if(!GIS_READY)startGBtnRetry()}
 $("accD").addEventListener("close",stopAccTimer);
 /* ---- ratings ---- */
  let revPid="";
@@ -763,11 +765,7 @@ function renderCheckout(){const el=$("checkout");
   if(ST_ERROR){el.innerHTML=`<div class="wrap narrow"><p class="err" style="padding:40px 0 0">We could not load the payment options. Please try again.</p><button class="btn" id="retryPay" type="button">Retry</button></div>`;$("retryPay").onclick=async()=>{const b=$("retryPay");b.disabled=true;b.textContent="Retrying…";await loadSettings();if(view()==="checkout")renderCheckout()};return}
   if(!ST_READY){el.innerHTML=`<div class="wrap narrow"><p class="muted" style="padding:60px 0">Loading payment options…</p></div>`;return}
   const pm=ST.paymentMethod||"both";
-  const cartPms=cart.map(i=>{const p=P.find(x=>x.id===i.id);return p&&p.pm?p.pm:"both"});
-  const allowCod=cartPms.every(x=>x!=="upi"),allowUpi=cartPms.every(x=>x!=="cod");
-  let showCod=(pm==="cod"||pm==="both")&&allowCod,showUpi=(pm==="upi"||pm==="both")&&allowUpi;
-  if(!showCod&&!showUpi){showCod=allowCod;showUpi=allowUpi}
-  if(!showCod&&!showUpi){showCod=true;showUpi=true}
+  let showCod=pm==="cod"||pm==="both",showUpi=pm==="upi"||pm==="both";
   const first=ST.online&&showUpi?"online":ST.upi&&showUpi?"upi":showCod?"cod":"";
   el.innerHTML=`<div class="wrap"><nav class="bc" aria-label="Breadcrumb"><a href="./" data-nav="">Home</a><span>/</span><b>Checkout</b></nav><h2 style="font-size:clamp(1.8rem,4vw,2.4rem)">Checkout</h2>
   <div class="ck"><form id="f" novalidate class="cardx"><h2 class="fh">Delivery details</h2>
@@ -920,6 +918,7 @@ addEventListener("hashchange",route);addEventListener("popstate",route);
   if(view()==="admin"){await route();return}
   try{const c=JSON.parse(localStorage.getItem("cr_pc")||"[]");if(Array.isArray(c)&&c.length){P=c;loading=false}}catch(e){}
   try{const c=JSON.parse(localStorage.getItem("cr_st")||"null");if(c&&typeof c==="object"){ST=Object.assign(ST,c);ST_READY=true;ST_STALE=true}}catch(e){}
+  gisInit(gClientId());if(!GIS_READY)startGBtnRetry();
   render();const first=route();
   if(view()==="product"){const pid=String(location.hash.slice(3));fetchRevs(pid).then(v=>{if(v)revStore(pid,v)}).catch(()=>{})}
   const st=loadSettings();
