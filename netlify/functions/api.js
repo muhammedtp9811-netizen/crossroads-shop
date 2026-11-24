@@ -627,13 +627,13 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     }
     return J(r);
   }
-  if(path==="settings"&&req.method==="GET"){const t=await get("settings",{});return J({upi:t.upi||"",name:t.name||"",online:!!(E.RAZORPAY_KEY_ID&&E.RAZORPAY_KEY_SECRET),paymentMethod:t.paymentMethod||"both",googleClientId:t.googleClientId||""})}
+  if(path==="settings"&&req.method==="GET"){const t=await get("settings",{});if(t.paymentMethod==="upi"&&!t.pmBothMigrated){t.paymentMethod="both";t.pmBothMigrated=true;await db.setJSON("settings",t)}return J({upi:t.upi||"",name:t.name||"",online:!!(E.RAZORPAY_KEY_ID&&E.RAZORPAY_KEY_SECRET),paymentMethod:t.paymentMethod||"both",googleClientId:t.googleClientId||""})}
   if(path==="settings/qr"&&req.method==="GET"){const t=await get("settings",{});return J({qr:t.qr||""})}
   if(path==="settings"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
     const cur=await get("settings",{}),nxt={...cur};
     if(b.upi!==undefined)nxt.upi=cut(b.upi,80);
-    if(b.paymentMethod!==undefined)nxt.paymentMethod=["cod","upi","both"].includes(b.paymentMethod)?b.paymentMethod:"both";
+    if(b.paymentMethod!==undefined){nxt.paymentMethod=["cod","upi","both"].includes(b.paymentMethod)?b.paymentMethod:"both";nxt.pmBothMigrated=true}
     if(b.googleClientId!==undefined)nxt.googleClientId=cut(String(b.googleClientId).trim(),160);
     if(b.name!==undefined)nxt.name=cut(b.name,60);
     if(b.qr!==undefined)nxt.qr=cut(b.qr,400000);
