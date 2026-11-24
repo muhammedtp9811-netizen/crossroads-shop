@@ -90,7 +90,7 @@ Thank you for shopping with Crossroads Shopping. We have received your order.
 You can track your order anytime from the Track Order page on our website:
 https://crossroads-shopping.netlify.app/#track
 
-We deliver free across India in about 5 days (maximum 2 weeks).
+We deliver free across India within 5 days.
 
 If you have any questions, reply to this email or message us on Instagram @crossroads_shopping.
 

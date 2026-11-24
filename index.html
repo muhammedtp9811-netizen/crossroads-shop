@@ -37,7 +37,7 @@
 <link rel="dns-prefetch" href="https://accounts.google.com">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>try{document.documentElement.setAttribute("data-theme","dark");localStorage.setItem("cr_theme","dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
-<script>(function(){var V="20261124f",last=0;function check(){if(Date.now()-last<15000)return;last=Date.now();try{if(sessionStorage.getItem("cr_build")===V)return;fetch("/build.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==V){sessionStorage.setItem("cr_build",V);location.reload()}}).catch(function(){})}catch(e){}}check();addEventListener("focus",check);addEventListener("pageshow",check);document.addEventListener("visibilitychange",function(){if(!document.hidden)check()})})();</script>
+<script>(function(){var V="20261124g",last=0;function check(){if(Date.now()-last<15000)return;last=Date.now();try{if(sessionStorage.getItem("cr_build")===V)return;fetch("/build.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v){sessionStorage.setItem("cr_build",j.v);if(j.v!==V)location.reload()}}).catch(function(){})}catch(e){}}check();addEventListener("focus",check);addEventListener("pageshow",check);document.addEventListener("visibilitychange",function(){if(!document.hidden)check()})})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -49,6 +49,13 @@ body{font:16px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-se
 h1,h2,h3,.logo{font-family:"Playfair Display",Georgia,"Times New Roman",serif}
 button,input,select,textarea{font:inherit;color:inherit}a{color:inherit}img{max-width:100%}
 :focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip{position:absolute;left:12px;top:-60px;z-index:99;background:var(--acc);color:#fff;padding:10px 16px;border-radius:0 0 10px 10px;text-decoration:none;transition:top .15s}
+.skip:focus{top:0}
+.muted{color:var(--mut)}
+.pvideo{margin:22px 0;border-radius:16px;overflow:hidden;background:var(--card);border:1px solid var(--line);box-shadow:var(--sh)}
+.pvideo iframe,.pvideo video{display:block;width:100%;aspect-ratio:16/9;border:0;background:#000}
+.faq{margin:34px 0 0}.faq h2{font-size:1.45rem;margin-bottom:12px}.faq details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 16px;margin-bottom:8px}.faq summary{cursor:pointer;font-weight:600;color:var(--ink)}.faq details p{margin-top:8px;color:var(--mut)}
 .wrap{max-width:1200px;margin:0 auto;padding:0 22px}
 .ann{background:var(--acc);color:#fff;text-align:center;font-size:.78rem;letter-spacing:.05em;padding:8px 14px}
 header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
@@ -322,7 +329,8 @@ gtag('config','YOUR_GA_ID');
 
 </head>
 <body>
-<div class="ann" id="ann">Free shipping across India<span class="hm"> &nbsp;·&nbsp; Delivered in about 5 days &nbsp;·&nbsp; Pay by UPI or online</span></div>
+<a class="skip" href="#main">Skip to content</a>
+<div class="ann" id="ann">Free shipping across India<span class="hm"> &nbsp;·&nbsp; Delivered within 5 days &nbsp;·&nbsp; Easy returns</span></div>
 <header id="hd">
 <div class="wrap hr">
 <a class="logo" href="./" id="logo">Crossroads<span>Shopping</span></a>
@@ -336,24 +344,25 @@ gtag('config','YOUR_GA_ID');
 <nav class="menu" aria-label="Shop menu"><div class="wrap" id="cats"></div></nav>
 </header>
 
+<main id="main"><h1 id="pageH1" class="sr-only">Crossroads Shopping</h1>
 <div id="shop">
 <div style="position:absolute;top:0;left:0;width:100%;height:200px;pointer-events:none;z-index:1;opacity:.6"><canvas id="c3d2" aria-hidden="true" style="width:100%;height:100%"></canvas></div>
 <section class="hero" id="hero"><canvas id="c3d" aria-hidden="true"></canvas><div class="wrap hi"><p class="kick">New collection</p><h2>Wear the drop.</h2><p class="hs">Fashion, trending items and shoes delivered to your door.</p><button class="btn" id="heroCta" type="button">Shop now</button></div></section>
 <div class="mq" aria-hidden="true"><div><span>NEW DROP</span><span>FASHION</span><span>TRENDING</span><span>SHOES</span><span>NEW DROP</span><span>FASHION</span><span>TRENDING</span><span>SHOES</span><span>NEW DROP</span><span>FASHION</span><span>TRENDING</span><span>SHOES</span><span>NEW DROP</span><span>FASHION</span><span>TRENDING</span><span>SHOES</span></div></div>
 <div class="wrap">
-<div class="th"><div><h1 id="ttl">All products</h1><p class="sub" id="cn"></p></div>
+<div class="th"><div><h2 id="ttl">All products</h2><p class="sub" id="cn"></p></div>
 <div class="tools"><input id="q" type="search" placeholder="Search products" aria-label="Search products"><select id="so" aria-label="Sort products"><option value="n">Newest</option><option value="l">Price: low to high</option><option value="h">Price: high to low</option></select></div></div>
 <div class="grid" id="grid"></div>
 </div></div>
 
 <section class="pg" id="about" hidden><div class="wrap narrow">
-<h1>About Crossroads Shopping</h1>
+<h2>About Crossroads Shopping</h2>
 <p class="lead">Your next favourite find is here.</p>
 <p>Crossroads Shopping is an online fashion store. We bring fashion, trending items, shoes and accessories together in one place and deliver them to your door.</p>
 <h2>What you can shop</h2>
 <p>Use the menu at the top of every page to browse each category, like Fashion, Trending and Shoes. New items are added regularly.</p>
 <h2>How ordering works</h2>
-<ol class="stp"><li><b>Pick your product.</b> Choose your size and add it to your bag.</li><li><b>Pay securely.</b> Pay by UPI or online payment and enter your delivery address.</li><li><b>We confirm and ship.</b> We check your order and dispatch it within 24 hours. Delivery takes about 5 days, and never more than 2 weeks. Message us any time if you need help.</li></ol>
+<ol class="stp"><li><b>Pick your product.</b> Choose your size and add it to your bag.</li><li><b>Pay securely.</b> Use the payment option shown at checkout and enter your delivery address.</li><li><b>We confirm and ship.</b> We check your order and dispatch it within 24 hours. Delivery is within 5 days. Message us any time if you need help.</li></ol>
 <h2>Website details</h2>
 <div class="cardx"><table class="info">
 <tr><th>Store name</th><td>Crossroads Shopping</td></tr>
@@ -362,14 +371,14 @@ gtag('config','YOUR_GA_ID');
 <tr><th>Email</th><td><a id="aMail" class="mail-t"></a></td></tr>
 <tr><th>Payments</th><td>UPI and online payment</td></tr>
 <tr><th>Shipping</th><td>Free, across India</td></tr>
-<tr><th>Delivery time</th><td>About 5 days, and never more than 2 weeks</td></tr>
+<tr><th>Delivery time</th><td>Within 5 days, free across India</td></tr>
 <tr><th>Customer support</th><td>Instagram message, email, or the message form on the Contact page</td></tr>
 </table></div>
 <div class="cta"><a class="btn" href="./" id="goShop">Browse products</a><a class="btn alt" href="#contact">Contact us</a></div>
 </div></section>
 
 <section class="pg" id="contact" hidden><div class="wrap narrow">
-<h1>Contact us</h1>
+<h2>Contact us</h2>
 <p class="lead">Questions about a product, size or your order?</p>
 <p>Reach us in any of these ways, and we will reply as soon as we can.</p>
 <div class="cc">
@@ -387,33 +396,33 @@ gtag('config','YOUR_GA_ID');
 </div></section>
 
 <section class="pg" id="delivery" hidden><div class="wrap narrow">
-<h1>Delivery</h1>
+<h2>Delivery</h2>
 <p class="lead">Free shipping across India, delivered in about 5 days.</p>
 
 <div class="cardx" style="padding:20px;margin-bottom:20px">
 <h2 style="margin-top:0">Your delivery timeline</h2>
 <ol class="stp">
-<li><b>You place the order.</b> Pay by UPI QR or online payment at checkout.</li>
+<li><b>You place the order.</b> Pay by the option shown at checkout: Cash on Delivery, UPI QR or online payment.</li>
 <li><b>We confirm it the same day.</b> We check your items and the address you gave us.</li>
 <li><b>Dispatched within 24 hours.</b> Monday to Saturday, excluding public holidays.</li>
-<li><b>Delivered in about 5 days.</b> Usually sooner. The maximum for any pin code in India is 2 weeks.</li>
+<li><b>Delivered within 5 days.</b> Shipping is free across India.</li>
 </ol>
 </div>
 
 <h2>Good to know</h2>
 <ul class="pl">
 <li>Shipping is free. The price you see at checkout is the final price.</li>
-<li>We deliver to serviceable pin codes across India. Very remote areas can take closer to the 2-week limit.</li>
-<li>Sale weeks, festivals and bad weather can add a few days. If your order is affected, we message you.</li>
-<li>We do not offer cash on delivery. Orders are dispatched after payment is confirmed.</li>
+<li>We deliver to serviceable pin codes across India within 5 days.</li>
+<li>Sale weeks, festivals and bad weather can affect dispatch. If your order is affected, we message you.</li>
+<li>Payment options follow the store setting. UPI QR orders are payment pending until verified; we dispatch after confirmation.</li>
 <li>Please double-check your phone number and full address with pin code before placing the order.</li>
 </ul>
 
 <h2>Tracking your order</h2>
-<p>We do not use a public tracking page yet. When your order is dispatched we update it in our system and send you a confirmation. To ask where your parcel is, message us on Instagram <a class="ig-t" target="_blank" rel="noopener"></a> or email <a class="mail-t"></a> with your order number. We reply the same day in most cases.</p>
+<p>Open <a href="#track">Track order</a> and enter your order number and phone number to see the latest status. We also send updates as the parcel moves. Need more help? Message us on Instagram <a class="ig-t" target="_blank" rel="noopener"></a> or email <a class="mail-t"></a> with your order number.</p>
 
 <h2>If your parcel is late</h2>
-<p>Most parcels arrive in about 5 days. If yours has not arrived within 2 weeks of dispatch, message us with your order number and we will trace it and sort it out. You will never be asked to wait without an answer.</p>
+<p>Most parcels arrive within 5 days. If yours is late, message us with your order number and we will trace it and sort it out. You will never be asked to wait without an answer.</p>
 
 <h2>Wrong or incomplete address</h2>
 <p>If you notice a mistake after ordering, contact us straight away. If the parcel has not been dispatched, we can usually correct the address. If it has already gone out, we will help you arrange redelivery where the courier allows it.</p>
@@ -425,25 +434,25 @@ gtag('config','YOUR_GA_ID');
 <tr><th>Instagram</th><td><a class="ig-t" target="_blank" rel="noopener"></a></td></tr>
 <tr><th>Email</th><td><a class="mail-t"></a></td></tr>
 <tr><th>Shipping</th><td>Free, across India</td></tr>
-<tr><th>Delivery time</th><td>About 5 days, and never more than 2 weeks</td></tr>
+<tr><th>Delivery time</th><td>Within 5 days, free across India</td></tr>
 <tr><th>Support hours</th><td>9 AM to 9 PM IST, every day</td></tr>
 </table></div>
 <div class="cta"><a class="btn" href="./" id="dGoShop">Browse products</a><a class="btn alt" href="#contact">Contact us</a></div>
 </div></section>
 
 <section class="pg" id="policy" hidden><div class="wrap narrow">
-<h1>Store policy</h1>
+<h2>Store policy</h2>
 <p class="lead">Clear, simple terms for shopping with Crossroads Shopping.</p>
-<p class="muted" style="margin-top:-8px">Last updated 19 November 2026</p>
+<p class="muted" style="margin-top:-8px">Last updated 24 November 2026</p>
 
 <h2>Orders and payment</h2>
-<p>You can pay by UPI QR or by online payment at checkout. We do not offer cash on delivery. An order is confirmed once we can see your payment, and we begin packing it the same day. Prices are in Indian Rupees and include everything: there are no hidden charges.</p>
+<p>The payment options shown at checkout follow the store setting: Cash on Delivery, UPI QR, or online payment by card/UPI/net banking. UPI QR orders are payment pending until verified. We begin packing the same day. Prices are in Indian Rupees and include everything: there are no hidden charges.</p>
 
 <h2>Pricing and shipping</h2>
 <p>Shipping is free on every order. The total shown at checkout is the amount you pay. If a price looks wrong on the site, message us before paying and we will correct it.</p>
 
 <h2>Delivery time</h2>
-<p>Orders are dispatched within 24 hours on working days and delivered in about 5 days. The maximum for any pin code in India is 2 weeks. Remote areas, sale weeks, festivals and bad weather can push an order towards that limit. See the <a href="#delivery">Delivery page</a> for the full timeline.</p>
+<p>Orders are dispatched within 24 hours on working days and delivered within 5 days. Shipping is free across India. See the <a href="#delivery">Delivery page</a> for the full timeline.</p>
 
 <h2>Returns, exchanges and damaged items</h2>
 <ul class="pl">
@@ -481,6 +490,8 @@ gtag('config','YOUR_GA_ID');
 
 <div id="admin" hidden></div>
 
+</main>
+
 <footer id="foot"><div class="wrap">
 <div class="fg">
 <div><div class="lg">Crossroads Shopping</div><p>Your next favourite find is here.</p></div>
@@ -517,7 +528,7 @@ try{VID=localStorage.getItem("cr_vid")||"";if(!VID){VID=Math.random().toString(3
  if(!SID){SID=Math.random().toString(36).slice(2)+Date.now().toString(36);sessionStorage.setItem("cr_sid",SID);sessionStorage.setItem("cr_t0",String(T0));if(NV)sessionStorage.setItem("cr_nv","1")}
  else{T0=+sessionStorage.getItem("cr_t0")||T0;NV=+sessionStorage.getItem("cr_nv")||0;const j=JSON.parse(sessionStorage.getItem("cr_j")||"{}");JR=j.JR||[];AC=j.AC||[];EC=j.EC||EC;OV=j.OV||0}}catch(e){}
 const jstore=()=>{try{sessionStorage.setItem("cr_j",JSON.stringify({JR:JR.slice(-40),AC:AC.slice(-30),EC,OV}))}catch(e){}};
-let jt=null;function jp(n){if(!n||(JR.length&&JR[JR.length-1].p===n))return;JR.push({p:n,t:Math.round((Date.now()-T0)/1000)});jstore();clearTimeout(jt);jt=setTimeout(()=>sync(),1500)}
+let jt=null;function jp(n){const h=document.getElementById("pageH1");if(h)h.textContent=n||"Crossroads Shopping";if(!n||(JR.length&&JR[JR.length-1].p===n))return;JR.push({p:n,t:Math.round((Date.now()-T0)/1000)});jstore();clearTimeout(jt);jt=setTimeout(()=>sync(),1500)}
 function pageName(){const v=view();if(v==="product"){const p=P.find(x=>String(x.id)===location.hash.slice(3));return"Product: "+(p?String(p.n).slice(0,50):"item")}
  return v==="shop"?(cat==="All"?"Home":"Category: "+cat):v==="about"?"About":v==="contact"?"Contact":v==="policy"?"Policy":v==="delivery"?"Delivery":v==="checkout"?"Checkout":""}
 function sync(final){if(own()||!VID||!SID||location.hash.startsWith("#admin"))return;
@@ -535,9 +546,13 @@ document.querySelectorAll("a.mail-t").forEach(e=>e.href="mailto:"+MAIL);
 document.querySelectorAll(".ig-t").forEach(e=>e.textContent="@"+IG);document.querySelectorAll(".mail-t").forEach(e=>e.textContent=MAIL);
 $("host").textContent=location.host||"crossroadsshoppings.in";document.querySelectorAll(".host-t").forEach(e=>e.textContent=location.host||"crossroadsshoppings.in");$("yr").textContent=new Date().getFullYear();
 
-let P=[],cat="All",cart=[],cur=null,size=null,Q="",SO="n",ST={upi:"",name:"",qr:"",online:false,paymentMethod:"both"},ST_READY=false,DISC={code:"",off:0},wasAdmin=false,loading=true;
+let P=[],cat="All",cart=[],cur=null,size=null,Q="",SO="n",ST={upi:"",name:"",qr:"",online:false,paymentMethod:"both"},ST_READY=false,ST_ERROR=false,DISC={code:"",off:0},wasAdmin=false,loading=true;
 try{cart=JSON.parse(localStorage.getItem("cr_cart")||"[]")}catch(e){}
-const save=()=>{try{localStorage.setItem("cr_cart",JSON.stringify(cart))}catch(e){}};
+const save=()=>{try{localStorage.setItem("cr_cart",JSON.stringify(cart));localStorage.setItem("cr_cart_t",String(Date.now()))}catch(e){}};
+function rememberCheckoutContact(){try{const f=$("fe"),n=$("fn");if(f&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.value.trim())){localStorage.setItem("cr_ck_email",f.value.trim().toLowerCase());if(n)localStorage.setItem("cr_ck_name",n.value.trim())}}catch(e){}}
+async function maybeCartReminder(){if(location.hash.startsWith("#admin")||view()==="checkout"||!cart.length)return;try{if(Date.now()-(+localStorage.getItem("cr_cart_t")||0)<10*60*1000)return}catch(e){}const email=(ACCT&&ACCT.email)||localStorage.getItem("cr_ck_email")||"";if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return;const key="cr_cartmail_"+email;try{if(localStorage.getItem(key))return}catch(e){}
+  const r=await post("cart/remind",{name:(ACCT&&ACCT.name)||localStorage.getItem("cr_ck_name")||"",email,items:cart.map(i=>({n:i.n,q:i.q,p:i.p}))}).catch(()=>null);
+  if(r&&r.ok)try{localStorage.setItem(key,String(Date.now()))}catch(e){}}
 const imgs=p=>p.images&&p.images.length?p.images:(p.imgs&&p.imgs.length?p.imgs:(p.img?[p.img]:[]));
 const view=()=>{const x=location.hash;return x==="#about"?"about":x==="#contact"?"contact":x==="#policy"?"policy":x==="#delivery"?"delivery":x.startsWith("#admin")?"admin":x==="#checkout"?"checkout":x==="#track"?"track":x.startsWith("#p/")?"product":"shop"};
 function toast(t){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.h);toast.h=setTimeout(()=>e.classList.remove("on"),1900)}
@@ -575,30 +590,48 @@ function home(e){e.preventDefault();cat="All";history.pushState(null,"",location
 
 let cg=0,auto=null,autoT=null,qty=1;
 function bump(){const c=$("cnt");c.classList.remove("bump");void c.offsetWidth;c.classList.add("bump")}
+function videoHTML(p){const v=String(p.video||p.vid||"").trim();if(!v)return "";
+  const m=v.match(/^https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,15})/i);
+  if(m)return `<div class="pvideo"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(m[1])}" title="${esc(pname(p))} video" loading="lazy" allow="accelerometer;autoplay;clipboard-write;encrypted-media;picture-in-picture" allowfullscreen></iframe></div>`;
+  if(/^https?:\/\//i.test(v)&&/\.(mp4|webm|ogg)(\?|$)/i.test(v))return `<div class="pvideo"><video controls playsinline preload="metadata" src="${esc(v)}" aria-label="${esc(pname(p))} video"></video></div>`;
+  return "";
+}
+function faqHTML(p){const rows=[
+   ["Is delivery free?","Yes. Shipping is free on every order across India, and the price at checkout is the final price."],
+   ["How fast will it arrive?","We dispatch within 24 hours and deliver within 5 days."],
+   ["How can I pay?","Checkout shows only the options we currently offer. Choose the one that suits you there; every UPI QR payment is payment pending until verified."],
+   ["What if the item is damaged or the wrong size?","Message us on Instagram within 48 hours with a photo and we will sort it out."],
+   ["Is this a genuine product?","Yes. We list genuine products and check each order before dispatch. If anything looks wrong, message us straight away."]
+  ];
+  return `<section class="faq"><h2>Frequently asked questions</h2>${rows.map(([q,a])=>`<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join("")}</section>`;
+}
 function renderProduct(id){
- cur=P.find(p=>String(p.id)===String(id)&&!p.hid);const el=$("product");cg=0;
- if(!cur){if(loading){el.innerHTML='<div class="wrap narrow"><p class="sub" style="padding:60px 0">Loading...</p></div>';return}el.innerHTML=`<div class="wrap narrow"><h1>Product not found</h1><p>This item may have been removed.</p><p style="margin-top:16px"><a class="btn" href="./" data-nav="" style="max-width:240px">Back to shop</a></p></div>`;return}
- const S=cur.s&&cur.s.length?cur.s:["One size"],m=imgs(cur),dc=+cur.o>cur.p?Math.round((1-cur.p/cur.o)*100):0,dis=cur.sold?"disabled":"";
- size=S.length===1?S[0]:null;qty=1;ev("view",cur.n,1);const _pn=pname(cur);document.title=(_pn.length>90?_pn.slice(0,89)+"…":_pn)+" | Crossroads Shopping";
- const rel=P.filter(p=>!p.hid&&p.id!==cur.id&&(p.c===cur.c||p.tr)).slice(0,4),btns=`<button class="btn alt" data-act="add" ${dis}>Add to bag</button><button class="btn" data-act="buy" ${dis}>${cur.sold?"Sold out":"Buy now"}</button>`;
- // SEO: Product structured data
- try{const old=document.getElementById("prodSchema");if(old)old.remove();const s=document.createElement("script");s.id="prodSchema";s.type="application/ld+json";s.textContent=JSON.stringify({"@context":"https://schema.org","@type":"Product","name":cur.n,"description":cur.d||cur.n,"image":m,"offers":{"@type":"Offer","price":cur.p,"priceCurrency":"INR","availability":cur.sold?"https://schema.org/OutOfStock":"https://schema.org/InStock","url":location.href},"brand":{"@type":"Brand","name":"Crossroads Shopping"}});document.head.appendChild(s)}catch(e){}
- el.innerHTML=`<div class="wrap"><nav class="bc" aria-label="Breadcrumb"><a href="./" data-nav="">Home</a><span>/</span><a href="./" data-nav="${esc(cur.c||"")}">${esc(cur.c||"Shop")}</a><span>/</span><b>${esc(pname(cur))}</b></nav>
- <div class="pp"><div class="gal"><div class="gm" id="gm">${m.length?m.map((s,k)=>`<img class="sl${k===0?" on":""}" ${k===0?'fetchpriority="high" ':""}decoding="async" src="${s}" alt="${esc(cur.n)}">`).join(""):ph(cur)}${m.length>1?`<div class="gd">${m.map((_,k)=>`<i class="${k===0?"on":""}"></i>`).join("")}</div>`:""}</div>${m.length>1?`<div class="gt">${m.map((s,k)=>`<button type="button" data-g="${k}" aria-label="Photo ${k+1}" aria-pressed="${k===0}"><img src="${s}" alt=""></button>`).join("")}</div>`:""}</div>
- <div class="pd"><h1 title="${esc(cur.n)}">${esc(pname(cur))}</h1><div class="price lg">${money(cur.p)}${dc?`<s>${money(cur.o)}</s><i class="off">-${dc}%</i>`:""}</div><button class="rsum" id="rsum" type="button" style="align-self:flex-start"></button>${cur.d?`<p class="dsc">${esc(cur.d)}</p>`:""}${!cur.d&&cur.n&&pname(cur)!==cur.n?`<p class="dsc">${esc(cur.n)}</p>`:""}
- <div class="trustbar" style="margin:12px 0"><span>&#128274; Secure</span><span>&#128666; Free ship</span><span>&#8617; Returns</span><span>&#9989; Genuine</span></div>
- <div><b>${S.length===1?"Size":"Select size"}</b><div class="sizes" id="sz">${S.map(s=>`<button type="button" data-s="${esc(s)}" aria-pressed="${s===size}">${esc(s)}</button>`).join("")}</div></div>
- <div><b>Quantity</b><div class="qty"><button type="button" data-q="-1" aria-label="Less">−</button><b id="qv">1</b><button type="button" data-q="1" aria-label="More">+</button></div></div>
- <div class="acts">${btns}</div>
- <ul class="tr"><li>Free delivery across India</li><li>Delivered in about 5 days</li><li>Questions? Message us on Instagram</li></ul>
- <details><summary>Delivery and payment</summary><p>Shipping is free. Pay by UPI or online payment at checkout. We confirm your order the same day, dispatch within 24 hours, and deliver in about 5 days — never more than 2 weeks. <a href="#delivery">See delivery details</a>.</p></details>
- <details><summary>Need help?</summary><p>Message us on <a href="https://ig.me/m/${IG}" target="_blank" rel="noopener">Instagram</a> or email <a href="mailto:${MAIL}">${MAIL}</a>.</p></details></div></div>
- <section class="revs" id="revs"></section>
- ${rel.length?`<h2 class="rh">You may also like</h2><div class="grid" id="rel">${rel.map(card).join("")}</div>`:""}</div><div class="pbar">${btns}</div>`;
- reveal();startAuto(2500);$("rsum").onclick=()=>$("revs").scrollIntoView({behavior:"smooth",block:"start"});loadRevs(cur.id);
- const gm=$("gm");let x0=null;gm.onmouseenter=stopAuto;gm.onmouseleave=()=>startAuto(1500);
- gm.ontouchstart=e=>{x0=e.touches[0].clientX;stopAuto()};
- gm.ontouchend=e=>{if(x0===null||m.length<2)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>40)go((cg+(dx<0?1:-1)+m.length)%m.length,true);else startAuto(4000)}}
+  cur=P.find(p=>String(p.id)===String(id)&&!p.hid);const el=$("product");cg=0;
+  if(!cur){if(loading){el.innerHTML='<div class="wrap narrow"><p class="sub" style="padding:60px 0">Loading...</p></div>';return}el.innerHTML=`<div class="wrap narrow"><h2 style="font-size:clamp(1.8rem,4vw,2.4rem)">Product not found</h2><p>This item may have been removed.</p><p style="margin-top:16px"><a class="btn" href="./" data-nav="" style="max-width:240px">Back to shop</a></p></div>`;return}
+  const S=cur.s&&cur.s.length?cur.s:["One size"],m=imgs(cur),dc=+cur.o>cur.p?Math.round((1-cur.p/cur.o)*100):0,dis=cur.sold?"disabled":"";
+  size=S.length===1?S[0]:null;qty=1;ev("view",cur.n,1);const _pn=pname(cur);document.title=(_pn.length>90?_pn.slice(0,89)+"…":_pn)+" | Crossroads Shopping";
+  const rel=P.filter(p=>!p.hid&&p.id!==cur.id&&(p.c===cur.c||p.tr)).slice(0,4),btns=`<button class="btn alt" data-act="add" ${dis}>Add to bag</button><button class="btn" data-act="buy" ${dis}>${cur.sold?"Sold out":"Buy now"}</button>`;
+  // SEO: Product structured data
+  try{const old=document.getElementById("prodSchema");if(old)old.remove();const s=document.createElement("script");s.id="prodSchema";s.type="application/ld+json";s.textContent=JSON.stringify({"@context":"https://schema.org","@type":"Product","name":cur.n,"description":cur.d||cur.n,"image":m,"offers":{"@type":"Offer","price":cur.p,"priceCurrency":"INR","availability":cur.sold?"https://schema.org/OutOfStock":"https://schema.org/InStock","url":location.href},"brand":{"@type":"Brand","name":"Crossroads Shopping"}});document.head.appendChild(s)}catch(e){}
+  try{const old=document.getElementById("prodFaq");if(old)old.remove();const s=document.createElement("script");s.id="prodFaq";s.type="application/ld+json";s.textContent=JSON.stringify({"@context":"https://schema.org","@type":"FAQPage","mainEntity":[["Is delivery free?","Yes. Shipping is free on every order across India."],["How fast will it arrive?","We dispatch within 24 hours and deliver within 5 days."],["Can I pay on delivery?","Payment options follow the store setting. UPI QR payments are pending until verified."]].map(([q,a])=>({"@type":"Question","name":q,"acceptedAnswer":{"@type":"Answer","text":a}}))});document.head.appendChild(s)}catch(e){}
+  el.innerHTML=`<div class="wrap"><nav class="bc" aria-label="Breadcrumb"><a href="./" data-nav="">Home</a><span>/</span><a href="./" data-nav="${esc(cur.c||"")}">${esc(cur.c||"Shop")}</a><span>/</span><b>${esc(pname(cur))}</b></nav>
+  <div class="pp"><div class="gal"><div class="gm" id="gm">${m.length?m.map((s,k)=>`<img class="sl${k===0?" on":""}" ${k===0?'fetchpriority="high" ':""}decoding="async" src="${s}" alt="${esc(cur.n)}">`).join(""):ph(cur)}${m.length>1?`<div class="gd">${m.map((_,k)=>`<i class="${k===0?"on":""}"></i>`).join("")}</div>`:""}</div>${m.length>1?`<div class="gt">${m.map((s,k)=>`<button type="button" data-g="${k}" aria-label="Photo ${k+1}" aria-pressed="${k===0}"><img src="${s}" alt=""></button>`).join("")}</div>`:""}</div>
+  <div class="pd"><h2 title="${esc(cur.n)}" style="font-size:clamp(1.5rem,3vw,2rem)">${esc(pname(cur))}</h2><div class="price lg">${money(cur.p)}${dc?`<s>${money(cur.o)}</s><i class="off">-${dc}%</i>`:""}</div><button class="rsum" id="rsum" type="button" style="align-self:flex-start"></button>${cur.d?`<p class="dsc">${esc(cur.d)}</p>`:""}${!cur.d&&cur.n&&pname(cur)!==cur.n?`<p class="dsc">${esc(cur.n)}</p>`:""}
+  <div class="trustbar" style="margin:12px 0"><span>&#128274; Secure</span><span>&#128666; Free ship</span><span>&#8617; Returns</span><span>&#9989; Genuine</span></div>
+  <div><b>${S.length===1?"Size":"Select size"}</b><div class="sizes" id="sz">${S.map(s=>`<button type="button" data-s="${esc(s)}" aria-pressed="${s===size}">${esc(s)}</button>`).join("")}</div></div>
+  <div><b>Quantity</b><div class="qty"><button type="button" data-q="-1" aria-label="Less">−</button><b id="qv">1</b><button type="button" data-q="1" aria-label="More">+</button></div></div>
+  <div class="acts">${btns}</div>
+  <ul class="tr"><li>Free delivery across India</li><li>Delivered within 5 days</li><li>Questions? Message us on Instagram</li></ul>
+  <details><summary>Delivery and payment</summary><p>Shipping is free. Payment options follow the store setting; UPI QR payments are payment pending until verified. We confirm your order the same day, dispatch within 24 hours, and deliver within 5 days. <a href="#delivery">See delivery details</a>.</p></details>
+  <details><summary>Need help?</summary><p>Message us on <a href="https://ig.me/m/${IG}" target="_blank" rel="noopener">Instagram</a> or email <a href="mailto:${MAIL}">${MAIL}</a>.</p></details></div></div>
+  ${videoHTML(cur)}
+  ${faqHTML(cur)}
+  <section class="revs" id="revs"></section>
+  ${rel.length?`<h2 class="rh">You may also like</h2><div class="grid" id="rel">${rel.map(card).join("")}</div>`:""}</div><div class="pbar">${btns}</div>`;
+  reveal();startAuto(2500);$("rsum").onclick=()=>$("revs").scrollIntoView({behavior:"smooth",block:"start"});loadRevs(cur.id);
+  const gm=$("gm");let x0=null;gm.onmouseenter=stopAuto;gm.onmouseleave=()=>startAuto(1500);
+  gm.ontouchstart=e=>{x0=e.touches[0].clientX;stopAuto()};
+  gm.ontouchend=e=>{if(x0===null||m.length<2)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>40)go((cg+(dx<0?1:-1)+m.length)%m.length,true);else startAuto(4000)}}
 function go(k,manual){cg=k;document.querySelectorAll("#gm .sl").forEach((e,n)=>e.classList.toggle("on",n===k));document.querySelectorAll("#gm .gd i").forEach((e,n)=>e.classList.toggle("on",n===k));document.querySelectorAll(".gt button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.g===k));if(manual)startAuto(6000)}
 function stopAuto(){clearInterval(auto);clearTimeout(autoT);auto=null}
 function startAuto(delay){stopAuto();if(!cur||view()!=="product")return;const m=imgs(cur);if(m.length<2||matchMedia("(prefers-reduced-motion:reduce)").matches)return;autoT=setTimeout(()=>{auto=setInterval(()=>go((cg+1)%m.length),3500)},delay||2500)}
@@ -615,7 +648,7 @@ $("product").onclick=e=>{
 const total=()=>cart.reduce((a,i)=>a+i.p*i.q,0);const payable=()=>Math.max(1,total()-(DISC.off||0));
 /* ---- optional account (name + phone + one-time code) ---- */
 const acctGet=()=>{try{return JSON.parse(localStorage.getItem("cr_acct")||"null")}catch(e){return null}};
-let ACCT=acctGet(),accStep="start",accPhone="",accName="",accCode="";
+let ACCT=acctGet(),accStep="start",accPhone="",accEmail="",accName="",accCode="";
 let accTimer=null;
 const stopAccTimer=()=>{if(accTimer){clearInterval(accTimer);accTimer=null}};
 const maskPhone=p=>{const d=String(p||"").replace(/\D/g,"").slice(-10);return d.length===10?"+91 "+d.slice(0,5)+" "+d.slice(5):"+91 "+d};
@@ -624,40 +657,41 @@ const acctSet=u=>{ACCT=u;try{u?localStorage.setItem("cr_acct",JSON.stringify(u))
 const acctHdr=u=>(u&&u.token?{"x-cr-token":u.token}:{});
 const starRow=v=>{const k=Math.max(0,Math.min(5,Math.round(+v||0)));return `<span class="stars" aria-hidden="true">${[1,2,3,4,5].map(i=>`<i class="${i<=k?"on":""}">★</i>`).join("")}</span>`};
 const ago=t=>{const d=(Date.now()-new Date(t||0).getTime())/864e5;if(!(d>=0))return "";if(d<1)return "Today";if(d<2)return "Yesterday";if(d<30)return Math.round(d)+" days ago";return new Date(t).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})};
-function prefillCk(){if(!$("fn"))return;if(ACCT){if(!$("fn").value)$("fn").value=ACCT.name;if(!$("fp").value)$("fp").value=ACCT.phone}}
+function prefillCk(){if(!$("fn"))return;if(ACCT){if(!$("fn").value)$("fn").value=ACCT.name;if(!$("fp").value)$("fp").value=ACCT.phone||"";if($("fe")&&!$("fe").value&&ACCT.email)$("fe").value=ACCT.email}}
 function refreshRevs(){const p=view()==="product"?P.find(x=>String(x.id)===location.hash.slice(3)):null;if(p)loadRevs(p.id)}
 function accRender(msg){const b=$("accBody");if(!b)return;const head=`<div class="top">Your account<button class="x" id="accX" aria-label="Close" type="button">×</button></div>`;
- if(ACCT){
-  b.innerHTML=head+`<div class="acct"><div class="who"><i>${esc((ACCT.name||"?").trim().charAt(0).toUpperCase())}</i><div><b>${esc(ACCT.name)}</b><small>+91 ${esc(ACCT.phone)}</small></div></div><p class="fine">You are logged in. Your name and phone are filled in at checkout, and you can rate products you have bought.</p>${msg?`<div class="ok">${esc(msg)}</div>`:""}<button class="btn alt" id="accOut" type="button">Log out</button></div>`;
-  $("accX").onclick=()=>$("accD").close();
-  $("accOut").onclick=()=>{post("auth/logout",{},acctHdr(ACCT)).catch(()=>{});acctSet(null);$("accD").close();toast("Logged out");refreshRevs()};
-  return}
- if(accStep==="otp"){
-  b.innerHTML=head+`<div class="acct"><h3>Enter your code</h3><p class="fine">We sent a 6-digit code to <b>${maskPhone(accPhone)}</b>. It expires in 10 minutes.</p>${accCode?`<p class="fine demo">SMS is not set up yet, so use this code: <b class="code">${esc(accCode)}</b></p>`:""}<form id="accF" class="fl" novalidate><label>6-digit code<input id="ao" class="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••"></label><div class="err" id="ae"></div><button class="btn" type="submit">Verify and log in</button><div class="otprow"><span>Didn't get it?</span><button class="link" id="accResend" type="button">Resend code</button></div><button class="btn alt" id="accBack" type="button">Use a different number</button></form></div>`;
+  if(ACCT){
+   b.innerHTML=head+`<div class="acct"><div class="who"><i>${esc((ACCT.name||"?").trim().charAt(0).toUpperCase())}</i><div><b>${esc(ACCT.name)}</b><small>${esc(ACCT.email||("+91 "+esc(ACCT.phone||"")))}</small></div></div><p class="fine">You are logged in. Your details are filled in at checkout, and you can rate products you have bought.</p>${msg?`<div class="ok">${esc(msg)}</div>`:""}<button class="btn alt" id="accOut" type="button">Log out</button></div>`;
+   $("accX").onclick=()=>$("accD").close();
+   $("accOut").onclick=()=>{post("auth/logout",{},acctHdr(ACCT)).catch(()=>{});acctSet(null);$("accD").close();toast("Logged out");refreshRevs()};
+   return}
+  if(accStep==="code"){
+   b.innerHTML=head+`<div class="acct"><h2>Enter your code</h2><p class="fine">We emailed a 6-digit code to <b>${esc(accEmail)}</b>. It expires in 10 minutes.</p><form id="accF" class="fl" novalidate><label>6-digit code<input id="ao" class="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••"></label><div class="err" id="ae"></div><button class="btn" type="submit">Verify and log in</button><div class="otprow"><span>Didn't get it?</span><button class="link" id="accResend" type="button">Resend code</button></div><button class="btn alt" id="accBack" type="button">Use a different email</button></form></div>`;
+   $("accX").onclick=()=>{stopAccTimer();$("accD").close()};
+   const rb=$("accResend");accCountdown(rb,30);
+   $("ao").focus();
+   $("ao").addEventListener("input",e=>{const v=e.target.value.replace(/\D/g,"").slice(0,6);if(e.target.value!==v)e.target.value=v;if(v.length===6){const f=$("accF");if(f)setTimeout(()=>{if(!$("accF"))return;f.requestSubmit?f.requestSubmit():f.dispatchEvent(new Event("submit",{cancelable:true,bubbles:true}))},140)}});
+   $("accBack").onclick=()=>{stopAccTimer();accStep="start";accCode="";accRender()};
+   rb.onclick=async()=>{const er=$("ae");er.className="";er.textContent="Sending a new code…";const r=await post("auth/start",{name:accName,email:accEmail,phone:accPhone}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not send a new code.";return}accRender();toast("New code sent")};
+   $("accF").onsubmit=async e=>{e.preventDefault();const code=$("ao").value.replace(/\D/g,""),er=$("ae");er.className="err";if(code.length!==6){er.textContent="Enter the 6-digit code.";return}er.className="";er.textContent="Checking…";const r=await post("auth/verify",{email:accEmail,code}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not verify that code.";return}stopAccTimer();acctSet({token:r.d.token,name:r.d.name,phone:r.d.phone||"",email:r.d.email||accEmail});$("accD").close();toast("Logged in as "+r.d.name);prefillCk();refreshRevs()};
+   return}
+  b.innerHTML=head+`<div class="acct"><h2>Log in or create an account</h2><p class="fine">Optional — you can shop without one. Enter your name and email and we will email you a 6-digit code.</p><form id="accF" class="fl" novalidate><label>Your name<input id="an" autocomplete="name" value="${esc(accName)}"></label><label>Email address<input id="aem" type="email" autocomplete="email" value="${esc(accEmail)}" placeholder="you@example.com"></label><label>Phone number (optional)<input id="ap" inputmode="numeric" autocomplete="tel" maxlength="10" value="${esc(accPhone)}" placeholder="10-digit mobile number"></label><div class="err" id="ae"></div><button class="btn" type="submit">Email me a code</button></form><div style="margin-top:12px;text-align:center"><div style="font-size:.8rem;color:var(--mut);margin-bottom:8px">or continue with</div><button class="btn alt" id="gLogin" type="button" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" style="width:18px;height:18px">Continue with Google</button><div class="err" id="gHelp" hidden style="margin-top:10px;text-align:left"></div></div></div>`;
   $("accX").onclick=()=>{stopAccTimer();$("accD").close()};
-  const rb=$("accResend");accCountdown(rb,30);
-  $("ao").focus();
-  $("ao").addEventListener("input",e=>{const v=e.target.value.replace(/\D/g,"").slice(0,6);if(e.target.value!==v)e.target.value=v;if(v.length===6){const f=$("accF");if(f)setTimeout(()=>{if(!$("accF"))return;f.requestSubmit?f.requestSubmit():f.dispatchEvent(new Event("submit",{cancelable:true,bubbles:true}))},140)}});
-  $("accBack").onclick=()=>{stopAccTimer();accStep="start";accCode="";accRender();if($("gLogin"))$("gLogin").onclick=()=>{accGoogleLogin()}};
-  rb.onclick=async()=>{const er=$("ae");er.className="";er.textContent="Sending a new code…";const r=await post("auth/start",{name:accName,phone:accPhone}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not send a new code.";return}accCode=r.d.demo&&r.d.code?String(r.d.code):"";accRender();toast(r.d.demo?"New code ready":"New code sent")};
-  $("accF").onsubmit=async e=>{e.preventDefault();const code=$("ao").value.replace(/\D/g,""),er=$("ae");er.className="err";if(code.length!==6){er.textContent="Enter the 6-digit code.";return}er.className="";er.textContent="Checking…";const r=await post("auth/verify",{phone:accPhone,code}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not verify that code.";return}stopAccTimer();acctSet({token:r.d.token,name:r.d.name,phone:r.d.phone});$("accD").close();toast("Logged in as "+r.d.name);prefillCk();refreshRevs()};
-  return}
- b.innerHTML=head+`<div class="acct"><h3>Log in or create an account</h3><p class="fine">Optional — you can shop without one. Enter your name and phone and we will text you a 6-digit code.</p><form id="accF" class="fl" novalidate><label>Your name<input id="an" autocomplete="name" value="${esc(accName)}"></label><label>Phone number<input id="ap" inputmode="numeric" autocomplete="tel" maxlength="10" value="${esc(accPhone)}" placeholder="10-digit mobile number"></label><div class="err" id="ae"></div><button class="btn" type="submit">Send code</button></form><div style="margin-top:12px;text-align:center"><div style="font-size:.8rem;color:var(--mut);margin-bottom:8px">or continue with</div><button class="btn alt" id="gLogin" type="button" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" style="width:18px;height:18px">Continue with Google</button><div class="err" id="gHelp" hidden style="margin-top:10px;text-align:left"></div></div></div>`;
- $("accX").onclick=()=>{stopAccTimer();$("accD").close()};
- $("accF").onsubmit=async e=>{e.preventDefault();const name=$("an").value.trim(),ph=$("ap").value.replace(/\D/g,""),er=$("ae");er.className="err";if(name.length<2){er.textContent="Enter your name.";return}if(ph.length!==10){er.textContent="Enter a valid 10-digit phone number.";return}er.className="";er.textContent="Sending code…";const r=await post("auth/start",{name,phone:ph}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not send the code.";return}accName=name;accPhone=ph;accCode=r.d.demo&&r.d.code?String(r.d.code):"";accStep="otp";accRender()}}
+  $("accF").onsubmit=async e=>{e.preventDefault();const name=$("an").value.trim(),email=$("aem").value.trim().toLowerCase(),ph=$("ap").value.replace(/\D/g,""),er=$("ae");er.className="err";if(name.length<2){er.textContent="Enter your name.";return}if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){er.textContent="Enter a valid email address.";return}if(ph&&ph.length!==10){er.textContent="Enter a valid 10-digit phone number, or leave it blank.";return}er.className="";er.textContent="Sending code…";const r=await post("auth/start",{name,email,phone:ph}).catch(()=>({ok:false,d:{}}));if(!r.ok){er.className="err";er.textContent=r.d.error||"Could not send the code.";return}accName=name;accEmail=email;accPhone=ph;accCode="";accStep="code";accRender();toast("Code sent to your email")};
+  const gb=$("gLogin");if(gb)gb.onclick=accGoogleLogin;}
 function gClientId(){return (typeof ST!=="undefined"&&ST&&ST.googleClientId)||""}
 let GIS_READY=false,GIS_CID="";
 function gisInit(cid){
  if(GIS_READY&&GIS_CID===cid)return;
  if(!cid||!window.google||!google.accounts||!google.accounts.id)return;
  try{
-  google.accounts.id.initialize({client_id:cid,callback:(resp)=>{try{const parts=resp.credential.split(".");const payload=JSON.parse(atob(parts[1].replace(/-/g,"+").replace(/_/g,"/")));const name=payload.name||payload.given_name||"Customer";const email=payload.email||"";const pic=payload.picture||"";const token="g_"+btoa(email||name).replace(/=/g,"");acctSet({token,name,phone:"",email,pic,provider:"google"});$("accD").close();toast("Logged in as "+name);if(email){post("welcome",{name,email},null,true).catch(()=>{})}prefillCk();refreshRevs()}catch(e){toast("Google login failed. Try again.")}},auto_select:false,ux_mode:"popup",itp_support:true});
+   google.accounts.id.initialize({client_id:cid,callback:async(resp)=>{try{const r=await post("auth/google",{credential:resp.credential}).catch(()=>({ok:false,d:{}}));if(!r.ok)throw new Error(r.d.error||"Could not sign in");acctSet({token:r.d.token,name:r.d.name,phone:"",email:r.d.email||"",provider:"google"});$("accD").close();toast("Logged in as "+r.d.name);prefillCk();refreshRevs()}catch(e){toast((e&&e.message)||"Google login failed. Try again.")}},auto_select:false,ux_mode:"popup",itp_support:true});
   GIS_READY=true;GIS_CID=cid
  }catch(e){}
 }
 function accGoogleLogin(){
  const cid=gClientId();
- if(!cid){accGoogleHelp("Google login is not set up yet. Ask the store owner to add a free Google Client ID in Admin -> Settings -> Google login. Until then, please log in with your phone number below.");return}
+ if(!cid){accGoogleHelp("Google login is not set up yet. Please use the email code option below.");return}
  gisInit(cid);
  if(!GIS_READY){toast("Google Sign-In is loading, try again in a moment.");window.addEventListener("load",()=>gisInit(gClientId()),{once:true});return}
  try{google.accounts.id.prompt((notif)=>{if(notif&&notif.isNotDisplayed&&notif.isNotDisplayed()&&notif.getNotDisplayedReason&&notif.getNotDisplayedReason()==="opt_out_or_no_session"){toast("Google sign-in popup was blocked. Allow popups and try again.")}})}catch(e){toast("Google Sign-In error: "+(e&&e.message||"unknown"))}
@@ -706,50 +740,57 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeCart()});
 function loadRzp(){return new Promise((ok,no)=>{if(window.Razorpay)return ok();const s=document.createElement("script");s.src="https://checkout.razorpay.com/v1/checkout.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
 function sumHTML(){return cart.map(i=>{const p=P.find(x=>x.id===i.id),m=p?imgs(p):[];return `<div class="sr"><div class="t0">${m[0]?`<img src="${m[0]}" alt="">`:""}</div><div><b>${esc(i.n)}</b><small>Size: ${esc(i.s)} · Qty: ${i.q}</small></div><b>${money(i.p*i.q)}</b></div>`}).join("")+`<div class="total" style="padding:14px 0 0"><span>Total${DISC.off?' <small class="ok" style="font-size:.8rem;font-weight:600">code applied</small>':""}</span><span>${money(payable())}</span></div>`}
 function upiHTML(){const amt=payable(),upi=ST.upi,pn=encodeURIComponent(ST.name||"Crossroads"),am=amt,tn=encodeURIComponent("Crossroads order"),pa=encodeURIComponent(upi);
- const base=`pa=${pa}&pn=${pn}&am=${am}&cu=INR&tn=${tn}`;
- const gpay="tez://upi/pay?"+base;
- const phonepe="phonepe://pay?"+base;
- const paytm="paytmmp://pay?"+base;
- return `<div class="upi">${ST.qr?`<img src="${ST.qr}" alt="UPI QR code">`:""}<p>UPI ID: <b>${esc(ST.upi)}</b></p><p class="sub" style="margin:6px 0">Pay exactly ${money(amt)}, then enter the UPI transaction ID (UTR) shown in your payment app.</p>
- <div class="upi-apps">
-  <a class="btn alt" href="${gpay}" style="background:#4285f4;color:#fff;border-color:#4285f4"><span class="ua">G</span>Google Pay</a>
-  <a class="btn alt" href="${phonepe}" style="background:#5f259f;color:#fff;border-color:#5f259f"><span class="ua">P</span>PhonePe</a>
-  <a class="btn alt" href="${paytm}" style="background:#00baf2;color:#fff;border-color:#00baf2"><span class="ua">₹</span>Paytm</a>
- </div>
- <label>UPI transaction ID (UTR)<input id="ut" inputmode="numeric" autocomplete="off" placeholder="12-digit UTR from your payment app"></label></div>`}
+  const base=`pa=${pa}&pn=${pn}&am=${am}&cu=INR&tn=${tn}`;
+  const gpay="tez://upi/pay?"+base;
+  const phonepe="phonepe://pay?"+base;
+  const paytm="paytmmp://pay?"+base;
+  return `<div class="upi">${ST.qr?`<img src="${ST.qr}" alt="UPI QR code">`:'<p class="muted" id="qrl">Loading QR…</p>'}<p>UPI ID: <b>${esc(ST.upi)}</b></p><p class="sub" style="margin:6px 0">Pay exactly ${money(amt)}, then enter the UPI transaction ID (UTR) shown in your payment app. Payment is pending until verified.</p>
+  <div class="upi-apps">
+   <a class="btn alt" href="${gpay}" style="background:#4285f4;color:#fff;border-color:#4285f4"><span class="ua">G</span>Google Pay</a>
+   <a class="btn alt" href="${phonepe}" style="background:#5f259f;color:#fff;border-color:#5f259f"><span class="ua">P</span>PhonePe</a>
+   <a class="btn alt" href="${paytm}" style="background:#00baf2;color:#fff;border-color:#00baf2"><span class="ua">₹</span>Paytm</a>
+  </div>
+  <label>UPI transaction ID (UTR)<input id="ut" inputmode="numeric" autocomplete="off" placeholder="12-digit UTR from your payment app"></label></div>`}
+let QR_READY=false,QR_LOAD=null;
+function ensureQR(){
+  if(QR_READY||QR_LOAD||!ST.upi)return Promise.resolve();
+  QR_LOAD=fetch("/api/settings/qr",{cache:"no-store"}).then(r=>r.json()).then(x=>{ST.qr=x.qr||"";QR_READY=true;const p=$("upip");if(p&&!p.hidden){const v=$("ut")?$("ut").value:"";p.innerHTML=upiHTML();if(v&&$("ut"))$("ut").value=v}}).catch(()=>{const q=$("qrl");if(q)q.textContent="QR is unavailable. Use the UPI ID and app buttons below."}).finally(()=>{QR_LOAD=null});
+  return QR_LOAD;
+}
 function renderCheckout(){const el=$("checkout");
- if(!cart.length){el.innerHTML=`<div class="wrap narrow"><h1>Your bag is empty</h1><p>Add something you like, then come back to check out.</p><p style="margin-top:16px"><a class="btn" href="./" data-nav="" style="max-width:240px">Continue shopping</a></p></div>`;return}
- const pm=ST.paymentMethod||"both";
- const cartPms=cart.map(i=>{const p=P.find(x=>x.id===i.id);return p&&p.pm?p.pm:"both"});
- const allowCod=cartPms.every(x=>x!=="upi"),allowUpi=cartPms.every(x=>x!=="cod");
- let showCod=(pm==="cod"||pm==="both")&&allowCod,showUpi=(pm==="upi"||pm==="both")&&allowUpi;
- if(!showCod&&!showUpi){showCod=allowCod;showUpi=allowUpi}
- if(!showCod&&!showUpi){showCod=true;showUpi=true}
- const first=ST.online&&showUpi?"online":ST.upi&&showUpi?"upi":showCod?"cod":"";
- el.innerHTML=`<div class="wrap"><nav class="bc" aria-label="Breadcrumb"><a href="./" data-nav="">Home</a><span>/</span><b>Checkout</b></nav><h1 style="font-size:clamp(1.8rem,4vw,2.4rem)">Checkout</h1>
- <div class="ck"><form id="f" novalidate class="cardx"><h2 class="fh">Delivery details</h2>
- <label>Full name<input id="fn" autocomplete="name"></label><label>Phone number<input id="fp" inputmode="tel" autocomplete="tel"></label>
- <label>Email (for your receipt)<input id="fe" type="email" autocomplete="email"></label><label>Full address with pincode<textarea id="fa" rows="3" autocomplete="street-address"></textarea></label>
- <h2 class="fh" style="margin-top:10px">Payment</h2>
- ${ST.online&&showUpi?`<label class="pmo pm-online"><input type="radio" name="pm" value="online" ${first==="online"?"checked":""}><span class="pm-icon">💳</span><span>Pay online<small>Cards, UPI, net banking &amp; wallets</small></span><span class="pm-badge">Instant</span></label>`:""}
- ${ST.upi&&showUpi?`<label class="pmo pm-upi"><input type="radio" name="pm" value="upi" ${first==="upi"?"checked":""}><span class="pm-icon">📱</span><span>Pay by UPI QR<small>Scan &amp; pay with any UPI app</small></span><span class="pm-badge">Popular</span></label>`:""}
- ${showCod?`<label class="pmo pm-cod"><input type="radio" name="pm" value="cod" ${first==="cod"?"checked":""}><span class="pm-icon">💵</span><span>Cash on Delivery<small>Pay when your order arrives</small></span><span class="pm-badge">Safe</span></label>`:""}
- ${!first?(ST_READY?'<div class="err">Payment is not available yet. Message us on Instagram to order.</div>':'<div class="muted">Loading payment options…</div>'):""}
- <div class="trustbar"><span>&#128274; Secure checkout</span><span>&#128666; Free shipping</span><span>&#8617; Easy returns</span><span>&#9989; Genuine products</span><span>&#128222; WhatsApp support</span></div>
- <p class="muted" style="font-size:.88rem;margin-top:6px">Shipping is free. Orders are dispatched within 24 hours and delivered in about 5 days — never more than 2 weeks. <a href="#delivery">Delivery details</a>.</p>
- <h2 class="fh" style="margin-top:10px">Discount code</h2><div style="display:flex;gap:8px"><input id="dc" placeholder="Enter your code" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase"><button class="btn alt sm" id="dcb" type="button" style="flex:none;white-space:nowrap">Apply</button></div><div class="err" id="dcm"></div>
- <div id="upip" ${first==="upi"?"":"hidden"}></div><div class="err" id="fr" role="alert"></div>
- ${first?`<button class="btn" id="pay" type="submit">${first==="upi"?"I have paid, place order":"Pay securely"}</button>`:""}</form>
- <div class="sum cardx"><h2 class="fh">Order summary</h2><div id="sumc">${sumHTML()}</div></div></div></div>`;
- if(first==="upi")$("upip").innerHTML=upiHTML();
- $("dcb").onclick=async()=>{const code=$("dc").value.trim().toUpperCase(),ph=$("fp").value.replace(/\D/g,""),m=$("dcm");if(!code){m.className="err";m.textContent="Type your code first.";return}if(ph.length<10){m.className="err";m.textContent="Enter your phone number above first.";return}m.className="";m.textContent="Checking…";const r=await post("code/check",{code,phone:ph}).catch(()=>({ok:false,d:{}}));if(r.ok){DISC={code,off:+r.d.off||0};m.className="ok";m.textContent="Code applied.";$("sumc").innerHTML=sumHTML();if(!$("upip").hidden)$("upip").innerHTML=upiHTML()}else{m.className="err";m.textContent=r.d.error||"That code did not work."}};
- $("f").onsubmit=e=>{e.preventDefault();place()};
- $("f").onchange=e=>{if(e.target.name==="pm"){const u=e.target.value==="upi";$("upip").hidden=!u;if(u)$("upip").innerHTML=upiHTML();$("pay").textContent=u?"I have paid, place order":"Pay securely"}};
- prefillCk();}
-$("checkout").onclick=e=>{const n=e.target.closest("[data-nav]");if(n){e.preventDefault();cat=n.dataset.nav||"All";history.pushState(null,"",location.pathname);route()}};
+  if(!cart.length){el.innerHTML=`<div class="wrap narrow"><h2 style="font-size:clamp(1.8rem,4vw,2.4rem)">Your bag is empty</h2><p>Add something you like, then come back to check out.</p><p style="margin-top:16px"><a class="btn" href="./" data-nav="" style="max-width:240px">Continue shopping</a></p></div>`;return}
+  if(!ST_READY){el.innerHTML=`<div class="wrap narrow"><p class="muted" style="padding:60px 0">Loading payment options…</p></div>`;return}
+  const pm=ST.paymentMethod||"both";
+  const cartPms=cart.map(i=>{const p=P.find(x=>x.id===i.id);return p&&p.pm?p.pm:"both"});
+  const allowCod=cartPms.every(x=>x!=="upi"),allowUpi=cartPms.every(x=>x!=="cod");
+  let showCod=(pm==="cod"||pm==="both")&&allowCod,showUpi=(pm==="upi"||pm==="both")&&allowUpi;
+  if(!showCod&&!showUpi){showCod=allowCod;showUpi=allowUpi}
+  if(!showCod&&!showUpi){showCod=true;showUpi=true}
+  const first=ST.online&&showUpi?"online":ST.upi&&showUpi?"upi":showCod?"cod":"";
+  el.innerHTML=`<div class="wrap"><nav class="bc" aria-label="Breadcrumb"><a href="./" data-nav="">Home</a><span>/</span><b>Checkout</b></nav><h2 style="font-size:clamp(1.8rem,4vw,2.4rem)">Checkout</h2>
+  <div class="ck"><form id="f" novalidate class="cardx"><h2 class="fh">Delivery details</h2>
+  <label>Full name<input id="fn" autocomplete="name"></label><label>Phone number<input id="fp" inputmode="tel" autocomplete="tel"></label>
+  <label>Email (for your receipt)<input id="fe" type="email" autocomplete="email"></label><label>Full address with pincode<textarea id="fa" rows="3" autocomplete="street-address"></textarea></label>
+  <h2 class="fh" style="margin-top:10px">Payment</h2>
+  ${ST.online&&showUpi?`<label class="pmo pm-online"><input type="radio" name="pm" value="online" ${first==="online"?"checked":""}><span class="pm-icon">💳</span><span>Pay online<small>Cards, UPI, net banking &amp; wallets</small></span><span class="pm-badge">Instant</span></label>`:""}
+  ${ST.upi&&showUpi?`<label class="pmo pm-upi"><input type="radio" name="pm" value="upi" ${first==="upi"?"checked":""}><span class="pm-icon">📱</span><span>Pay by UPI QR<small>Scan &amp; pay with any UPI app · payment pending until verified</small></span><span class="pm-badge">Popular</span></label>`:""}
+  ${showCod?`<label class="pmo pm-cod"><input type="radio" name="pm" value="cod" ${first==="cod"?"checked":""}><span class="pm-icon">💵</span><span>Cash on Delivery<small>Pay when your order arrives</small></span><span class="pm-badge">Safe</span></label>`:""}
+  ${!first?`<div class="err">${ST_ERROR?"Payment is not available right now. Try again or message us on Instagram.":"Payment is not available yet. Message us on Instagram to order."}</div>`:""}
+  <div class="trustbar"><span>&#128274; Secure checkout</span><span>&#128666; Free shipping</span><span>&#8617; Easy returns</span><span>&#9989; Genuine products</span><span>&#128222; WhatsApp support</span></div>
+  <p class="muted" style="font-size:.88rem;margin-top:6px">Shipping is free. Orders are dispatched within 24 hours and delivered within 5 days. <a href="#delivery">Delivery details</a>.</p>
+  <h2 class="fh" style="margin-top:10px">Discount code</h2><div style="display:flex;gap:8px"><input id="dc" placeholder="Enter your code" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase"><button class="btn alt sm" id="dcb" type="button" style="flex:none;white-space:nowrap">Apply</button></div><div class="err" id="dcm"></div>
+  <div id="upip" ${first==="upi"?"":"hidden"}></div><div class="err" id="fr" role="alert"></div>
+  ${first?`<button class="btn" id="pay" type="submit">${first==="upi"?"I have paid, place order":"Pay securely"}</button>`:""}</form>
+  <div class="sum cardx"><h2 class="fh">Order summary</h2><div id="sumc">${sumHTML()}</div></div></div></div>`;
+  if(first==="upi"){$("upip").innerHTML=upiHTML();ensureQR()}
+  $("dcb").onclick=async()=>{const code=$("dc").value.trim().toUpperCase(),ph=$("fp").value.replace(/\D/g,""),m=$("dcm");if(!code){m.className="err";m.textContent="Type your code first.";return}if(ph.length<10){m.className="err";m.textContent="Enter your phone number above first.";return}m.className="";m.textContent="Checking…";const r=await post("code/check",{code,phone:ph}).catch(()=>({ok:false,d:{}}));if(r.ok){DISC={code,off:+r.d.off||0};m.className="ok";m.textContent="Code applied.";$("sumc").innerHTML=sumHTML();if(!$("upip").hidden)$("upip").innerHTML=upiHTML()}else{m.className="err";m.textContent=r.d.error||"That code did not work."}};
+  $("f").onsubmit=e=>{e.preventDefault();place()};
+  $("f").onchange=e=>{if(e.target.name==="pm"){const u=e.target.value==="upi";$("upip").hidden=!u;if(u){$("upip").innerHTML=upiHTML();ensureQR()}$("pay").textContent=u?"I have paid, place order":"Pay securely"}};
+  if($("fe")){$("fe").addEventListener("blur",rememberCheckoutContact);$("fe").addEventListener("change",rememberCheckoutContact)}
+  prefillCk();}
 function renderTrack(){const el=$("track");
  if(!el)return;
- el.innerHTML=`<div class="wrap narrow"><h1 style="font-size:clamp(1.8rem,4vw,2.4rem)">Track your order</h1><p class="muted" style="margin-bottom:20px">Enter your order number and phone number to see the status of your order.</p>
+ el.innerHTML=`<div class="wrap narrow"><h2 style="font-size:clamp(1.8rem,4vw,2.4rem)">Track your order</h2><p class="muted" style="margin-bottom:20px">Enter your order number and phone number to see the status of your order.</p>
  <div class="cardx" style="max-width:480px"><form id="trackf" novalidate class="fl">
   <label>Order number<input id="trno" type="number" inputmode="numeric" placeholder="e.g. 1001"></label>
   <label>Phone number<input id="trph" inputmode="tel" maxlength="10" placeholder="10-digit mobile number"></label>
@@ -793,20 +834,20 @@ function cust(){const n=$("fn").value.trim(),ph=$("fp").value.replace(/\D/g,""),
  $("fr").textContent="";return{n,ph,em,ad}}
 function done(a,b,amt,next){EC.o++;OV+=+amt||0;AC.push({a:"order",n:money(+amt||0)});jstore();sync();cart=[];DISC={code:"",off:0};save();render();
  const nb=next?`<div class="cardx" style="max-width:460px;margin:26px auto 0;text-align:center"><p class="muted" style="font-size:.85rem;margin:0 0 6px">Your code for the next order</p><b style="font-size:1.4rem;letter-spacing:.09em;display:block">${esc(next)}</b><p class="muted" style="font-size:.82rem;margin-top:8px">Use it at checkout next time. It works with this phone number only.</p></div>`:"";
- $("checkout").innerHTML=`<div class="wrap narrow" style="text-align:center;padding:50px 0"><h1 class="ok">${a}</h1><p>${b}</p>${nb}<p style="margin-top:22px"><a class="btn" href="./" data-nav="" style="max-width:240px;margin:0 auto">Continue shopping</a></p></div>`;scrollTo(0,0)}
+ $("checkout").innerHTML=`<div class="wrap narrow" style="text-align:center;padding:50px 0"><h2 class="ok">${a}</h2><p>${b}</p>${nb}<p style="margin-top:22px"><a class="btn" href="./" data-nav="" style="max-width:240px;margin:0 auto">Continue shopping</a></p></div>`;scrollTo(0,0)}
 async function place(){const d=cust();if(!d)return;const tot=payable();const r=document.querySelector("input[name=pm]:checked"),er=$("fr");if(!r){er.textContent="Choose a payment method.";return}
  const items=cart.map(i=>({id:i.id,size:i.s,q:i.q})),customer={name:d.n,phone:d.ph,email:d.em,address:d.ad},code=DISC.code||"";ev("buy","Pay "+money(payable()));$("pay").disabled=true;
- if(r.value==="cod"){const x=await post("order/manual",{items,customer,utr:"",code,method:"cod"}).catch(()=>({ok:false,d:{}}));if(x.ok)done("Order placed. Thank you!","We will call to confirm. Pay in cash when your order arrives. Delivery takes about 5 days, and never more than 2 weeks.",tot,x.d.next);else{er.textContent=x.d.error||"Something went wrong. Try again.";$("pay").disabled=false}return}
+ if(r.value==="cod"){const x=await post("order/manual",{items,customer,utr:"",code,method:"cod"}).catch(()=>({ok:false,d:{}}));if(x.ok)done("Order placed. Thank you!","We will call to confirm. Pay in cash when your order arrives. Delivery is within 5 days.",tot,x.d.next);else{er.textContent=x.d.error||"Something went wrong. Try again.";$("pay").disabled=false}return}
  if(r.value==="upi"){const ut=$("ut").value.trim();if(ut.replace(/\W/g,"").length<8){er.textContent="Enter the UPI transaction ID from your payment app.";$("pay").disabled=false;return}
   const x=await post("order/manual",{items,customer,utr:ut,code}).catch(()=>({ok:false,d:{}}));
-  if(x.ok)done("Order received. Thank you!","We will check your payment and start packing. Delivery takes about 5 days, and never more than 2 weeks.",tot,x.d.next);else{er.textContent=x.d.error||"Something went wrong. Try again.";$("pay").disabled=false}return}
+  if(x.ok)done("Order received. Thank you!","Your UPI payment is pending until verified. We will check it and start packing. Delivery is within 5 days.",tot,x.d.next);else{er.textContent=x.d.error||"Something went wrong. Try again.";$("pay").disabled=false}return}
  try{const x=await post("pay/create",{items,customer,code});
   if(!x.ok){er.textContent=x.d.error||"Something went wrong. Try again.";$("pay").disabled=false;return}
   await loadRzp();
   new Razorpay({key:x.d.key,amount:x.d.amount,currency:"INR",order_id:x.d.order,name:"Crossroads Shopping",prefill:{name:d.n,contact:d.ph,email:d.em},theme:{color:"#2548E6"},
    modal:{ondismiss:()=>{$("pay").disabled=false}},
    handler:async y=>{const v=await post("pay/verify",{order_id:y.razorpay_order_id,payment_id:y.razorpay_payment_id,signature:y.razorpay_signature});
-    if(v.ok)done("Payment received. Thank you!","We are packing your order. Delivery takes about 5 days, and never more than 2 weeks.",tot,v.d.next);
+    if(v.ok)done("Payment received. Thank you!","We are packing your order. Delivery is within 5 days.",tot,v.d.next);
     else{er.textContent="Payment went through but could not be confirmed. Message us on Instagram with your payment ID: "+y.razorpay_payment_id;$("pay").disabled=false}}}).open()
  }catch(e){er.textContent="Could not open payment. Check your connection and try again.";$("pay").disabled=false}}
 
@@ -873,17 +914,17 @@ async function route(){stopAuto();document.title="Crossroads Shopping";const v=v
  scrollTo({top:0,left:0,behavior:"instant"});if(v!=="shop")log("Opened the "+v+" page")}
 addEventListener("hashchange",route);addEventListener("popstate",route);
 (async()=>{
- if(view()==="admin"){await route();return}
- try{const c=JSON.parse(localStorage.getItem("cr_pc")||"[]");if(Array.isArray(c)&&c.length){P=c;loading=false}}catch(e){}
- render();const first=route();
- if(view()==="product"){const pid=String(location.hash.slice(3));fetchRevs(pid).then(v=>{if(v)revStore(pid,v)}).catch(()=>{})}
- let stOk=false;
- const st=fetch("/api/settings",{cache:"no-store"}).then(r=>r.json()).then(x=>{ST=x;ST_READY=true;stOk=true}).catch(()=>{ST_READY=true});
+  if(view()==="admin"){await route();return}
+  try{const c=JSON.parse(localStorage.getItem("cr_pc")||"[]");if(Array.isArray(c)&&c.length){P=c;loading=false}}catch(e){}
+  render();const first=route();
+  if(view()==="product"){const pid=String(location.hash.slice(3));fetchRevs(pid).then(v=>{if(v)revStore(pid,v)}).catch(()=>{})}
+  const st=fetch("/api/settings",{cache:"no-store"}).then(async r=>{if(!r.ok)throw 0;return r.json()}).then(x=>{ST=x;ST_READY=true;ST_ERROR=false}).catch(()=>{ST_READY=true;ST_ERROR=true});
   const ch=await loadP();const was=loading;loading=false;
   if(view()!=="admin"&&(ch||was)){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout();if(view()==="track")renderTrack()}
   await st;gisInit(gClientId());if(!GIS_READY){const gi=setInterval(()=>{gisInit(gClientId());if(GIS_READY)clearInterval(gi)},400);setTimeout(()=>clearInterval(gi),8000)}
-  if(view()!=="admin"&&stOk){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout();if(view()==="track")renderTrack()}
- await first;if(view()!=="admin"){ev("open","",1);sync()}})();
+  if(view()!=="admin"){render();cats();if(view()==="shop")grid();if(view()==="product")renderProduct(location.hash.slice(3));if(view()==="checkout")renderCheckout();if(view()==="track")renderTrack()}
+  maybeCartReminder();
+  await first;if(view()!=="admin"){ev("open","",1);sync()}})();
 window.CRShop={get products(){return P},get cart(){return cart}};
 </script>
 <script src="/feedback.js?v=1" defer></script><script src="/chat.js?v=1" defer></script>
