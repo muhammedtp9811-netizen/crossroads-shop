@@ -702,7 +702,11 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     }
     return J({ok:1});
   }
-  if(path==="dbg/meesho"&&req.method==="GET"){
+  if(path==="test/slow"&&req.method==="GET"){
+    if(!admin())return J({error:"Wrong password"},401);
+    await new Promise(r=>setTimeout(r,5000));
+    return J({ok:1,msg:"done after 5s"});
+  }
     if(!admin())return J({error:"Wrong password"},401);
     const out={};
     const probe=async(label,url,headers)=>{
