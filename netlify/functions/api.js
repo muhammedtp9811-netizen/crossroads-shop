@@ -133,15 +133,176 @@ const ldProduct=html=>{const flat=[],re=/<script[^>]+type\s*=\s*["']application\
   return flat.find(x=>{const t=[].concat(x["@type"]||[]).map(String).join(" ").toLowerCase();return t.includes("product")})||null};
 const ldImages=v=>{if(!v)return[];const a=Array.isArray(v)?v:[v];return a.map(x=>typeof x==="string"?x:(x&&(x.url||x.contentUrl))||"").filter(Boolean)};
 const ldPrice=o=>{if(!o)return 0;const a=Array.isArray(o)?o:[o];for(const x of a){const p=+(x&&(x.price||x.lowPrice||x.highPrice));if(p>0)return p}return 0};
+function deepFind(o,pred,depth=0){
+  if(!o||depth>9||typeof o!=="object")return null;
+  try{if(pred(o))return o}catch(e){}
+  const vals=Array.isArray(o)?o:Object.values(o);
+  for(const v of vals){const r=deepFind(v,pred,depth+1);if(r)return r}
+  return null;
+}
+function cleanImgList(arr){
+  if(!Array.isArray(arr))arr=arr?[arr]:[];
+  const out=[];
+  for(let x of arr){
+    if(x&&typeof x==="object")x=x.url||x.src||x.image_url||x.image||x.link||"";
+    x=String(x||"").trim();if(!x)continue;
+    if(x.startsWith("//"))x="https:"+x;
+    if(!/^https?:\/\//.test(x))continue;
+    if(out.indexOf(x)<0)out.push(x);
+  }
+  return out.slice(0,6);
+}
+function nextDataProduct(html){
+  const m=/<script[^>]+id\s*=\s*["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i.exec(html);
+  if(!m)return null;
+  let j;try{j=JSON.parse(m[1])}catch(e){return null}
+  return deepFind(j,o=>o&&typeof o==="object"&&!Array.isArray(o)&&(o.name||o.title||o.product_name)&&(o.images||o.image_urls||o.media||o.image||o.offers));
+}
 async function genericProduct(u){
   const r=await fetch(u.href,{headers:UA,redirect:"follow"});if(!r.ok)return null;
-  const html=await r.text(),ld=ldProduct(html),meta=metaMap(html);
-  const title=plainText((ld&&ld.name)||meta["og:title"]||meta["twitter:title"]||(/<title[^>]*>([\s\S]*?)<\/title>/i.exec(html)||[])[1]||"").replace(/\s+/g," ");
+  const html=await r.text(),ld=ldProduct(html),meta=metaMap(html),base=(()=>{try{return new URL(r.url||u.href).hostname.replace(/^www\./,"")}catch(e){return u.hostname.replace(/^www\./,"")}})();
+  const nd=nextDataProduct(html);
+  const title=plainText((ld&&ld.name)||meta["og:title"]||meta["twitter:title"]||(nd&&(nd.name||nd.title||nd.product_name))||(/<title[^>]*>([\s\S]*?)<\/title>/i.exec(html)||[])[1]||"").replace(/\s+/g," ");
   if(!title)return null;
-  let images=ldImages(ld&&ld.image);if(!images.length)images=ldImages(meta["og:image"]||meta["twitter:image"]);
-  const desc=plainText((ld&&ld.description)||meta["og:description"]||meta.description||"");
-  const price=ldPrice(ld&&ld.offers);
-  return{n:cut(title,120),sn:cut(title,60),c:"",d:desc,images:images.filter(x=>/^https?:\/\//.test(x)).filter((x,i,a)=>a.indexOf(x)===i).slice(0,5),cost:price,sup:{s:u.hostname.replace(/^www\./,""),u:u.href}};
+  let images=ldImages(ld&&ld.image);if(!images.length)images=cleanImgList(meta["og:image"]||meta["twitter:image"]);
+  if(!images.length&&nd)images=cleanImgList(nd.images||nd.image_urls||nd.media||nd.image);
+  const desc=plainText((ld&&ld.description)||meta["og:description"]||meta.description||(nd&&(nd.description||nd.product_description))||"");
+  const price=ldPrice(ld&&ld.offers)||(()=>{if(!nd)return 0;const v=nd.price||nd.discounted_price||nd.selling_price||(nd.offers&&(nd.offers.price||nd.offers.lowPrice));return +String(v??"").replace(/[^\d.]/g,"")||0})();
+  return{n:cut(title,120),sn:cut(title,60),c:"",d:desc,images:cleanImgList(images),cost:price,sup:{s:base||u.hostname.replace(/^www\./,""),u:u.href}};
+}
+
+/* ---- Meesho product fetch (share links from the app or website) ---- */
+const MEESHO_RE=/(^|\.)meesho\.(com|link|app\.link)$/i;
+function probeId(str){
+  const s0=String(str||"");
+  let m=/\/p\/([A-Za-z0-9_-]{4,})/.exec(s0);if(m)return m[1];
+  m=/\/(?:product|products)\/([A-Za-z0-9_-]{4,})/.exec(s0);if(m)return m[1];
+  m=/[?&](?:product_id|pid|productId|deep_link_value|id)=([A-Za-z0-9_-]{4,})/i.exec(s0);if(m)return m[1];
+  return "";
+}
+function meeshoPrice(v){
+  if(v&&typeof v==="object")v=v.price||v.value||v.amount||v.discounted_price||v.final_price||0;
+  let n=+String(v??"").replace(/[^\d.]/g,"");if(!isFinite(n))n=0;
+  if(n>=10000&&n%100===0)n=n/100;
+  return Math.round(n)||0;
+}
+function guessCat(n){
+  const t=String(n||"").toLowerCase();
+  if(/watch|smart ?watch|chronograph/.test(t))return"Watches";
+  if(/shoe|sneaker|sandal|slipper|heel|footwear|loafer|boot|flip ?flop/.test(t))return"Shoes";
+  if(/bag|backpack|purse|wallet|clutch|handbag|trolley|sling/.test(t))return"Bags";
+  if(/earring|necklace|jewell?ery|bracelet|\bring\b|pendant|anklet|bangle|chain|kada|mangalsutra/.test(t))return"Accessories";
+  if(/kurti|kurta|saree|sari|lehenga|dress|shirt|tshirt|t-shirt|jeans|trouser|top|blouse|suit|jacket|hoodie|skirt|dupatta|co-?ord|nightsuit|night ?suit/.test(t))return"Fashion";
+  return"";
+}
+const MEESHO_HEADERS={...UA,accept:"application/json, text/plain, */*",referer:"https://www.meesho.com/","sec-fetch-site":"same-origin","sec-fetch-mode":"cors","sec-fetch-dest":"empty"};
+function priceHint(html){
+  const t=String(html||"");
+  const m=/"(?:discounted_?price|selling_?price|final_?price|price)"\s*:\s*"?(\d{2,7})"?/i.exec(t);
+  return m?meeshoPrice(m[1]):0;
+}
+function normMeesho(j,u,id){
+  if(!j)return null;
+  let p=j.product||j.data||j.result||null;
+  if(!p)p=deepFind(j,o=>o&&typeof o==="object"&&!Array.isArray(o)&&(o.name||o.product_name)&&(o.images||o.image_urls||o.media||o.image))||null;
+  if(!p)return null;
+  const name=plainText(p.name||p.product_name||p.title||"");
+  if(!name||name.length<3)return null;
+  const images=cleanImgList(p.images||p.image_urls||p.media||p.product_images||p.image||[]);
+  const cost=meeshoPrice(p.price||p.discounted_price||p.selling_price||p.min_price||p.final_price||(p.price_range&&p.price_range.min));
+  const desc=plainText(p.description||p.product_description||p.desc||p.details||"");
+  const cat=plainText(p.category||p.category_name||p.sub_category||p.categoryName||"");
+  return{n:cut(name,120),sn:cut(name,60),c:cut(cat,40)||guessCat(name),d:desc,images,cost,sup:{s:"meesho",id:id||"",u:u.href}};
+}
+function parseMeeshoHtml(html,u,id){
+  const meta=metaMap(html);
+  const nd=nextDataProduct(html);if(nd){const p=normMeesho(nd,u,id);if(p&&p.images.length)return p}
+  const ld=ldProduct(html);
+  const price=ldPrice(ld&&ld.offers)||meeshoPrice(meta["product:price:amount"]||meta["og:price:amount"])||priceHint(html);
+  if(ld&&ld.name){const n=plainText(ld.name);if(n)return{n:cut(n,120),sn:cut(n,60),c:guessCat(n),d:plainText(ld.description||meta["og:description"]||""),images:cleanImgList(ldImages(ld.image).concat(ldImages(meta["og:image"]))),cost:price,sup:{s:"meesho",id:id||"",u:u.href}}}
+  const title=plainText(meta["og:title"]||meta["twitter:title"]||"");
+  if(!title)return null;
+  return{n:cut(title,120),sn:cut(title,60),c:guessCat(title),d:plainText(meta["og:description"]||meta.description||""),images:cleanImgList(ldImages(meta["og:image"]||meta["twitter:image"])),cost:price,sup:{s:"meesho",id:id||"",u:u.href}};
+}
+/* Meesho's product pages sit behind a strict bot filter, but its sitemaps are open.
+   Sitemaps are split into ~500 shards, each covering a range of product ids, so we
+   binary-search the shard and read the product's name + photos from it. */
+async function meeshoSitemap(id,u){
+  const target=parseInt(id,36);
+  if(!isFinite(target)||target<=0)return null;
+  const head=async s=>{
+    try{
+      const r=await fetch("https://www.meesho.com/sitemap/pdp/"+s+".xml",{headers:{...UA,range:"bytes=0-600"},signal:AbortSignal.timeout(7000)});
+      if(!r.ok)return"";
+      const m=/\/p\/([A-Za-z0-9]+)</.exec(await r.text());
+      return m?m[1]:"";
+    }catch(e){return""}
+  };
+  let lo=0,hi=520,ans=-1;
+  while(lo<=hi){
+    const mid=(lo+hi)>>1,h=await head(mid);
+    if(!h){hi=mid-1;continue}
+    if(parseInt(h,36)<=target){ans=mid;lo=mid+1}else hi=mid-1;
+  }
+  if(ans<0)return null;
+  for(const s of [ans,ans+1,ans-1]){
+    if(s<0||s>520)continue;
+    try{
+      const r=await fetch("https://www.meesho.com/sitemap/pdp/"+s+".xml",{headers:UA,signal:AbortSignal.timeout(16000)});
+      if(!r.ok)continue;
+      const xml=await r.text(),at=xml.indexOf("/p/"+id+"<");
+      if(at<0)continue;
+      const st=xml.lastIndexOf("<url>",at),en=xml.indexOf("</url>",at);
+      const block=xml.slice(st<0?Math.max(0,at-2000):st,en<0?Math.min(xml.length,at+4000):en);
+      const loc=(/<loc>([^<]+)<\/loc>/i.exec(block)||[])[1]||"";
+      const imgs=[];let m;const re=/<image:loc>([^<]+)<\/image:loc>/gi;
+      while((m=re.exec(block))){
+        let x=m[1].trim();if(x.startsWith("//"))x="https:"+x;
+        if(!/^https?:\/\//.test(x))continue;
+        x=x.replace(/\.avif(\?|$)/i,".jpg$1");
+        if(/[?&]width=\d+/i.test(x))x=x.replace(/([?&])width=\d+/i,"$1width=1024");
+        else x+=(x.includes("?")?"&":"?")+"width=1024";
+        if(imgs.indexOf(x)<0)imgs.push(x);
+      }
+      const sm=/meesho\.com\/([^/]+)\/p\//i.exec(loc);
+      let name=sm?decodeURIComponent(sm[1]).replace(/[-_]+/g," ").replace(/\s+/g," ").trim():"";
+      if(!name||name.length<3)continue;
+      name=name.replace(/\b[a-z]/g,c=>c.toUpperCase());
+      return{n:cut(name,120),sn:cut(name,60),c:guessCat(name),d:"",images:imgs.slice(0,6),cost:0,sup:{s:"meesho",id,u:u.href}};
+    }catch(e){}
+  }
+  return null;
+}
+async function meeshoProduct(u){
+  let id=probeId(u.pathname);
+  if(!id)for(const k of ["$canonical_url","deep_link_value","deeplink","url","link","redirect","target_url","$desktop_url","af_dp","pid","product_id"]){const pid=probeId(u.searchParams.get(k)||"");if(pid){id=pid;break}}
+  if(!id&&/(^|\.)(meesho\.link|app\.link|meesho\.app\.link)$/i.test(u.hostname)){
+    try{const r=await fetch(u.href,{headers:UA,redirect:"follow",signal:AbortSignal.timeout(8000)});id=probeId(r.url)||"";if(!id)id=probeId(await r.text())||""}catch(e){}
+  }
+  if(id){
+    const direct=(async()=>{
+      for(const api of ["https://www.meesho.com/api/v1/products/","https://www.meesho.com/api/v1/product/"]){
+        try{const r=await fetch(api+encodeURIComponent(id),{headers:MEESHO_HEADERS,signal:AbortSignal.timeout(6000)});
+          if(r.ok){const p=normMeesho(await r.json().catch(()=>null),u,id);if(p&&p.n)return p}
+        }catch(e){}
+      }
+      for(const page of ["https://www.meesho.com/p/"+encodeURIComponent(id),u.href]){
+        try{const r=await fetch(page,{headers:UA,redirect:"follow",signal:AbortSignal.timeout(6000)});
+          if(r.ok){const p=parseMeeshoHtml(await r.text(),u,id);if(p&&p.n&&p.n.length>3)return p}
+        }catch(e){}
+      }
+      return null;
+    })();
+    const both=await Promise.allSettled([direct,meeshoSitemap(id,u)]);
+    const q=both[0].status==="fulfilled"?both[0].value:null;
+    const sp=both[1].status==="fulfilled"?both[1].value:null;
+    if(q&&sp)return{n:(q.n&&q.n.length>3)?q.n:sp.n,sn:(q.n&&q.n.length>3)?cut(q.n,60):sp.sn,c:q.c||sp.c,d:q.d||sp.d,images:(q.images&&q.images.length)?q.images:sp.images,cost:q.cost||sp.cost,sup:sp.sup};
+    if(q)return q;
+    if(sp)return sp;
+    return null;
+  }
+  try{const r=await fetch(u.href,{headers:UA,redirect:"follow",signal:AbortSignal.timeout(8000)});if(r.ok){const p=parseMeeshoHtml(await r.text(),u,id);if(p)return p}}catch(e){}
+  throw new Error("Open a Meesho product and tap Share > Copy link. The link should contain /p/.");
 }
 let jvCred={t:0,url:"",key:""},jvCat={t:0,map:{}};
 async function jvecCreds(){
@@ -612,6 +773,23 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     }
     return J({ok:1});
   }
+  if(path==="proxy/img"&&req.method==="GET"){
+    let target="";try{target=new URL(req.url).searchParams.get("u")||""}catch(e){}
+    let tu;try{tu=new URL(target)}catch(e){return J({error:"Bad image URL"},400)}
+    if(!/^https?:$/.test(tu.protocol))return J({error:"Bad image URL"},400);
+    const host=tu.hostname.toLowerCase();
+    if(/^(localhost|127\.|0\.0\.0\.0|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(host)||/\.local$/.test(host)||host==="::1")return J({error:"Blocked"},400);
+    try{
+      const r=await fetch(tu.href,{headers:{...UA,accept:"image/avif,image/webp,image/apng,image/*,*/*;q=0.8",referer:tu.origin+"/"},redirect:"follow"});
+      if(!r.ok)return J({error:"Image fetch failed"},404);
+      const ct=String(r.headers.get("content-type")||"").toLowerCase();
+      if(ct&&!ct.startsWith("image/"))return J({error:"Not an image"},415);
+      const buf=Buffer.from(await r.arrayBuffer());
+      if(!buf.length)return J({error:"Empty image"},404);
+      if(buf.length>8*1024*1024)return J({error:"Image too large"},413);
+      return new Response(buf,{headers:{"content-type":ct&&ct.startsWith("image/")?ct:"image/jpeg","cache-control":"public, max-age=86400","access-control-allow-origin":"*"}});
+    }catch(e){return J({error:"Image fetch failed"},502)}
+  }
   if(path.startsWith("img/")&&req.method==="GET"){
     const id=path.slice(4);if(!/^[a-f0-9]{24}$/.test(id))return J({error:"Not found"},404);
     const r=await db.getWithMetadata("img/"+id,{type:"arrayBuffer"});if(!r)return J({error:"Not found"},404);
@@ -644,15 +822,22 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
   }
   if(path==="import/product"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
-    const raw=String(b.url||"").trim();let u;try{u=new URL(raw)}catch(e){return J({error:"Paste the full product link, starting with https://"},400)}
+    let raw=String(b.url||"").trim();
+    const found=raw.match(/https?:\/\/[^\s"'<>]+/i);
+    if(found)raw=found[0];
+    else if(/^meesho:\/\//i.test(raw)){const did=probeId(raw);if(did)raw="https://www.meesho.com/p/"+did}
+    let u;try{u=new URL(raw)}catch(e){return J({error:"Paste the full product link, starting with https://"},400)}
     if(!/^https?:$/.test(u.protocol))return J({error:"Only http and https links work"},400);
     let p=null;
-    try{if(/(^|\.)jvecomb2b\.com$/i.test(u.hostname))p=await jvecProduct(u);if(!p)p=await genericProduct(u)}
+    try{
+      if(/(^|\.)jvecomb2b\.com$/i.test(u.hostname))p=await jvecProduct(u);
+      if(!p&&(MEESHO_RE.test(u.hostname)||/meesho/i.test(u.hostname)))p=await meeshoProduct(u);
+      if(!p)p=await genericProduct(u);
+    }
     catch(e){return J({error:String((e&&e.message)||e)},502)}
     if(!p)return J({error:"Could not read that product. Open it in your browser, copy the link again, or add the product manually."},422);
     const mk=Math.min(10,Math.max(1,+b.markup||2)),cost=+p.cost||0,explicit=+b.price||0;
-    p.cost=cost;p.p=explicit>0?Math.round(explicit):round9(cost*mk);p.o=round9(Math.max(p.p*1.5,p.p+1));
-    if(!p.p)p.p=1;
+    p.cost=cost;p.p=explicit>0?Math.round(explicit):(cost>0?round9(cost*mk):0);p.o=p.p?round9(Math.max(p.p*1.5,p.p+1)):0;
     return J({ok:1,product:p,markup:mk});
   }
   if(path==="import/sync"&&req.method==="POST"){
