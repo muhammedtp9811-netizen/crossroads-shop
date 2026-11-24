@@ -225,91 +225,62 @@ function parseMeeshoHtml(html,u,id){
   return{n:cut(title,120),sn:cut(title,60),c:guessCat(title),d:plainText(meta["og:description"]||meta.description||""),images:cleanImgList(ldImages(meta["og:image"]||meta["twitter:image"])),cost:price,sup:{s:"meesho",id:id||"",u:u.href}};
 }
 async function meeshoProduct(u){
-  let id=probeId(u.pathname);
-  if(!id)for(const k of ["$canonical_url","deep_link_value","deeplink","url","link","redirect","target_url","$desktop_url","af_dp","pid","product_id"]){const pid=probeId(u.searchParams.get(k)||"");if(pid){id=pid;break}}
-  if(!id&&/(^|\.)(meesho\.link|app\.link|meesho\.app\.link)$/i.test(u.hostname)){
-    try{const r=await fetch(u.href,{headers:UA,redirect:"follow",signal:AbortSignal.timeout(8000)});id=probeId(r.url)||"";if(!id)id=probeId(await r.text())||""}catch(e){}
+  const rawUrl = (u && u.href) ? u.href : String(u||"");
+  let id = probeId((u && u.pathname) || "");
+  if(!id) for(const k of ["$canonical_url","deep_link_value","deeplink","url","link","redirect","target_url","$desktop_url","af_dp","pid","product_id"]){const pid=probeId((u && u.searchParams ? u.searchParams.get(k) : "")||"");if(pid){id=pid;break}}
+  if(!id && /(^|\.)(meesho\.link|app\.link|meesho\.app\.link)$/i.test((u&&u.hostname)||"")){
+    try{const r=await fetch(rawUrl,{headers:UA,redirect:"follow",signal:AbortSignal.timeout(8000)});id=probeId(r.url)||"";if(!id)id=probeId(await r.text())||""}catch(e){}
   }
-  if(id){
-    for(const api of ["https://www.meesho.com/api/v1/products/","https://www.meesho.com/api/v1/product/"]){
-      try{const r=await fetch(api+encodeURIComponent(id),{headers:MEESHO_HEADERS,signal:AbortSignal.timeout(6000)});
-        if(r.ok){const p=normMeesho(await r.json().catch(()=>null),u,id);if(p&&p.n)return p}
-      }catch(e){}
-    }
-    for(const page of ["https://www.meesho.com/p/"+encodeURIComponent(id),u.href]){
-      try{const r=await fetch(page,{headers:UA,redirect:"follow",signal:AbortSignal.timeout(6000)});
-        if(r.ok){const p=parseMeeshoHtml(await r.text(),u,id);if(p&&p.n&&p.n.length>3)return p}
-      }catch(e){}
-    }
-    return null;
+  if(!id) throw new Error("Could not find a product ID in that link. Paste the full Meesho product link (it should contain /p/).");
+  // binary search the sitemap index
+  const target = parseInt(id, 36);
+  if(!isFinite(target) || target <= 0) throw new Error("Invalid product ID.");
+  const arr = "0:88qmr,1:9ecq8,2:qrm3t,3:tvzlr,4:14nbwx,5:1a28bh,6:1gvp73,7:1izwjr,8:1tx7rs,9:2305mp,10:2bfkgp,11:2dz82i,12:2i569y,13:2s7kzs,14:2wj5h0,15:32ek24,16:3foup2,17:3ghape,18:3pqwrm,19:3tw5os,20:45fldj,21:44t49x,22:4ep7fn,23:4gvimx,24:4p9vjm,25:4tr2au,26:5052x7,27:51944n,28:53p9b8,29:58jsgx,30:5duh60,31:5f9qx8,32:5hou6g,33:5l67fn,34:5o1svd,35:5w4kl8,36:5y23qj,37:5znp1z,38:63wt1i,39:66nu4o,40:66nu4o,41:68c8l1,42:68zeyt,43:68zeyt,44:69khhz,45:69x4m2,46:6ai759,47:6az1yx,48:6bwrme,49:6bmxn1,50:6d9xis,51:6d9xis,52:6drhmp,53:6er2xr,54:6eu49p,55:6eutjw,56:6f85yf,57:6frtx0,58:6gcwg2,59:6gyxqr,60:6ghtfz,61:6h02tt,62:6i1h7y,63:6i910z,64:6ipsor,65:6iraf6,66:6jp02k,67:6jp02j,68:6k1n6r,69:6kii0f,70:6lwd74,71:6let38,72:6m5hw6,73:6n1sz3,74:6n1sz3,75:6nqdxc,76:6ovtp9,77:6pcoiz,78:6ouf4o,79:6pcoiz,80:6pz5mj,81:6qr8zw,82:6qr8zw,83:6r9ie1,84:6sa16f,85:6s3pm9,86:6tbyj1,87:6ssakg,88:6tfgyb,89:6ukwq7,90:6v6ojf,91:6v6ojf,92:6vvys2,93:6wc4bh,94:6w3owm,95:6wh1b5,96:6worfr,97:6xiynt,98:6xhk3f,99:6xqosk,100:6y3bwu,101:6yf9qr,102:6zpmi9,103:703o71,104:6zrqcz,105:703o73,106:70ap1d,107:70xvf4,108:7146z5,109:71xox0,110:72tapt,111:72ywzq,112:72mz5q,113:73nes9,114:73bk3w,115:74dsir,116:746gmg,117:752rp8,118:74jt0q,119:752rp8,120:75n4y6,121:75s1xq,122:75jmiy,123:75s1xq,124:76k5b5,125:76xhpo,126:779wxi,127:76xhpo,128:77roxt,129:77ik8r,130:77roxt,131:781ix4,132:78idqt,133:78yjab,134:79pxdg,135:7af7lx,136:7b0a53,137:7c3m2d,138:7ecdrf,139:7di6j8,140:7gl5gi,141:7hvi85,142:7g26s1,143:7hdy49,144:7ifvgz,145:7jcvu1,146:7jv587,147:7lus8a,148:7ksuvj,149:7lw6so,150:7ogwbx,151:7mpoqs,152:7ogwbx,153:7p4rzy,154:7rgcu2,155:7ro2yn,156:7qoyqv,157:7rgcu2,158:7s9urz,159:7sdd74,160:7td6p4,161:7v77fe,162:7u1rni,163:7v77fe,164:7yghwt,165:7wre6a,166:80dbru,167:7yghwt,168:821q89,169:80l1wk,170:8493d3,171:821q89,172:82v867,173:872xl5,174:84w9qo,175:889rxn,176:86ko71,177:8a2e3b,178:88eox5,179:8bfjzu,180:8cfdhv,181:8d0g0z,182:8bfjzv,183:8cfdhv,184:8d395u,185:8ebi2s,186:8f500o,187:8jj0zv,188:8g7mno,189:8lbn5j,190:8i9dim,191:8od7id,192:8kr9wp,193:8la8l2,194:8marde,195:8o7l8g,196:8sd6sv,197:8psh9k,198:8r9uvn,199:8upgx4,200:8ver5n,201:8trr9u,202:8whdsm,203:8upgx4,204:8x6o12,205:8vkdfh,206:8wisd0,207:8x0cgz,208:8x6o12,209:8xqbzp,210:9040oj,211:90dunt,212:90wtc4,213:918r65,214:8zxp4c,215:90dunt,216:90hpq5,217:90ucud,218:90ykjs,219:91hvva,220:91msux,221:91wmuf,222:92aoiw,223:92s8mv,224:9322m4,225:93b7ba,226:93g4aw,227:93s24w,228:941w47,229:947ie7,230:96qtcs,231:94w3c9,232:9721wl,233:95cy60,234:97orp2,235:95plai,236:9651jh,237:96evj0,238:98ochu,239:96z8rm,240:99bivy,241:97cl66,242:9a3m9e,243:9aan3n,244:98b03w,245:98i0y0,246:98w2mq,247:99atlq,248:9bjlat,249:99rofd,250:9ccdyl,251:9ag9dk,252:9cvcmx,253:9d8p1e,254:9bd9qr,255:9drnps,256:9butuf,257:9ccdyl,258:9ck435,259:9ct8s8,260:9f6xh0,261:9d9ebn,262:9drnps,263:9e2w9l,264:9eicir,265:9en9if,266:9f6xh0,267:9fpw5e,268:9fs004,269:9gd2j7,270:9gvbxe,271:9gzjmp,272:9hfp63,273:9kaxyx,274:9iibt6,275:9iz6mu,276:9jd8bl,277:9jgqqo,278:9lt0v2,279:9kqe81,280:9l5570,281:9largy,282:9lt0v2,283:9mhltd,284:9oa7z0,285:9ooyy0,286:9oo9nt,287:9p4f74,288:9q3w25,289:9rb31n,290:9rb31n,291:9rznzw,292:9sia16,293:9sxjys,294:9twui6,295:9uv346,296:9vl8yj,297:9w4wx3,298:9wto6x,299:9xifgr,300:9y5lum,301:9zgb98,302:a02m1b,303:a0rdb3,304:a29suf,305:a2z32v,306:a3lduv,307:a3tzlb,308:a4ao3c,309:a4seis,310:a5au8h,311:a5p8k8,312:a6ik6p,313:a72r3z,314:a7rv0w,315:a8fx0i,316:a9gyrh,317:aameji,318:ac7zuq,319:acdft3,320:ad6l3w,321:aehgu5,322:af7gcw,323:afvoo1,324:agbb8s,325:ah8hxg,326:ain2ei,327:ajaf3t,328:ajt7gk,329:amaekj,330:amjj9q,331:an2o9l,332:aokxhf,333:apzulg,334:aqnjxw,335:ar5adf,336:asdja9,337:asue3x,338:audp91,339:av4qp6,340:aw3old,341:ax2g62,342:ayrwjp,343:az6h74,344:b0k62b,345:b2p2p6,346:b3mfpd,347:b4o0f1,348:b4ywbs,349:b7fqsg,350:b8bcl6,351:b9memz,352:bcxsz9,353:bdwx6w,354:bfvuws,355:bghmq0,356:bhhsv8,357:bjtwo0,358:bkfohd,359:blwj4j,360:boq0pq,361:br421n,362:bscnln,363:buo8fr,364:bvhqdp,365:bzmsza,366:c064av,367:c1f8tg,368:c3ie8p,369:c8bcid,370:c986jw,371:cex9kq,372:cgpcrv,373:chrt3a,374:cmqwli,375:cprro0,376:crwoaw,377:cu7juo,378:czwa8m,379:d38dv2,380:daz7qr,381:dd7mss,382:dfmdey,383:dj0kw3,384:dp428p,385:dtyrq3,386:duz46t,387:e0nhxh,388:e3xhp6,389:e6e5ug,390:ean3ic,391:eh49wr,392:ek3wqg,393:emeylv,394:en9v48,395:epizgj,396:eqfztm,397:eqy97r,398:eriz3r,399:et8fhf,400:euvlot,401:ev3i4y,402:evud9i,403:ewfyra,404:eyjgtk,405:ezlqth,406:f0k5r1,407:f1fxv8,408:f42xko,409:f4dzsw,410:f5huot,411:f71c5f,412:f9hhc2,413:faa3o5,414:facwt9,415:fcobbp,416:fdrzw3,417:fge3zk,418:fgt7lq,419:fh84w1,420:fhwjiz,421:fi2org,422:fio3xr,423:fje3gg,424:fjvtvx,425:fk8zys,426:fkl44b,427:fkzigb,428:flfbcl,429:fm3wau,430:fnaqna,431:foqpop,432:fpmbhe,433:frexn2,434:ft4qny,435:fvxvlu,436:fxxilx,437:g0ff07,438:g1r6c5,439:g2c8va,440:g3jshw,441:g4u59h,442:g5jfhs,443:g6v6u2,444:g7lvn1,445:g8wxoq,446:g92jyo,447:ga8p0y,448:gawkoz,449:gaxz9d,450:gbx3h5,451:gc44bm,452:gcn2zz,453:gdf6dj,454:gfalof,455:ggjjv6,456:ghrss1,457:gi3qlx,458:giky2u,459:gj72j7,460:gjg78c,461:gk2obs,462:gkqjzz,463:gkya4g,464:glxecd,465:gmfnqj,466:gn4xz0,467:gnpb7v,468:gogpb3,469:gpeeyd,470:gr8fom,471:gsjhqc,472:gt0ck1,473:gtlf35,474:gu4dre,475:gvkcsy,476:gxv8cu,477:gyvr54,478:gzai42,479:gzp930,480:h0kuvn,481:h1hv8q,482:h3hi8u,483:h4ws03,484:h580jy,485:h64bmo,486:h6bch2,487:h71bzt,488:h8hb18,489:ha7422,490:haq2qe,491:hb689w,492:hbrat2,493:hcayrl,494:hf0lad,495:hf4szv,496:hgbnc7,497:hghywb,498:hiuyaw,499:hjyzic,500:hkcbwo,501:hkm5w4,502:hlhroq,503:hmzuky,504:hnrxye,505:hnna0v".split(",");
+  let lo = 0, hi = arr.length - 1, guess = -1;
+  while(lo <= hi){
+    const mid = (lo+hi)>>1, seg = arr[mid], c = seg.indexOf(":");
+    if(parseInt(seg.slice(c+1), 36) <= target){ guess = +seg.slice(0,c); lo = mid+1; } else hi = mid-1;
   }
-  try{const r=await fetch(u.href,{headers:UA,redirect:"follow",signal:AbortSignal.timeout(8000)});if(r.ok){const p=parseMeeshoHtml(await r.text(),u,id);if(p)return p}}catch(e){}
-  throw new Error("Open a Meesho product and tap Share > Copy link. The link should contain /p/.");
+  if(guess < 0) throw new Error("Product not found in Meesho catalogue.");
+  const shards = [guess].filter(sh => sh >= 0);
+  for(const sh of shards){
+    try {
+      const r = await fetch("https://r.jina.ai/https://www.meesho.com/sitemap/pdp/"+sh+".xml", {headers:{"x-return-format":"html"}, signal:AbortSignal.timeout(15000)});
+      if(!r.ok) continue;
+      const xml = await r.text();
+      const at = xml.indexOf("/p/"+id+"<");
+      if(at < 0) continue;
+      const st = xml.lastIndexOf("<url>", at), en = xml.indexOf("</url>", at);
+      const block = xml.slice(st < 0 ? Math.max(0, at-2000) : st, en < 0 ? Math.min(xml.length, at+4000) : en);
+      const loc = (/<loc>([^<]+)<\/loc>/i.exec(block) || [])[1] || "";
+      const imgs = []; let m; const re = /<image:loc>([^<]+)<\/image:loc>/gi;
+      while((m = re.exec(block))){
+        let x = m[1].trim(); if(x.startsWith("//")) x = "https:"+x;
+        if(!/^https?:\/\//.test(x)) continue;
+        x = x.replace(/\.avif(\?|$)/i, ".jpg$1");
+        if(/[?&]width=\d+/i.test(x)) x = x.replace(/([?&])width=\d+/i, "$1width=1200");
+        else x += (x.includes("?") ? "&" : "?") + "width=1200";
+        if(imgs.indexOf(x) < 0) imgs.push(x);
+      }
+      const sm = /meesho\.com\/([^/]+)\/p\//i.exec(loc);
+      let name = sm ? decodeURIComponent(sm[1]).replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim() : "";
+      if(!name || name.length < 3) continue;
+      name = name.replace(/\b[a-z]/g, c => c.toUpperCase());
+      const cat = guessCatServer(name);
+      return {n: cut(name,120), sn: cut(name,60), c: cat, d: "", images: imgs.slice(0,6), cost: 0, sup: {s: "meesho", id, u: rawUrl}};
+    } catch(e) {}
+  }
+  throw new Error("Product not found in Meesho catalogue. It may be too new.");
 }
-let jvCred={t:0,url:"",key:""},jvCat={t:0,map:{}};
-async function jvecCreds(){
-  if(jvCred.url&&Date.now()-jvCred.t<6*3600*1000)return jvCred;
-  const home=await fetch("https://www.jvecomb2b.com/",{headers:UA});
-  if(!home.ok)throw new Error("The supplier site is not reachable right now.");
-  const html=await home.text(),m=/<script[^>]+src\s*=\s*["']([^"']*\/assets\/[^"']+\.js)["']/i.exec(html);
-  if(!m)throw new Error("The supplier page changed. Open the product and copy the link again.");
-  const js=await(await fetch(m[1].startsWith("http")?m[1]:"https://www.jvecomb2b.com"+m[1],{headers:UA})).text();
-  const url=(js.match(/https:\/\/[a-z0-9]+\.supabase\.co/)||[])[0],key=(js.match(/eyJ[A-Za-z0-9_\-.]{60,}/)||[])[0];
-  if(!url||!key)throw new Error("Could not reach the supplier catalogue.");
-  jvCred={t:Date.now(),url,key};return jvCred;
+function guessCatServer(n){
+  const t = String(n||"").toLowerCase();
+  if(/watch|smart ?watch|chronograph/.test(t)) return "Watches";
+  if(/shoe|sneaker|sandal|slipper|heel|footwear|loafer|boot|flip ?flop/.test(t)) return "Shoes";
+  if(/bag|backpack|purse|wallet|clutch|handbag|trolley|sling/.test(t)) return "Bags";
+  if(/earring|necklace|jewell?ery|bracelet|\bring\b|pendant|anklet|bangle|chain|kada|mangalsutra/.test(t)) return "Accessories";
+  if(/kurti|kurta|saree|sari|lehenga|dress|shirt|tshirt|t-shirt|jeans|trouser|top|blouse|suit|jacket|hoodie|skirt|dupatta|co-?ord|nightsuit|night ?suit/.test(t)) return "Fashion";
+  return "";
 }
-async function jvecFetch(creds,path){
-  const r=await fetch(creds.url+"/rest/v1/"+path,{headers:{apikey:creds.key,authorization:"Bearer "+creds.key}});
-  if(!r.ok)return null;return r.json().catch(()=>null);
-}
-async function jvecProduct(u){
-  const parts=u.pathname.split("/").filter(Boolean);let slug=parts[0]==="product"&&parts[1]?decodeURIComponent(parts[1]):"";
-  if(!slug&&parts[0]==="products"&&parts.length>1)slug=decodeURIComponent(parts[parts.length-1]);
-  if(!slug)slug=u.searchParams.get("slug")||u.searchParams.get("id")||"";
-  if(!slug)throw new Error("Open one product, not the whole list, and copy that product link (it contains /product/).");
-  const creds=await jvecCreds();
-  let row=null;
-  if(/^[0-9a-f-]{36}$/i.test(slug)){const rr=await jvecFetch(creds,"products?id=eq."+encodeURIComponent(slug)+"&select=*&limit=1");row=rr&&rr[0]}
-  if(!row){const rr=await jvecFetch(creds,"products?slug=eq."+encodeURIComponent(slug)+"&select=*&limit=1");row=rr&&rr[0]}
-  if(!row)return null;
-  if(Date.now()-jvCat.t>6*3600*1000){const rows=await jvecFetch(creds,"categories?select=id,name&limit=500");const map={};(rows||[]).forEach(c=>{if(c&&c.id)map[c.id]=c.name||""});jvCat={t:Date.now(),map}}
-  const cost=[+row.discounted_price,+row.original_price].filter(x=>x>0).sort((a,b)=>a-b)[0]||0;
-  const images=[row.image].concat(Array.isArray(row.images)?row.images:[]).filter(x=>x&&/^https?:\/\//.test(x)).filter((x,i,a)=>a.indexOf(x)===i).slice(0,5);
-  const name=String(row.name||"").replace(/\s+/g," ").trim();
-  if(!name)return null;
-  return{n:cut(name,120),sn:cut(name,60),c:jvCat.map[row.category_id]||"",d:plainText(row.description),images,cost,
-    sup:{s:"jvecomb2b",id:row.id||"",slug:row.slug||slug,cost,stock:+(row.on_hand_stock??row.stock??0)||0,u:u.href}};
-}
-
-/* ---------- Instagram publishing (official Graph API) ---------- */
-const IG_VER="v21.0",IG_BASE="https://crossroads-shopping.netlify.app";
-const IG_TAGS={Electronics:["#electronics","#tech","#gadgets","#techdeals"],Accessories:["#accessories","#style","#gifts"],Shirts:["#shirts","#fashion","#menswear"],Fashion:["#fashion","#style","#ootd"],Shoes:["#shoes","#sneakers","#footwear"]};
-function igCaption(p){
-  const name=cut(String(p.n||"").trim(),90),desc=plainText(p.d||"").replace(/\s+/g," ").slice(0,300),price=+p.p||0,old=+p.o||0;
-  const lines=[name,"",desc,"",price?("Price: ₹"+price.toLocaleString("en-IN")+(old>price?" (was ₹"+old.toLocaleString("en-IN")+")":"")):"","Free delivery across India in about 5 days. Cash on Delivery available.","Order here: "+IG_BASE+"/#product/"+p.id,""];
-  const tags=["#CrossroadsShopping","#OnlineShoppingIndia","#IndiaShopping","#ShopNow"];
-  const cat=String(p.c||"").toLowerCase();Object.keys(IG_TAGS).forEach(k=>{if(cat.includes(k.toLowerCase()))tags.push(...IG_TAGS[k])});
-  const nameTags=name.toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(w=>w.length>3).slice(0,3).map(w=>"#"+w);
-  const out=[...lines,...tags,...nameTags].join("\n");
-  return out.length>2100?out.slice(0,2100):out;
-}
-async function igCall(url,opt){
-  const r=await fetch(url,opt),d=await r.json().catch(()=>({}));
-  if(!r.ok||!d||d.error)throw new Error((d&&d.error&&d.error.message)||("Instagram error "+r.status));
-  return d;
-}
-async function igVerify(user,token){return igCall("https://graph.facebook.com/"+IG_VER+"/"+encodeURIComponent(user)+"?fields=username,name&access_token="+encodeURIComponent(token))}
-async function igCreate(user,token,params){
-  const body=new URLSearchParams(Object.assign({},params,{access_token:token}));
-  const d=await igCall("https://graph.facebook.com/"+IG_VER+"/"+encodeURIComponent(user)+"/media",{method:"POST",body});
-  if(!d.id)throw new Error("Instagram did not return a media ID.");return d.id;
-}
-async function igPublish(user,token,id){
-  const body=new URLSearchParams({creation_id:id,access_token:token});
-  const d=await igCall("https://graph.facebook.com/"+IG_VER+"/"+encodeURIComponent(user)+"/media_publish",{method:"POST",body});
-  if(!d.id)throw new Error("Instagram did not publish the media.");return d.id;
-}
-
 export default async(req,context)=>{
   const db=getStore({name:"shop",consistency:"strong"}), path=new URL(req.url).pathname.replace(/^\/api\/?/,"");
   const get=async(k,d)=>(await db.get(k,{type:"json"}))??d;
@@ -714,22 +685,6 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       await mail("Visitor: "+L.length+" actions",`Visitor summary\nFrom: ${where}\nDevice: ${dev}\nCame from: ${cut(b.ref,120)||"direct link"}\n\n`+L.map(x=>cut(x.t,8)+"  "+cut(x.x,100)).join("\n")).catch(()=>{});
     }
     return J({ok:1});
-  }
-  if(path==="dbg/meesho"&&req.method==="GET"){
-    if(!admin())return J({error:"Wrong password"},401);
-    const out={};
-    const probe=async(label,url,headers)=>{
-      const t0=Date.now();
-      try{const r=await fetch(url,{headers,signal:AbortSignal.timeout(8000)});
-        const t=await r.text();
-        out[label]={s:r.status,ms:Date.now()-t0,len:t.length,ct:r.headers.get("content-type"),head:t.slice(0,120).replace(/\s+/g," ")};
-      }catch(e){out[label]={err:String((e&&e.message)||e).slice(0,140),ms:Date.now()-t0}}
-    };
-    await probe("index","https://www.meesho.com/sitemap.xml",{...UA});
-    await probe("shard7","https://www.meesho.com/sitemap/pdp/7.xml",{...UA,range:"bytes=0-600"});
-    await probe("page","https://www.meesho.com/p/1izwjr",{...UA});
-    await probe("img","https://images.meesho.com/images/products/92374407/2sayp.jpg?width=512",{...UA});
-    return J(out);
   }
   if(path==="resolve"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
