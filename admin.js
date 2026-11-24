@@ -123,6 +123,44 @@ async function watermarkList(list,onStep){
   for(let i=0;i<list.length;i++){if(onStep)onStep(i+1,list.length);try{out.push(await brandWatermark(list[i]))}catch(e){out.push(list[i])}}
   return out;
 }
+async function meeshoLookup(raw,note){
+ const resolved=await meeshoResolve(raw);
+ const id=meeshoId(resolved);if(!id){if(note)note("Could not find a product ID in that link. Paste the full Meesho product link (it should contain /p/).");return null}
+ if(note)note("Looking up product "+id+"...");
+ const list=await meeshoIndex();if(!list||!list.length){if(note)note("Could not load Meesho catalogue.");return null}
+ const target=parseInt(id,36);if(!isFinite(target))return null;
+ let lo=0,hi=list.length-1,j=-1;
+ while(lo<=hi){const mid=(lo+hi)>>1;if(list[mid].v<=target){j=mid;lo=mid+1}else hi=mid-1}
+ if(j<0){if(note)note("Product not found in Meesho catalogue.");return null}
+ const cands=[list[j].s,list[j+1]&&list[j+1].s,list[j+2]&&list[j+2].s].filter(x=>typeof x==="number");
+ if(note)note("Reading the Meesho catalogue...");
+ const results=await Promise.all(cands.map(async(sh)=>{
+  try{const r=await fetch("https://r.jina.ai/https://www.meesho.com/sitemap/pdp/"+sh+".xml",{headers:{"x-return-format":"html"}});if(!r.ok)return null;return await r.text()}catch(e){return null}
+ }));
+ for(let k=0;k<results.length;k++){
+  const xml=results[k];if(!xml)continue;
+  const at=xml.indexOf("/p/"+id+"<");if(at<0)continue;
+  const st=xml.lastIndexOf("<url>",at),en=xml.indexOf("</url>",at);
+  const block=xml.slice(st<0?Math.max(0,at-2000):st,en<0?Math.min(xml.length,at+4000):en);
+  const loc=(/<loc>([^<]+)<\/loc>/i.exec(block)||[])[1]||"";
+  const imgs=[];let m;const re=/<image:loc>([^<]+)<\/image:loc>/gi;
+  while((m=re.exec(block))){
+   let x=m[1].trim();if(x.startsWith("//"))x="https:"+x;
+   if(!/^https?:\/\//.test(x))continue;
+   x=x.replace(/\.avif(\?|$)/i,".jpg$1");
+   if(/[?&]width=\d+/i.test(x))x=x.replace(/([?&])width=\d+/i,"$1width=1200");
+   else x+=(x.includes("?")?"&":"?")+"width=1200";
+   if(imgs.indexOf(x)<0)imgs.push(x);
+  }
+  const sm=/meesho\.com\/([^/]+)\/p\//i.exec(loc);
+  let name=sm?decodeURIComponent(sm[1]).replace(/[-_]+/g," ").replace(/\s+/g," ").trim():"";
+  if(!name||name.length<3)continue;
+  name=name.replace(/\b[a-z]/g,c=>c.toUpperCase());
+  return{n:name.slice(0,120),sn:name.slice(0,60),c:guessCat(name),d:"",images:imgs.slice(0,6),cost:0,sup:{s:"meesho",id,u:resolved}};
+ }
+ if(note)note("Product not found in Meesho catalogue. It may be too new.");
+ return null}
+
 function shrink(file,m=720){return new Promise(ok=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,m/Math.max(i.width,i.height)),c=document.createElement("canvas");c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);c.getContext("2d").drawImage(i,0,0,c.width,c.height);ok(c.toDataURL("image/jpeg",.72))};i.onerror=()=>ok("");i.src=r.result};r.readAsDataURL(file)})}
 
 /* ---------- shell + login ---------- */
