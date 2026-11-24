@@ -731,7 +731,13 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     await probe("img","https://images.meesho.com/images/products/92374407/2sayp.jpg?width=512",{...UA});
     return J(out);
   }
-  if(path==="proxy/img"&&req.method==="GET"){
+  if(path==="resolve"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const raw=String(b.url||"").trim();let u;try{u=new URL(raw)}catch(e){return J({error:"Bad URL"},400)}
+    // follow redirects server-side (no CORS)
+    try{const r=await fetch(u.href,{headers:UA,redirect:"follow",signal:AbortSignal.timeout(10000)});return J({ok:1,url:r.url||u.href})}
+    catch(e){return J({error:String((e&&e.message)||e)},502)}
+  }
     let target="";try{target=new URL(req.url).searchParams.get("u")||""}catch(e){}
     let tu;try{tu=new URL(target)}catch(e){return J({error:"Bad image URL"},400)}
     if(!/^https?:$/.test(tu.protocol))return J({error:"Bad image URL"},400);
