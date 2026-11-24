@@ -112,71 +112,12 @@ async function meeshoResolve(raw){
 function meeshoId(t){const s=String(t||"");
   let m=/\/p\/([A-Za-z0-9_-]{4,})/.exec(s);if(m)return m[1];
   m=/\/(?:product|products)\/([A-Za-z0-9_-]{4,})/.exec(s);if(m)return m[1];
-  m=/[?&](?:product_id|pid|productId|id|deep_link_value|catalog_id)=([A-Za-z0-9_-]{4,})/i.exec(s);if(m)return m[1];
-  // Meesho app sometimes shares links with the ID in the path without /p/
-  m=/meesho\.com\/[^\/]*?([a-z0-9]{5,8})(?:[?#]|$)/i.exec(s);if(m&&m[1].length>=5&&m[1].length<=8)return m[1];
+  m=/[?&](?:product_id|pid|productId|id|deep_link_value|catalog_id|share_id|item_id|product|itemid|mid)=([A-Za-z0-9_-]{4,})/i.exec(s);if(m)return m[1];
+  m=/meesho\.com\/s\/([A-Za-z0-9_-]{4,})/i.exec(s);if(m)return m[1];
+  m=/meesho\.com\/(?:[a-z0-9-]+\/)?([a-z0-9]{5,8})(?:[?#\/]|$)/i.exec(s);if(m&&m[1].length>=5&&m[1].length<=8&&!/utm|share|app|link|www|http/i.test(m[1]))return m[1];
+  const ids=s.match(/\b([a-z0-9]{5,8})\b/gi);
+  if(ids){for(const id of ids){if(/^[a-z0-9]+$/i.test(id)&&!/^(utm|http|https|www|meesho|com|share|app|link|source|campaign|medium|product)$/i.test(id))return id}}
   return""}
-async function meeshoLookup(raw,note){
- if(note)note("Resolving link...");
- const resolved=await meeshoResolve(raw);
- const id=meeshoId(resolved);
- if(!id){if(note)note("Could not find a product ID in that link. Paste the full Meesho product link (it should contain /p/).");return null}
- if(note)note("Looking up product "+id+"...");
- if(!isFinite(target))return null;
- let lo=0,hi=list.length-1,j=-1;
- while(lo<=hi){const mid=(lo+hi)>>1;if(list[mid].v<=target){j=mid;lo=mid+1}else hi=mid-1}
- const cands=[list[j].s,list[j+1]&&list[j+1].s,list[j+2]&&list[j+2].s].filter(x=>typeof x==="number");
- if(note)note("Reading the Meesho catalogue…");
- // fetch all candidate shards in parallel for speed
- const results=await Promise.all(cands.map(async(s)=>{
- }));
- for(let k=0;k<results.length;k++){
-  const xml=results[k];if(!xml)continue;
-  const at=xml.indexOf("/p/"+id+"<");if(at<0)continue;
-  const st=xml.lastIndexOf("<url>",at),en=xml.indexOf("</url>",at);
-  const block=xml.slice(st<0?Math.max(0,at-2000):st,en<0?Math.min(xml.length,at+4000):en);
-  const loc=(/<loc>([^<]+)<\/loc>/i.exec(block)||[])[1]||"";
-  const imgs=[];let m;const re=/<image:loc>([^<]+)<\/image:loc>/gi;
-  while((m=re.exec(block))){
-   let x=m[1].trim();if(x.startsWith("//"))x="https:"+x;
-   if(!/^https?:\/\//.test(x))continue;
-   x=x.replace(/\.avif(\?|$)/i,".jpg$1");
-   if(/[?&]width=\d+/i.test(x))x=x.replace(/([?&])width=\d+/i,"$1width=1200");
-   else x+=(x.includes("?")?"&":"?")+"width=1200";
-   if(imgs.indexOf(x)<0)imgs.push(x);
-  }
-  const sm=/meesho\.com\/([^/]+)\/p\//i.exec(loc);
-  let name=sm?decodeURIComponent(sm[1]).replace(/[-_]+/g," ").replace(/\s+/g," ").trim():"";
-  if(!name||name.length<3)continue;
-  name=name.replace(/\b[a-z]/g,c=>c.toUpperCase());
-  return{n:name.slice(0,120),sn:name.slice(0,60),c:guessCat(name),d:"",images:imgs.slice(0,6),cost:0,sup:{s:"meesho",id,u:resolved}};
- }
- return null}
-function rrPath(x,a,b,w,h,r){r=Math.max(0,Math.min(r,h/2));x.beginPath();x.moveTo(a+r,b);x.lineTo(a+w-r,b);x.arcTo(a+w,b,a+w,b+r,r);x.lineTo(a+w,b+h-r);x.arcTo(a+w,b+h,a+w-r,b+h,r);x.lineTo(a+r,b+h);x.arcTo(a,b+h,a,b+h-r,r);x.lineTo(a,b+r);x.arcTo(a,b,a+r,b,r);x.closePath()}
-async function brandWatermark(url){
-  const b=getBrand(),label=String(b.name||"Crossroads Shopping").trim().slice(0,26)||"Crossroads",ac=/^#[0-9a-f]{3,8}$/i.test(b.ac||"")?(b.ac||"#c9a227"):"#c9a227";
-  const res=await fetch("/api/proxy/img?u="+encodeURIComponent(url),{cache:"force-cache"});
-  if(!res.ok)throw new Error("img");
-  const blob=await res.blob();
-  let src;try{src=await createImageBitmap(blob)}catch(e){src=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=URL.createObjectURL(blob)})}
-  const iw=src.width||src.naturalWidth,ih=src.height||src.naturalHeight;
-  const max=1200,sc=Math.min(1,max/Math.max(iw,ih));
-  const w=Math.max(1,Math.round(iw*sc)),h=Math.max(1,Math.round(ih*sc));
-  const cv=document.createElement("canvas");cv.width=w;cv.height=h;
-  const x=cv.getContext("2d");x.imageSmoothingEnabled=true;x.imageSmoothingQuality="high";x.drawImage(src,0,0,w,h);
-  const fs=Math.max(14,Math.round(w*0.034)),pad=Math.round(fs*.72),dot=Math.round(fs*.5);
-  x.font="600 "+fs+"px Inter,Arial,sans-serif";
-  const lw=x.measureText(label).width;
-  const bw=Math.round(lw+dot+pad*3.1),bh=Math.round(fs+pad*1.5);
-  const bx=w-bw-Math.round(w*.028),by=h-bh-Math.round(h*.032);
-  x.save();
-  x.globalAlpha=.8;x.fillStyle="rgba(6,8,14,.72)";rrPath(x,bx,by,bw,bh,bh/2);x.fill();
-  x.globalAlpha=1;x.lineWidth=Math.max(1,fs*.055);x.strokeStyle="rgba(255,255,255,.16)";rrPath(x,bx,by,bw,bh,bh/2);x.stroke();
-  x.fillStyle=ac;x.beginPath();x.arc(bx+pad+dot/2,by+bh/2,dot/2,0,Math.PI*2);x.fill();
-  x.fillStyle="#fff";x.textBaseline="middle";x.font="600 "+fs+"px Inter,Arial,sans-serif";x.fillText(label,bx+pad*1.6+dot,by+bh/2+1);
-  x.restore();
-  return cv.toDataURL("image/jpeg",.85);
-}
 async function watermarkList(list,onStep){
   const out=[];
   for(let i=0;i<list.length;i++){if(onStep)onStep(i+1,list.length);try{out.push(await brandWatermark(list[i]))}catch(e){out.push(list[i])}}
@@ -281,6 +222,7 @@ function pOrder(id){const o=S.orders.find(x=>x.id===id);if(!o)return`<div class=
 <div class="cd"><h3>Payment</h3><p>${o.method==="cod"?"Cash on Delivery (COD)":o.method==="upi"?"UPI QR (manual)":"Online (Razorpay)"}</p>${o.utr?`<p class="muted">UPI transaction ID: <b>${esc(o.utr)}</b></p>`:""}${o.pay?`<p class="muted">Payment ID: ${esc(o.pay)}</p>`:""}${o.method==="upi"&&!o.paid?'<p class="muted">Check your bank app for this transaction ID, then tap Mark as paid.</p>':""}${o.track?`<p class="muted">Tracking: ${esc(o.track)}</p>`:""}${o.disc?`<p class="muted">Discount code used: <b>${esc(o.disc.code)}</b> (₹${money(o.disc.off)})</p>`:""}${o.next?`<p class="muted">Next-order code given: <b>${esc(o.next)}</b></p>`:""}</div></div></div>`}
 function pProducts(id){if(id)return pForm(id);const q=S.pq.toLowerCase(),L=S.products.map((p,i)=>({p,i})).filter(({p})=>(S.pf==="all"||(S.pf==="hidden"&&p.hid)||(S.pf==="sold"&&p.sold)||(S.pf==="active"&&!p.hid&&!p.sold))&&(!q||(p.n+" "+(p.c||"")).toLowerCase().includes(q)));
  return`<div class="cd impcard" style="margin-bottom:12px"><h3>&#8595; Fetch a product from a link</h3><p class="muted" style="font-size:.9rem;margin-bottom:12px">Works with <b>Meesho</b> share links, <b>JVECOMB2B</b> and most online stores. Paste the link (or the whole message from the app) and tap Fetch. We grab the name and photos, plus the price and description wherever the store shares them, then you review before publishing.</p><form id="impf" class="fl" novalidate><label>Product link or shared message<textarea id="impu" rows="2" placeholder="https://www.meesho.com/.../p/abc123  —  or paste the full share text"></textarea></label><div class="two"><label>Markup<select id="impm"><option value="1.5">1.5x</option><option value="1.8">1.8x</option><option value="2" selected>2x</option><option value="2.5">2.5x</option><option value="3">3x</option></select></label><label>Or your selling price (₹, optional)<input id="impp" type="number" min="1" placeholder="Leave empty to use markup"></label></div><label class="chk"><input type="checkbox" id="impwm" checked>Add my brand watermark to the photos</label><div class="err" id="impe"></div><button class="btn sm" id="impbtn" type="submit">Fetch product</button></form><p class="muted" style="font-size:.78rem;margin-top:8px">Only import products you are allowed to resell. Watermarked photos are stored on your site, so nobody else can copy them.
+Meesho tip: if a link from the app fails, open the product on the Meesho website, copy that link, and paste it here. Or add the product manually (tap "Add product" above) with photos saved from Meesho.
 Meesho tip: if a link from the app fails, open the product on the Meesho website, copy that link, and paste it here. Or add the product manually with photos saved from Meesho (tap "Add product" above).</p></div>`+`<div class="rowh"><div class="tabs" style="margin:0">${[["all","All"],["active","Active"],["hidden","Hidden"],["sold","Sold out"]].map(([k,l])=>`<button data-pf="${k}" class="${S.pf===k?"on":""}">${l}</button>`).join("")}</div><button class="btn sm alt" data-act="impsync">Sync supplier stock</button><a class="btn sm" href="#admin/products/new">Add product</a></div><input id="pq" placeholder="Search products" value="${esc(S.pq)}" style="margin-bottom:8px">
 ${L.map(({p,i})=>{const m=imgs(p);return`<div class="pl"><div class="th">${m[0]?`<img src="${esc(m[0])}" alt="">`:""}</div><div><b>${esc(p.n)}</b><small>${money(p.p)} · ${esc(p.c||"")} · ${m.length} photo${m.length===1?"":"s"}</small><br>${p.hid?'<span class="tg">Hidden</span> ':'<span class="tg g">Active</span> '}${p.sold?'<span class="tg r">Sold out</span> ':""}${p.tr?'<span class="tg b">Trending</span>':""}</div><div class="ra"><a class="link" href="#admin/products/${p.id}">Edit</a><button class="link" data-act="phide" data-id="${p.id}">${p.hid?"Show":"Hide"}</button><button class="link" data-act="pdup" data-id="${p.id}">Duplicate</button><button class="link" data-act="igpost" data-id="${p.id}">Post to IG</button>${i?`<button class="link" data-act="pup" data-id="${p.id}">Move up</button>`:""}${i<S.products.length-1?`<button class="link" data-act="pdown" data-id="${p.id}">Move down</button>`:""}<button class="link" data-act="pdel" data-id="${p.id}">Delete</button></div></div>`}).join("")||'<div class="empty2">No products here. Tap Add product to create your first one.</div>'}`}
 function pForm(id){const e=id==="new"?(impDraft||{}):S.products.find(p=>String(p.id)===id);if(!e)return`<div class="empty2">Product not found. <a href="#admin/products">Back</a></div>`;draft=imgs(e).slice();
