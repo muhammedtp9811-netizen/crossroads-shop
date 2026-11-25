@@ -40,7 +40,7 @@
 <link rel="dns-prefetch" href="https://accounts.google.com">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>try{document.documentElement.setAttribute("data-theme","dark");localStorage.setItem("cr_theme","dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
-<script>(function(){var V="20261125b",last=0;function check(){if(Date.now()-last<15000)return;last=Date.now();try{if(sessionStorage.getItem("cr_build")===V)return;fetch("/build.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v){sessionStorage.setItem("cr_build",j.v);if(j.v!==V)location.reload()}}).catch(function(){})}catch(e){}}check();addEventListener("focus",check);addEventListener("pageshow",check);document.addEventListener("visibilitychange",function(){if(!document.hidden)check()})})();</script>
+<script>(function(){var V="20261125c",last=0;function check(){if(Date.now()-last<15000)return;last=Date.now();try{if(sessionStorage.getItem("cr_build")===V)return;fetch("/build.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v){sessionStorage.setItem("cr_build",j.v);if(j.v!==V)location.reload()}}).catch(function(){})}catch(e){}}check();addEventListener("focus",check);addEventListener("pageshow",check);document.addEventListener("visibilitychange",function(){if(!document.hidden)check()})})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -220,7 +220,7 @@ details{border-top:1px solid var(--line);padding:14px 0}details:last-of-type{bor
 .sr b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;font-weight:600}.sr small{color:var(--mut)}
 @keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
 @media(max-width:900px){.pp{grid-template-columns:1fr;gap:22px}.pp .gal{position:static}.ck{grid-template-columns:1fr}.sum{position:static;order:-1}}
-@media(max-width:700px){.acts{display:none}.pbar{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:fixed;left:0;right:0;bottom:0;z-index:25;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line)}#product{padding-bottom:120px}#product .bc b,#product .bc span:last-of-type{display:none}.pbar .btn{padding:13px 10px}#toast{bottom:calc(84px + env(safe-area-inset-bottom))}.wafab{bottom:calc(88px + env(safe-area-inset-bottom));right:12px;width:46px;height:46px;font-size:1.3rem}.tools select{max-width:46%}.pp .gm{border-radius:12px}}
+@media(max-width:700px){.acts{display:none}.pbar{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:fixed;left:0;right:0;bottom:0;z-index:25;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line)}#product{padding-bottom:120px}#product .bc b,#product .bc span:last-of-type{display:none}.pbar .btn{padding:13px 10px}#toast{bottom:calc(84px + env(safe-area-inset-bottom))}.tools select{max-width:46%}.pp .gm{border-radius:12px}}
 .hero{position:relative;overflow:hidden;background:var(--bg);border-bottom:1px solid var(--line)}
 @supports(background:color-mix(in srgb,red,blue)){.hero{background:radial-gradient(900px 420px at 85% 10%,color-mix(in srgb,var(--acc) 26%,transparent),transparent 65%),var(--bg)}}
 #c3d{position:absolute;inset:0;width:100%;height:100%;display:block}
@@ -318,9 +318,6 @@ details{border-top:1px solid var(--line);padding:14px 0}details:last-of-type{bor
 .rform input[type=file]{font-size:.82rem;color:var(--mut)}
 .rpreview{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:none}
 .photoLB{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.82);display:grid;place-items:center;padding:16px}
-.wafab{position:fixed;right:16px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:59;width:52px;height:52px;border-radius:50%;background:#25D366;color:#fff;display:grid;place-items:center;text-decoration:none;box-shadow:0 10px 28px rgba(0,0,0,.35);font-size:1.5rem;line-height:1}
-.wafab b{font:800 .95rem Inter,system-ui,sans-serif;letter-spacing:.02em}
-.wafab:hover{transform:translateY(-2px)}
 .alertform{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:12px 0;background:var(--bg);display:grid;gap:8px;font-size:.85rem}
 .alertform label{font-weight:600}.alertform .row{display:flex;gap:8px}.alertform input{flex:1;min-width:0}.alertform small{color:var(--mut);font-size:.76rem}
 </style>
@@ -363,6 +360,7 @@ gtag('config','YOUR_GA_ID');
 
 <main id="main"><h1 id="pageH1" class="sr-only">Crossroads Shopping</h1>
 <div id="shop">
+<div style="position:absolute;top:0;left:0;width:100%;height:200px;pointer-events:none;z-index:1;opacity:.6"><canvas id="c3d2" aria-hidden="true" style="width:100%;height:100%"></canvas></div>
 <section class="hero" id="hero"><canvas id="c3d" aria-hidden="true"></canvas><div class="wrap hi"><p class="kick">New collection</p><h2>Wear the drop.</h2><p class="hs">Fashion, trending items and shoes delivered to your door.</p><button class="btn" id="heroCta" type="button">Shop now</button></div></section>
 <div class="mq" aria-hidden="true"><div><span>NEW DROP</span><span>FASHION</span><span>TRENDING</span><span>SHOES</span><span>NEW DROP</span><span>FASHION</span><span>TRENDING</span><span>SHOES</span><span>NEW DROP</span><span>FASHION</span><span>TRENDING</span><span>SHOES</span><span>NEW DROP</span><span>FASHION</span><span>TRENDING</span><span>SHOES</span></div></div>
 <div class="wrap">
@@ -399,6 +397,7 @@ gtag('config','YOUR_GA_ID');
 <p>Reach us in any of these ways, and we will reply as soon as we can.</p>
 <div class="cc">
 <a id="cIg" target="_blank" rel="noopener" class="cardx"><b>Instagram</b><span class="ig-t"></span><small>Send us a direct message</small></a>
+<a id="cWa" target="_blank" rel="noopener" class="cardx"><b>WhatsApp</b><span>Chat with us</span><small>Message us on WhatsApp</small></a>
 <a id="cMail" class="cardx"><b>Email</b><span class="mail-t"></span><small>Write to us any time</small></a>
 </div>
 <h2>Or send a message here</h2>
@@ -521,7 +520,6 @@ gtag('config','YOUR_GA_ID');
 <dialog id="accD" aria-label="Your account"><div id="accBody"></div></dialog>
 <aside id="cart" aria-label="Your bag"><div class="top">Your bag<button class="x" id="cx" aria-label="Close bag">×</button></div><div id="items"></div><div id="co"></div></aside>
 <div id="toast" role="status"></div>
-<a class="wafab" id="wafab" href="https://wa.me/918281036836" target="_blank" rel="noopener" aria-label="Chat with us on WhatsApp"><b>WA</b></a>
 
 <script>
 const IG="crossroads_shopping",MAIL="producingmj@gmail.com",SITE="https://crossroads-shopping.netlify.app",WA_LINK="https://wa.me/918281036836?text="+encodeURIComponent("Hi Crossroads, I need help with an order.");
@@ -557,7 +555,7 @@ setInterval(()=>{if(document.visibilityState==="visible"&&hb++<15)sync()},60000)
 
 $("bTheme").onclick=()=>{document.documentElement.setAttribute("data-theme","dark");try{localStorage.setItem("cr_theme","dark")}catch(e){}document.querySelector("meta[name=theme-color]").content="#080A10";document.dispatchEvent(new Event("themechange"));toast("Dark theme is always on")};
 $("heroCta").onclick=()=>$("grid").scrollIntoView({behavior:"smooth",block:"start"});
-$("fIg").href=$("cIg").href=$("aIg").href="https://ig.me/m/"+IG;$("wafab").href=WA_LINK;
+$("fIg").href=$("cIg").href=$("aIg").href="https://ig.me/m/"+IG;$("cWa").href=WA_LINK;
 ["fMail","cMail","aMail"].forEach(i=>$(i).href="mailto:"+MAIL);
 document.querySelectorAll("a.ig-t").forEach(e=>e.href="https://ig.me/m/"+IG);
 document.querySelectorAll("a.mail-t").forEach(e=>e.href="mailto:"+MAIL);
@@ -581,7 +579,7 @@ const basePath=()=>String(location.pathname).replace(/\/p\/[^/]+\/?$/,"")||"/";
 const view=()=>{const x=location.hash;return x==="#about"?"about":x==="#contact"?"contact":x==="#policy"?"policy":x==="#delivery"?"delivery":x.startsWith("#admin")?"admin":x==="#checkout"?"checkout":x==="#track"?"track":(x.startsWith("#p/")||pathPid())?"product":"shop"};
 function trustHTML(kind){
   const rating=TRUST.count?`${TRUST.avg.toFixed(1)}★ from ${TRUST.count} buyer ratings`:"Buyer ratings on product pages";
-  return `<div class="trustbar"><span>&#128274; Secure checkout</span><span>&#128666; Free delivery in 5 days</span><span>&#9989; ${rating}</span><span>&#128337; Help within 48 hours</span><a href="${WA_LINK}" target="_blank" rel="noopener">&#128172; WhatsApp support</a></div>`;
+  return `<div class="trustbar"><span>&#128274; Secure checkout</span><span>&#128666; Free delivery in 5 days</span><span>&#9989; ${rating}</span><span>&#128337; Help within 48 hours</span></div>`;
 }
 async function loadTrust(){try{const r=await fetch("/api/reviews",{cache:"no-store"});if(!r.ok)return;const d=await r.json();TRUST.avg=+d.avg||0;TRUST.count=+d.count||0;if(view()==="product"||view()==="checkout"){const boxes=document.querySelectorAll(".trustbar");boxes.forEach(b=>{b.outerHTML=trustHTML(view())})}}catch(e){}}
 function toast(t){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.h);toast.h=setTimeout(()=>e.classList.remove("on"),1900)}
@@ -611,9 +609,6 @@ $("cats").onclick=e=>{const b=e.target.closest("button[data-c]");if(!b)return;ca
 $("q").oninput=e=>{Q=e.target.value.trim().toLowerCase();grid()};$("so").onchange=e=>{SO=e.target.value;grid()};
 function applySearchParam(){const q=new URLSearchParams(location.search).get("q");if(q===null)return;Q=String(q).trim().toLowerCase();cat="All";const el=$("q");if(el)el.value=String(q)}
 applySearchParam();
-function cardFrom(e){const t=e.target;return t&&t.closest?t.closest(".card"):null}
-function openCard(b,e){if(!b||b.classList.contains("sk"))return;const id=b.dataset.id;if(!id)return;if(e)e.preventDefault();const base=basePath(),u=new URL(location.href);u.pathname=(base.endsWith("/")?base:base+"/")+"p/"+encodeURIComponent(id);u.hash="";history.pushState(null,"",u.pathname+u.search);route()}
-$("grid").onclick=e=>{openCard(cardFrom(e),e)};
 function home(e){if(e)e.preventDefault();cat="All";Q="";const q=$("q");if(q)q.value="";const u=new URL(location.href);u.pathname=basePath();u.hash="";u.search="";history.pushState(null,"",u.pathname);route()}
 ["logo","goShop","dGoShop","pGoShop","fHome"].forEach(i=>{const n=$(i);if(n)n.onclick=home});
 
@@ -680,7 +675,6 @@ $("product").onclick=e=>{
  const s=e.target.closest("[data-s]");if(s){size=s.dataset.s;document.querySelectorAll("#sz button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.s===size));return}
  const q=e.target.closest("[data-q]");if(q){qty=Math.max(1,Math.min(10,qty+ +q.dataset.q));$("qv").textContent=qty;return}
  const a=e.target.closest("[data-act]");if(a){if(!addCur())return;if(a.dataset.act==="buy"){ev("buy",cur.n);location.hash="#checkout"}return}
- const c=e.target.closest(".card");if(c){openCard(c,e);return}
  const n=e.target.closest("[data-nav]");if(n){e.preventDefault();cat=n.dataset.nav||"All";const u=new URL(location.href);u.pathname=basePath();u.hash="";history.pushState(null,"",u.pathname+u.search);route()}};
 
 const total=()=>cart.reduce((a,i)=>a+i.p*i.q,0);const payable=()=>Math.max(1,total()-(DISC.off||0));
@@ -925,7 +919,7 @@ $("mf").onsubmit=async e=>{e.preventDefault();const t=$("mt").value.trim();if(!t
 function tilt(root){let raf=0;root.addEventListener("pointermove",e=>{if(e.pointerType!=="mouse")return;if(raf)return;raf=requestAnimationFrame(()=>{raf=0;const c=document.elementFromPoint(e.clientX,e.clientY)?.closest?.(".card");if(!c||c.classList.contains("sk"))return;const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;c.style.setProperty("--ry",(x*12).toFixed(2)+"deg");c.style.setProperty("--rx",(-y*12).toFixed(2)+"deg");c.style.setProperty("--gx",(x*100+50).toFixed(0)+"%");c.style.setProperty("--gy",(y*100+50).toFixed(0)+"%")})},{passive:true});
  root.addEventListener("pointerout",e=>{const c=e.target.closest(".card");if(c&&!c.contains(e.relatedTarget)){c.style.setProperty("--ry","0deg");c.style.setProperty("--rx","0deg")}})}
 tilt($("grid"));tilt($("product"));
-let h3=false;function maybeHero(){if(!h3&&view()==="shop"&&innerWidth>=760&&!matchMedia("(prefers-reduced-motion:reduce)").matches){h3=true;const go=()=>hero3d();if("requestIdleCallback" in window)requestIdleCallback(go,{timeout:2500});else setTimeout(go,1200)}}
+let h3=false;function maybeHero(){if(!h3&&view()==="shop"){h3=true;const go=()=>{hero3d();hero3d2()};if("requestIdleCallback" in window)requestIdleCallback(go,{timeout:2500});else setTimeout(go,1200)}}
 async function hero3d(){const c=$("c3d");if(!c)return;
  if((navigator.connection&&navigator.connection.saveData)||(navigator.connection&&/2g/.test(navigator.connection.effectiveType||""))){c.remove();return}
  try{const THREE=await import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js");
@@ -949,7 +943,25 @@ async function hero3d(){const c=$("c3d");if(!c)return;
   let last=-99;(function loop(now){requestAnimationFrame(loop);if(!vis||document.hidden)return;if(now-last<32)return;last=now;if(c.clientWidth&&c.clientWidth!==lw)fit();const t=clock.getElapsedTime();knot.rotation.x=t*.25+my*.6;knot.rotation.y=t*.35+mx*.8;wire.rotation.y=-t*.12;pts.rotation.y=t*.05;g.position.y=Math.sin(t*.8)*.12;r.render(sc,cam)})(0);
   }catch(e){c.remove()}}
 
- /* ---------- Owner admin: open yourwebsite/#admin (code loads from /admin.js only when needed) ---------- */
+ async function hero3d2(){const c=document.getElementById("c3d2");if(!c)return;
+   if((navigator.connection&&navigator.connection.saveData)||(navigator.connection&&/2g/.test(navigator.connection.effectiveType||""))){c.remove();return}
+   try{const THREE=await import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js");
+    const r=new THREE.WebGLRenderer({canvas:c,antialias:true,alpha:true,powerPreference:"low-power"});r.setPixelRatio(Math.min(devicePixelRatio||1,1.25));
+    const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(50,1,.1,100);cam.position.set(0,0,6);
+    const col=()=>new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue("--acc").trim()||"#3F6DFF");
+    const g=new THREE.Group();sc.add(g);
+    const ico=new THREE.Mesh(new THREE.IcosahedronGeometry(1.2,1),new THREE.MeshStandardMaterial({color:col(),metalness:.6,roughness:.3,transparent:true,opacity:.7,wireframe:true}));g.add(ico);
+    const sphere=new THREE.Mesh(new THREE.SphereGeometry(.6,16,16),new THREE.MeshStandardMaterial({color:col(),metalness:.8,roughness:.15,transparent:true,opacity:.5}));g.add(sphere);
+    sc.add(new THREE.HemisphereLight(0xffffff,0x223355,.9));
+    const l1=new THREE.PointLight(0xffffff,40,30);l1.position.set(3,3,5);sc.add(l1);
+    let vis=true;new IntersectionObserver(e=>{vis=e[0].isIntersecting}).observe(document.getElementById("hero")||c);
+    const fit=()=>{const w=c.clientWidth,h=c.clientHeight||200;if(!w)return;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()};
+    fit();window.addEventListener("resize",fit,{passive:true});
+    const clock=new THREE.Clock();let last=-99;
+    (function loop(now){requestAnimationFrame(loop);if(!vis||document.hidden)return;if(now-last<40)return;last=now;const t=clock.getElapsedTime();ico.rotation.x=t*.3;ico.rotation.y=t*.4;sphere.rotation.y=-t*.5;sphere.scale.setScalar(1+Math.sin(t*2)*.08);r.render(sc,cam)})(0);
+   }catch(e){c.remove()}}
+
+  /* ---------- Owner admin: open yourwebsite/#admin (code loads from /admin.js only when needed) ---------- */
 let admP=null;
 async function adm(){const A=$("admin");
  if(!window.CRAdmin){A.innerHTML='<div class="sub" style="padding:60px 20px;text-align:center">Loading admin...</div>';
@@ -958,7 +970,7 @@ async function adm(){const A=$("admin");
   catch(e){A.innerHTML='<div class="wrap narrow"><p>Could not load the admin tools. Refresh the page and try again.</p></div>';return}}
  window.CRAdmin.open(A)}
 
-async function route(){stopAuto();document.title="Crossroads Shopping";const v=view();["shop","about","contact","policy","delivery","product","checkout","track","admin"].forEach(k=>$(k).hidden=v!==k);$("foot").hidden=$("hd").hidden=$("ann").hidden=v==="admin";$("wafab").hidden=v==="admin";
+async function route(){stopAuto();document.title="Crossroads Shopping";const v=view();["shop","about","contact","policy","delivery","product","checkout","track","admin"].forEach(k=>$(k).hidden=v!==k);$("foot").hidden=$("hd").hidden=$("ann").hidden=v==="admin";
  if(v==="admin"){wasAdmin=true;await adm();return}
  if(wasAdmin){wasAdmin=false;await loadP()}
  jp(pageName());cats();if(v==="shop"){grid();maybeHero()}if(v==="product")renderProduct(productId());if(v==="checkout")renderCheckout();if(v==="track")renderTrack();
