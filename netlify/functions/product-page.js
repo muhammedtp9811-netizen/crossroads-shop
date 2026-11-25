@@ -111,5 +111,11 @@ export default async function productPage(req) {
   out = out.replace(/<script[^>]*>\s*window\.CR_PRERENDER_PID\s*=[\s\S]*?<\/script>/i, "");
   out = out.replace(/<head\b[^>]*>/i, m => m + `<script>window.CR_PRERENDER_PID = ${jsStr(id)};</script>`);
 
+  if (!product) {
+    return new Response(out, {status: 404, headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store"
+    }});
+  }
   return new Response(out, {status: 200, headers: HTML_HEADERS});
 }
