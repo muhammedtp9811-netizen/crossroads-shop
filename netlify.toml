@@ -27,51 +27,73 @@ force = true
 from = "/api.js"
 to = "/404"
 status = 404
+force = true
 
 [[redirects]]
 from = "/netlify/*"
 to = "/404"
 status = 404
+force = true
 
 [[redirects]]
 from = "/package.json"
 to = "/404"
 status = 404
+force = true
 
 [[redirects]]
 from = "/meesho-index.json"
 to = "/404"
 status = 404
+force = true
 
 [[redirects]]
 from = "/NOTIFY-SETUP.md"
 to = "/404"
 status = 404
+force = true
 
 [[redirects]]
 from = "/SMS-SETUP.md"
 to = "/404"
 status = 404
+force = true
 
 [[redirects]]
 from = "/EMAIL-TEMPLATES.md"
 to = "/404"
 status = 404
+force = true
 
 [[redirects]]
 from = "/GOOGLE-SETUP.md"
 to = "/404"
 status = 404
+force = true
 
 [[redirects]]
 from = "/INSTAGRAM-SETUP.md"
 to = "/404"
 status = 404
+force = true
+
+[[redirects]]
+from = "/netlify.toml"
+to = "/404"
+status = 404
+force = true
+
+[[redirects]]
+from = "/.gitignore"
+to = "/404"
+status = 404
+force = true
 
 [[redirects]]
 from = "/*.map"
 to = "/404"
 status = 404
+force = true
 
 [[headers]]
 for = "/*"
