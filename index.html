@@ -40,7 +40,7 @@
 <link rel="dns-prefetch" href="https://accounts.google.com">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>try{document.documentElement.setAttribute("data-theme","dark");localStorage.setItem("cr_theme","dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
-<script>(function(){var V="20261125a",last=0;function check(){if(Date.now()-last<15000)return;last=Date.now();try{if(sessionStorage.getItem("cr_build")===V)return;fetch("/build.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v){sessionStorage.setItem("cr_build",j.v);if(j.v!==V)location.reload()}}).catch(function(){})}catch(e){}}check();addEventListener("focus",check);addEventListener("pageshow",check);document.addEventListener("visibilitychange",function(){if(!document.hidden)check()})})();</script>
+<script>(function(){var V="20261125b",last=0;function check(){if(Date.now()-last<15000)return;last=Date.now();try{if(sessionStorage.getItem("cr_build")===V)return;fetch("/build.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v){sessionStorage.setItem("cr_build",j.v);if(j.v!==V)location.reload()}}).catch(function(){})}catch(e){}}check();addEventListener("focus",check);addEventListener("pageshow",check);document.addEventListener("visibilitychange",function(){if(!document.hidden)check()})})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -790,7 +790,7 @@ function drawRevs(pid,d){const box=$("revs"),sum=$("rsum"),n=+d.count||0,avg=+d.
  }
 }
 $("bAcc").onclick=openAcc;acctSet(ACCT);
-$("revs").addEventListener("click",e=>{const im=e.target.closest("img[data-photo]");if(im)openPhotoLB(im.dataset.photo)});
+document.addEventListener("click",e=>{const im=e.target.closest("img[data-photo]");if(im)openPhotoLB(im.dataset.photo)});
 function render(){const c=cart.reduce((a,i)=>a+i.q,0);$("cnt").textContent=c;$("cnt").hidden=!c;
  if($("sumc"))$("sumc").innerHTML=sumHTML();
  if(!cart.length){$("items").innerHTML=`<div class="cempty">Your bag is empty.<br>Add a product to get started.</div>`;$("co").innerHTML="";return}
