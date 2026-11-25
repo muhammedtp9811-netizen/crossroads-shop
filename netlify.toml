@@ -5,6 +5,74 @@ functions = "netlify/functions"
 [functions]
 node_bundler = "esbuild"
 
+[functions."uptime"]
+schedule = "15 * * * *"
+
+# Clean product URLs and the dynamic sitemap are matched before any broad rules.
+[[redirects]]
+from = "/p/*"
+to = "/.netlify/functions/product-page"
+status = 200
+
+# force: a static sitemap.xml fallback also exists in the publish root.
+[[redirects]]
+from = "/sitemap.xml"
+to = "/.netlify/functions/sitemap"
+status = 200
+force = true
+
+# Do not expose source, config or setup notes. Never blocks /p/*, /sitemap.xml,
+# /admin.js, /index.html, /chat.js, /feedback.js, /build.json or /robots.txt.
+[[redirects]]
+from = "/api.js"
+to = "/404"
+status = 404
+
+[[redirects]]
+from = "/netlify/*"
+to = "/404"
+status = 404
+
+[[redirects]]
+from = "/package.json"
+to = "/404"
+status = 404
+
+[[redirects]]
+from = "/meesho-index.json"
+to = "/404"
+status = 404
+
+[[redirects]]
+from = "/NOTIFY-SETUP.md"
+to = "/404"
+status = 404
+
+[[redirects]]
+from = "/SMS-SETUP.md"
+to = "/404"
+status = 404
+
+[[redirects]]
+from = "/EMAIL-TEMPLATES.md"
+to = "/404"
+status = 404
+
+[[redirects]]
+from = "/GOOGLE-SETUP.md"
+to = "/404"
+status = 404
+
+[[redirects]]
+from = "/INSTAGRAM-SETUP.md"
+to = "/404"
+status = 404
+
+[[redirects]]
+from = "/*.map"
+to = "/404"
+status = 404
+
 [[headers]]
 for = "/*"
 [headers.values]
@@ -34,3 +102,9 @@ Cache-Control = "no-store"
 for = "/build.json"
 [headers.values]
 Cache-Control = "no-store"
+
+# The function sets its own Cache-Control; only add edge caching here.
+[[headers]]
+for = "/api/products"
+[headers.values]
+Netlify-CDN-Cache-Control = "public, max-age=60, stale-while-revalidate=300"

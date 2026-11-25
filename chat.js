@@ -113,7 +113,7 @@
     let h = `<div class="cr-m ${m.r === "u" ? "u" : "b"}">${esc(m.t).replace(/\n/g, "<br>")}</div>`;
     if (m.products && m.products.length) {
       h += `<div class="cr-ps">` + m.products.map(p =>
-        `<a class="cr-p" href="#p/${encodeURIComponent(p.id)}" data-p>${p.img
+        `<a class="cr-p" href="/p/${encodeURIComponent(p.id)}" data-p>${p.img
           ? `<img src="${esc(p.img)}" alt="" loading="lazy" decoding="async">`
           : `<span class="cr-ph">${esc((p.n || "?").trim().charAt(0).toUpperCase())}</span>`}<span><b>${esc(p.n)}</b><em>${money(p.p)}</em></span></a>`
       ).join("") + `</div>`;

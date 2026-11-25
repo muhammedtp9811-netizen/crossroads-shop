@@ -2,7 +2,9 @@ import {getStore} from "@netlify/blobs";
 import crypto from "node:crypto";
 export const config={path:"/api/*"};
 const E=process.env, WA=E.WA_NUMBER||"918281036836";
-const J=(d,s=200)=>new Response(JSON.stringify(d),{status:s,headers:{"content-type":"application/json","cache-control":"no-store"}});
+const J=(d,s=200,h={})=>new Response(JSON.stringify(d),{status:s,headers:{"content-type":"application/json","cache-control":"no-store",...h}});
+const HTML=(s,status=200,h={})=>new Response(s,{status,headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store",...h}});
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const cut=(s,n)=>String(s??"").slice(0,n);
 const ist=(t=Date.now())=>new Date(t+19800000).toISOString().slice(0,10);
 const hourOf=t=>new Date(t+19800000).getUTCHours();
@@ -24,8 +26,8 @@ const STORE={ig:"crossroads_shopping",mail:"producingmj@gmail.com",
   pay:"The payment options shown at checkout follow the store setting: Cash on Delivery, UPI QR, or online card/UPI/net banking. UPI QR orders are payment pending until verified.",
   returns:"If an item arrives damaged or in the wrong size, message us on Instagram within 48 hours with a photo and we will sort it out.",
   hours:"We usually reply within a few hours, between 9 AM and 9 PM IST."};
-const inr=n=>"â‚¹"+(+n||0).toLocaleString("en-IN");
-const shortN=(s,n=58)=>{s=String(s??"").replace(/\s+/g," ").trim();if(s.length<=n)return s;const c=s.slice(0,n),i=c.lastIndexOf(" ");return(i>20?c.slice(0,i):c)+"â€¦"};
+const inr=n=>"₹"+(+n||0).toLocaleString("en-IN");
+const shortN=(s,n=58)=>{s=String(s??"").replace(/\s+/g," ").trim();if(s.length<=n)return s;const c=s.slice(0,n),i=c.lastIndexOf(" ");return(i>20?c.slice(0,i):c)+"…"};
 const DASH="https://crossroads-shopping.netlify.app/#admin";
 const normPhone=v=>String(v??"").replace(/\D/g,"").replace(/^00+/,"").slice(0,15);
 const last10=v=>String(v??"").replace(/\D/g,"").slice(-10);
@@ -79,11 +81,11 @@ function chatRule(text,prods,cart){
   const q=String(text||"").toLowerCase().trim(),live=prods.filter(p=>!p.hid),ok=re=>re.test(q);
   const ig={l:"Message on Instagram",href:"https://ig.me/m/"+STORE.ig},shop={l:"Browse the shop",href:"./"};
   if(ok(/^(thanks|thank you|thankyou|thx)\b/))return{text:"Happy to help! Anything else you'd like to know?",quick:[shop,ig]};
-  if(ok(/^(bye|goodbye|see you)\b/))return{text:"Thanks for stopping by â€” hope to see you at checkout soon!",quick:[shop]};
+  if(ok(/^(bye|goodbye|see you)\b/))return{text:"Thanks for stopping by — hope to see you at checkout soon!",quick:[shop]};
   if(ok(/^(hi|hey|hello|hai|hiya|namaste|yo)\b/)||ok(/^good (morning|afternoon|evening)/))
-    return{text:"Hi! ðŸ‘‹ What are you looking for today? I can help with products, sizes, delivery or payment.",quick:[{l:"What's new?"},{l:"Delivery time"},ig]};
+    return{text:"Hi! 👋 What are you looking for today? I can help with products, sizes, delivery or payment.",quick:[{l:"What's new?"},{l:"Delivery time"},ig]};
   if(ok(/\b(human|agent|owner|real person|whatsapp|call|phone|contact|email|support)\b/)&&!ok(/\b(product|price|size|delivery)\b/))
-    return{text:`The fastest way to reach a person is Instagram â€” @${STORE.ig}. ${STORE.hours}\n\nYou can also email ${STORE.mail} or use the Contact page.`,quick:[ig,{l:"Contact page",href:"#contact"}]};
+    return{text:`The fastest way to reach a person is Instagram — @${STORE.ig}. ${STORE.hours}\n\nYou can also email ${STORE.mail} or use the Contact page.`,quick:[ig,{l:"Contact page",href:"#contact"}]};
   if(ok(/\b(track|tracking|order status|parcel|where is my|my order|order number)\b/))
     return{text:"I can't see live order status from here yet. Send your order number to the owner on Instagram and they'll check it for you. You'll also be contacted once your parcel is shipped.",quick:[ig,{l:"Message form",href:"#contact"}]};
   if(ok(/\b(deliver|delivery|shipping|ship|courier|how long|days|arrive|reach)\b/))
@@ -94,11 +96,11 @@ function chatRule(text,prods,cart){
     return{text:STORE.returns,quick:[ig,{l:"Contact page",href:"#contact"}]};
   if(ok(/\b(size|sizes|fit|fitting|measurement|measurements|xl|xxl|small|medium|large)\b/)){
     const S=[...new Set(live.flatMap(p=>p.s||[]))];
-    return{text:"Sizes differ by product â€” the exact sizes in stock are shown on each product page"+(S.length?` (for example ${S.slice(0,6).join(", ")})`:"")+". If you're between two sizes, size up for a relaxed fit. Tell me the product name and I'll check what's available.",quick:[shop,ig]};
+    return{text:"Sizes differ by product — the exact sizes in stock are shown on each product page"+(S.length?` (for example ${S.slice(0,6).join(", ")})`:"")+". If you're between two sizes, size up for a relaxed fit. Tell me the product name and I'll check what's available.",quick:[shop,ig]};
   }
   if(ok(/\b(cart|bag|basket)\b/)){
     if(cart.length){const t=cart.reduce((a,i)=>a+(+i.p||0)*(+i.q||1),0);
-      return{text:`Your bag has ${cart.reduce((a,i)=>a+(+i.q||1),0)} item(s):\n`+cart.map(i=>`â€¢ ${shortN(i.n,40)} Ã— ${+i.q||1} â€” ${inr((+i.p||0)*(+i.q||1))}`).join("\n")+`\n\nTotal: ${inr(t)}`,quick:[{l:"Go to checkout",href:"#checkout"},shop]};
+      return{text:`Your bag has ${cart.reduce((a,i)=>a+(+i.q||1),0)} item(s):\n`+cart.map(i=>`• ${shortN(i.n,40)} × ${+i.q||1} — ${inr((+i.p||0)*(+i.q||1))}`).join("\n")+`\n\nTotal: ${inr(t)}`,quick:[{l:"Go to checkout",href:"#checkout"},shop]};
     }
     return{text:"Your bag is empty right now. Everything in the shop is one tap away.",quick:[shop]};
   }
@@ -116,7 +118,7 @@ function chatRule(text,prods,cart){
   }
   let lo=0,hi=0,m=/(?:between)\s*(\d{2,5})\s*(?:and|to|-)\s*(\d{2,5})/.exec(q);
   if(m){lo=+m[1];hi=+m[2]}
-  if(!hi){m=/(?:under|below|less than|upto|up to|max)\s*(?:rs\.?|â‚¹)?\s*(\d{2,5})/.exec(q);if(m)hi=+m[1]}
+  if(!hi){m=/(?:under|below|less than|upto|up to|max)\s*(?:rs\.?|₹)?\s*(\d{2,5})/.exec(q);if(m)hi=+m[1]}
   if(!hi&&ok(/\b(cheap|cheapest|lowest price|budget|affordable)\b/)&&live.length){hi=Math.min(...live.map(p=>+p.p||0))}
   if(hi){
     let L=live.filter(p=>(+p.p||0)>=lo&&(+p.p||0)<=hi);
@@ -129,14 +131,14 @@ function chatRule(text,prods,cart){
   const hits=matchProds(q,live);
   if(hits.length)return{text:"Here's what I found:",products:cardsFor(hits),quick:[shop,ig]};
   if(tk(q).length)
-    return{text:"I couldn't find that in the shop right now. New pieces are added regularly â€” here's the latest:",products:cardsFor([...live].sort((a,b)=>(b.id||0)-(a.id||0)).slice(0,3)),quick:[ig,shop]};
+    return{text:"I couldn't find that in the shop right now. New pieces are added regularly — here's the latest:",products:cardsFor([...live].sort((a,b)=>(b.id||0)-(a.id||0)).slice(0,3)),quick:[ig,shop]};
   return{text:"I can help with products, prices, sizes, delivery, payment and orders. What would you like to know?",quick:[{l:"What's new?"},{l:"Delivery time"},ig]};
 }
 async function chatAI(messages,prods){
   const key=E.AI_API_KEY||E.OPENAI_API_KEY||E.OPENROUTER_API_KEY;
   if(!key)return null;
   const url=E.AI_URL||"https://openrouter.ai/api/v1/chat/completions",model=E.AI_MODEL||"openai/gpt-4o-mini";
-  const list=prods.slice(0,30).map(p=>`- ${cut(p.n,70)} | ${p.c||"Other"} | â‚¹${p.p}${p.s&&p.s.length?" | sizes: "+p.s.join("/"):""}${p.sold?" | SOLD OUT":""}`).join("\n");
+  const list=prods.slice(0,30).map(p=>`- ${cut(p.n,70)} | ${p.c||"Other"} | ₹${p.p}${p.s&&p.s.length?" | sizes: "+p.s.join("/"):""}${p.sold?" | SOLD OUT":""}`).join("\n");
   const sys=`You are the shopping assistant for Crossroads Shopping, a small online store in India. Reply in the customer's language, warmly, in at most 60 words. Use only the facts below. Never invent prices, stock, delivery times or policies. If you don't know, point them to Instagram @${STORE.ig} or the Contact page.\nStore facts:\n${STORE.delivery}\n${STORE.ship}\n${STORE.pay}\n${STORE.returns}\nSupport hours: ${STORE.hours}\nProducts:\n${list}\nWhen suggesting products, give the name and price only.`;
   try{
     const r=await fetch(url,{method:"POST",headers:{"content-type":"application/json",authorization:"Bearer "+key},
@@ -435,7 +437,7 @@ const IG_VER="v21.0",IG_BASE="https://crossroads-shopping.netlify.app";
 const IG_TAGS={Electronics:["#electronics","#tech","#gadgets","#techdeals"],Accessories:["#accessories","#style","#gifts"],Shirts:["#shirts","#fashion","#menswear"],Fashion:["#fashion","#style","#ootd"],Shoes:["#shoes","#sneakers","#footwear"]};
 function igCaption(p){
   const name=cut(String(p.n||"").trim(),90),desc=plainText(p.d||"").replace(/\s+/g," ").slice(0,300),price=+p.p||0,old=+p.o||0;
-  const lines=[name,"",desc,"",price?("Price: ₹"+price.toLocaleString("en-IN")+(old>price?" (was ₹"+old.toLocaleString("en-IN")+")":"")):"","Free delivery across India in about 5 days. Cash on Delivery available.","Order here: "+IG_BASE+"/#product/"+p.id,""];
+  const lines=[name,"",desc,"",price?("Price: ₹"+price.toLocaleString("en-IN")+(old>price?" (was ₹"+old.toLocaleString("en-IN")+")":"")):"","Free delivery across India in about 5 days. Cash on Delivery available.","Order here: "+IG_BASE+"/p/"+encodeURIComponent(p.id),""];
   const tags=["#CrossroadsShopping","#OnlineShoppingIndia","#IndiaShopping","#ShopNow"];
   const cat=String(p.c||"").toLowerCase();Object.keys(IG_TAGS).forEach(k=>{if(cat.includes(k.toLowerCase()))tags.push(...IG_TAGS[k])});
   const nameTags=name.toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(w=>w.length>3).slice(0,3).map(w=>"#"+w);
@@ -459,13 +461,19 @@ async function igPublish(user,token,id){
   if(!d.id)throw new Error("Instagram did not publish the media.");return d.id;
 }
 
-export default async(req,context)=>{
+async function handle(req,context){
   const db=getStore({name:"shop",consistency:"strong"}), path=new URL(req.url).pathname.replace(/^\/api\/?/,"");
   const get=async(k,d)=>(await db.get(k,{type:"json"}))??d;
   const cfg=async()=>{if(cfgCache.v&&Date.now()-cfgCache.t<15000)return cfgCache.v;const s=await get("settings",{});cfgCache={t:Date.now(),v:s};return s};
   const admin=()=>E.ADMIN_PASSWORD&&req.headers.get("x-admin")===E.ADMIN_PASSWORD;
   const b=req.method==="POST"?await req.json().catch(()=>({})):{};
   const imgId=b=>crypto.createHash("sha1").update(b).digest("hex").slice(0,24);
+  const ipKey=()=>{const ip=String(req.headers.get("x-forwarded-for")||"").split(",")[0].trim()||"unknown";return crypto.createHash("sha256").update(ip).digest("hex").slice(0,16)};
+  const limit=async(name,key,n,hour=true)=>{const h=new Date().toISOString().slice(0,hour?13:10),k="rl/"+name+"/"+h,rl=await get(k,{}),v=(rl[key]||0)+1;if(v>n)return false;rl[key]=v;await db.setJSON(k,rl);return true};
+  const getOrders=async()=>{const [cur,arc]=await Promise.all([get("orders",[]),get("orders_archive",[])]);return [...cur,...arc]};
+  const saveOrders=async(list)=>{const seen=new Set(),uniq=[];for(const o of list||[]){const k=String((o&&o.id)||(o&&o.no)||"");if(k&&seen.has(k))continue;if(k)seen.add(k);uniq.push(o)}const keep=uniq.slice(0,5000),arc=uniq.slice(5000,25000);await db.setJSON("orders_archive",arc);await db.setJSON("orders",keep)};
+  const nextOrderNo=async(orders)=>{const seq=await get("seq/order",{n:1000}),n=Math.max(1000,+seq.n||0,...orders.map(o=>+o.no||0))+1;await db.setJSON("seq/order",{n});return n};
+  const mailFail=async(msg)=>{try{const L=await get("mail_fails",[]);L.unshift({t:new Date().toISOString(),msg:cut(msg,300)});await db.setJSON("mail_fails",L.slice(0,100));if(await limit("mailfail","owner",2))await notify("Crossroads email problem: "+cut(msg,160))}catch(e){}};
   async function pack(list){let changed=false;
     for(const p of list){
       const arr=Array.isArray(p.images)&&p.images.length?p.images:(Array.isArray(p.imgs)&&p.imgs.length?p.imgs:(p.img?[p.img]:[])),out=[];
@@ -474,7 +482,11 @@ export default async(req,context)=>{
         if(m){const buf=Buffer.from(m[2],"base64");if(!buf.length||buf.length>3000000)continue;
           const id=imgId(buf),ab=buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength);
           await db.set("img/"+id,ab,{metadata:{type:"image/"+(m[1]==="png"?"png":m[1]==="webp"?"webp":"jpeg")}});out.push("/api/img/"+id)}
-        else if(str.startsWith("/api/img/")||/^https?:\/\//.test(str))out.push(str);
+        else if(str.startsWith("/api/img/"))out.push(str);
+        else if(/^https?:\/\//i.test(str)&&!str.includes(new URL(req.url).hostname)){
+          try{const r=await fetch(str);if(r.ok){const ct=r.headers.get("content-type")||"";if(/^image\/(png|jpe?g|webp)/i.test(ct)){const buf=Buffer.from(await r.arrayBuffer());if(buf.length&&buf.length<=5000000){const id=imgId(buf);await db.set("img/"+id,buf,{metadata:{type:ct.includes("png")?"image/png":ct.includes("webp")?"image/webp":"image/jpeg"}});out.push("/api/img/"+id);continue}}}}catch(e){}
+          out.push(str)
+        }
       }
       if(out.length!==arr.length||arr.some((x,i)=>x!==out[i])||p.img!==(out[0]||"")||("imgs" in p))changed=true;
       p.images=out;p.img=out[0]||"";delete p.imgs;
@@ -494,7 +506,7 @@ export default async(req,context)=>{
 
 Thank you for shopping with Crossroads Shopping. We have received your order.
 
-Order #${o.no||""}  Â·  ${when} IST
+Order #${o.no||""}  ·  ${when} IST
 
 ${(o.lines||[]).join("\n")}
 
@@ -502,7 +514,9 @@ Total: ${inr(o.total)}
 
 ${kind==="paid"
   ? "Payment received. We are packing your order and will dispatch it within 24 hours. Delivery is within 5 days."
-  : "Your UPI payment is pending until verified. We will email you as soon as it is confirmed."}
+  : o.method==="cod"
+    ? "Your order is confirmed. Pay cash when it arrives. We will dispatch it within 24 hours and deliver within 5 days."
+    : "Your UPI payment is pending until verified. We will email you as soon as it is confirmed."}
 ${o.next?`
 Your code for the next order: ${o.next}
 Use it at checkout for a discount. It works with this phone number only.
@@ -514,8 +528,27 @@ ${o.phone||""}
 
 Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
 
-â€” Crossroads Shopping`;
-    await mail(kind==="paid"?"Order #"+(o.no||"")+" confirmed â€” payment received":"Order #"+(o.no||"")+" received",body,{key,to:email,from}).catch(()=>{});
+— Crossroads Shopping`;
+    try{const r=await mail(kind==="paid"?"Order #"+(o.no||"")+" confirmed — payment received":"Order #"+(o.no||"")+" received",body,{key,to:email,from});if(!r.ok){const t=await r.text().catch(()=>"");await mailFail("Receipt to "+email+" failed ("+r.status+"): "+t)}}catch(e){await mailFail("Receipt to "+email+" failed: "+String(e))}
+  };
+  const priceDrops=async(oldList,newList)=>{
+    let sent=0;
+    for(const p of newList){
+      const old=oldList.find(x=>String(x.id)===String(p.id)),now=+p.p||0;
+      if(!old||!(+old.p>now))continue;
+      const alerts=(await get("pricealerts",[])).filter(a=>String(a.pid)===String(p.id)&&emailOk(a.email)&&!(+a.price<=now));
+      if(!alerts.length)continue;
+      const st=await cfg().catch(()=>({})),key=E.RESEND_API_KEY||st.rsKey||"",from=E.MAIL_FROM||st.rsFrom||"Crossroads <onboarding@resend.dev>";
+      if(!key)continue;
+      const link="https://crossroads-shopping.netlify.app/p/"+encodeURIComponent(p.id);
+      for(const a of alerts){
+        try{const r=await mail("Price drop at Crossroads Shopping","Hi!\n\nThe price of "+p.n+" is now "+inr(now)+" (was "+inr(+old.p)+").\n\nOrder it here: "+link+"\n\nFree delivery across India within 5 days.\n\n— Crossroads Shopping",{key,to:a.email,from});if(r.ok)sent++;else await mailFail("Price alert to "+a.email+" failed: "+r.status)}catch(e){await mailFail("Price alert failed: "+String(e))}
+      }
+      const keep=(await get("pricealerts",[])).filter(a=>!(String(a.pid)===String(p.id)&&emailOk(a.email)&&!(+a.price<=now)));
+      await db.setJSON("pricealerts",keep);
+    }
+    if(sent)await notify("Price drop emails sent: "+sent);
+    return sent;
   };
   const codeNorm=v=>String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
   const getCodes=()=>get("codes",[]);
@@ -545,6 +578,17 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
   }
   const shortName=v=>{const p=String(v||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "Customer";return p.length>1?p[0]+" "+p[p.length-1][0].toUpperCase()+".":p[0]};
   const getReviews=()=>get("reviews",[]);
+  const packPhoto=async(v)=>{
+    const str=String(v||"");
+    if(str.startsWith("/api/img/")||/^https?:\/\//i.test(str))return cut(str,500);
+    const m=/^data:image\/(png|jpe?g|webp);base64,(.+)$/.exec(str);
+    if(!m)return "";
+    const buf=Buffer.from(m[2],"base64");
+    if(!buf.length||buf.length>3000000)return "";
+    const id=imgId(buf),type=m[1].toLowerCase()==="png"?"image/png":m[1].toLowerCase()==="webp"?"image/webp":"image/jpeg";
+    await db.set("img/"+id,buf,{metadata:{type}});
+    return "/api/img/"+id;
+  };
   const me=async()=>{const t=String(req.headers.get("x-cr-token")||"").trim();if(!t)return null;const ss=await get("sessions",[]),s=ss.find(k=>k.token===t);if(!s)return null;if(Date.now()-new Date(s.t||0).getTime()>90*864e5)return null;return s};
   const otpText=code=>`${code} is your Crossroads Shopping code. It expires in 10 minutes. Never share it with anyone.`;
   async function sendOtp(phone,code){
@@ -617,6 +661,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(imp&&rsKey&&!skip.email)await mail(t.split("\n").filter(Boolean)[0],t,{key:rsKey,to:rsTo,from:rsFrom}).catch(()=>{});
     if(tgTok&&tgChat&&!skip.tg)await tgSend(t,{tok:tgTok,chat:tgChat});
   }
+  if(path==="health"&&req.method==="GET")return J({ok:true,t:Date.now(),service:"crossroads"});
   if(path==="test"){
     const k=new URL(req.url).searchParams.get("k");
     if(!E.ADMIN_PASSWORD||k!==E.ADMIN_PASSWORD)return J({error:"Open this link as /api/test?k=YOUR_ADMIN_PASSWORD"},401);
@@ -686,7 +731,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     }
     const nxt={...cur,tgToken:cut(tok,120),tgChat:cut(chat,40)};
     await db.setJSON("settings",nxt);cfgCache={t:0,v:null};
-    const err=await tgSend("âœ… Telegram alerts are connected to Crossroads Shopping.\nYou will get every new order here.\n"+DASH,{tok,chat});
+    const err=await tgSend("✅ Telegram alerts are connected to Crossroads Shopping.\nYou will get every new order here.\n"+DASH,{tok,chat});
     if(err)return J({error:"Saved, but Telegram said: "+err},400);
     return J({ok:1,bot:me.result.username,chat,who});
   }
@@ -695,17 +740,17 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const cur=await get("settings",{}),key=String(b.key||cur.rsKey||E.RESEND_API_KEY||"").trim();
     const to=String(b.to||cur.rsTo||E.ALERT_EMAIL||"producingmj@gmail.com").trim().toLowerCase();
     const from=String(b.from||cur.rsFrom||E.MAIL_FROM||"").trim();
-    if(!key)return J({error:"Paste your Resend API key first (resend.com â†’ API Keys)."},400);
+    if(!key)return J({error:"Paste your Resend API key first (resend.com → API Keys)."},400);
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))return J({error:"That email address does not look right."},400);
     let r,d={};
     try{
-      r=await mail("Test alert from Crossroads Shopping","ðŸ”” Test alert from Crossroads Shopping\nIf you can read this, order alerts are working.\n"+DASH,{key,to,from});
+      r=await mail("Test alert from Crossroads Shopping","🔔 Test alert from Crossroads Shopping\nIf you can read this, order alerts are working.\n"+DASH,{key,to,from});
       d=await r.json().catch(()=>({}));
     }catch(e){return J({error:"Could not reach Resend. Check your internet and try again."},400)}
     if(!r.ok){
       const m=String(d.message||d.error||"").trim();
       if(/only send testing emails/i.test(m))return J({error:"Resend blocked this: the free sender can only email the address that owns the Resend account. Use that same address here."},400);
-      if(/invalid|not authorized|unauthorized/i.test(m))return J({error:"Resend says the API key is invalid. Copy it again from resend.com â†’ API Keys."},400);
+      if(/invalid|not authorized|unauthorized/i.test(m))return J({error:"Resend says the API key is invalid. Copy it again from resend.com → API Keys."},400);
       return J({error:"Resend refused the email: "+(m||("status "+r.status))},400);
     }
     await db.setJSON("settings",{...cur,rsKey:cut(key,90),rsTo:cut(to,120),rsFrom:cut(from,120)});cfgCache={t:0,v:null};
@@ -718,7 +763,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const rsKey=E.RESEND_API_KEY||st.rsKey||"",rsTo=E.ALERT_EMAIL||st.rsTo||"producingmj@gmail.com",rsFrom=E.MAIL_FROM||st.rsFrom||"";
     const other=rsKey||E.NTFY_TOPIC||E.DISCORD_WEBHOOK||(tgTok&&tgChat);
     if(!waKey&&!other)return J({error:"No alert channel is set up yet."},400);
-    const msg="ðŸ”” Test alert from Crossroads Shopping\nIf you can read this, order alerts are working.\n"+DASH;
+    const msg="🔔 Test alert from Crossroads Shopping\nIf you can read this, order alerts are working.\n"+DASH;
     let wa="",waOk=false;
     if(waKey){
       try{
@@ -750,53 +795,94 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       lines.push(`${p.n} (${cut(i.size,20)}) x${q}`);its.push({n:shortN(p.n,90),s:cut(i.size,20),q,p:p.p});total+=p.p*q;
     }
     const method=String(b.method||"upi")==="cod"?"cod":"upi";
+    const cfgPay=await cfg().catch(()=>({})),payAllow=cfgPay.paymentMethod||"both";
+    if(method==="cod"&&payAllow!=="cod"&&payAllow!=="both")return J({error:"Cash on Delivery is not available right now."},400);
+    if(method==="upi"&&payAllow!=="upi"&&payAllow!=="both")return J({error:"UPI payment is not available right now."},400);
     const utr=String(b.utr||"").replace(/\W/g,"").slice(0,30);
     if(!lines.length||!c.name||!c.phone||!c.address)return J({error:"Fill in your details."},400);
+    if(!emailOk(c.email))return J({error:"Enter a valid email address for your receipt."},400);
     if(method==="upi"&&utr.length<8)return J({error:"Fill in your details and the UPI transaction ID."},400);
-    const orders=await get("orders",[]);
+    const orders=await getOrders();
     if(method==="upi"&&orders.some(x=>x.method!=="cod"&&x.utr&&x.utr===utr))return J({error:"This transaction ID was already used."},400);
     const id="upi"+Date.now();
     const cc=await checkCode(b.code,c.phone,true,id);
     if(cc.err)return J({error:cc.err},400);
     total=applyOff(total,cc.off);
-    const first=!orders.some(x=>!x.cancelled&&last10(x.phone)===last10(c.phone));
-    const mx=Math.max(1000,...orders.map(o=>o.no||0));
-    const o={id,no:mx+1,method:method,ev:[{a:"placed",t:new Date().toISOString()}],lines,it:its,total,paid:false,manual:true,utr:method==="cod"?"":utr,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300),track:{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[{a:"placed",t:new Date().toISOString()}]}};
+    const no=await nextOrderNo(orders);
+    const o={id,no,method:method,ev:[{a:"placed",t:new Date().toISOString()}],lines,it:its,total,paid:false,manual:true,utr:method==="cod"?"":utr,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300),track:{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[{a:"placed",t:new Date().toISOString()}]}};
     if(cc.off)o.disc={code:cc.code,off:cc.off};
-    if(first){const nc=await issueCode(c.phone);if(nc)o.next=nc}
     orders.unshift(o);
-    await db.setJSON("orders",orders.slice(0,500));
+    await saveOrders(orders);
     await notify(orderText(o,method==="cod"?"New order - Cash on Delivery. Collect payment on delivery.":"New order - UPI payment pending until verified. Check your bank app, then mark it paid.")+(cc.off?`\nDiscount code used: ${cc.code}`:""),true).catch(()=>{});
     await custMail(o,"received").catch(()=>{});
     return J({ok:1,next:o.next||""});
   }
   if(path==="orders/paid"){
     if(!admin())return J({error:"Wrong password"},401);
-    const orders=await get("orders",[]),o=orders.find(x=>x.id===b.id);
-    if(o&&!o.paid){o.paid=true;(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});if(!o.next&&!orders.some(x=>x.id!==o.id&&x.paid&&!x.cancelled&&last10(x.phone)===last10(o.phone))){const nc=await issueCode(o.phone);if(nc)o.next=nc}await db.setJSON("orders",orders);await custMail(o,"paid").catch(()=>{})}return J({ok:1});
+    const orders=await getOrders(),o=orders.find(x=>x.id===b.id);
+    if(o&&!o.paid){o.paid=true;(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});if(!o.next&&!orders.some(x=>x.id!==o.id&&x.paid&&!x.cancelled&&last10(x.phone)===last10(o.phone))){const nc=await issueCode(o.phone);if(nc)o.next=nc}await saveOrders(orders);await custMail(o,"paid").catch(()=>{})}return J({ok:1});
+  }
+  if(path==="orders/resend"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const o=(await getOrders()).find(x=>x.id===b.id);
+    if(!o)return J({error:"Order not found."},404);
+    if(!emailOk(o.email))return J({error:"This order has no valid email address."},400);
+    await custMail(o,o.paid?"paid":"received");
+    return J({ok:1});
+  }
+  if(path==="mail/fails"&&req.method==="GET"){
+    if(!admin())return J({error:"Wrong password"},401);
+    return J({fails:await get("mail_fails",[])});
+  }
+  if(path==="upi/match"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const utr=String(b.utr||"").replace(/\W/g,"").slice(0,30),amt=+b.amount||0,ph=String(b.phone||"").replace(/\D/g,"").slice(-10);
+    if(utr.length<8)return J({error:"Type at least 8 characters of the UPI transaction ID."},400);
+    const pending=(await getOrders()).filter(o=>o.method==="upi"&&!o.paid&&!o.cancelled);
+    const matches=pending.map(o=>{
+      const ou=String(o.utr||"").replace(/\W/g,"");
+      const score=(ou===utr?100:0)+(ou&&utr.slice(-6)===ou.slice(-6)?25:0)+(amt&&Math.abs(+o.total-amt)<1?60:0)+(ph&&last10(o.phone)===ph?30:0);
+      return{id:o.id,no:o.no,total:+o.total||0,name:o.name||"",phone:o.phone||"",utr:ou,t:o.t,score};
+    }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,8);
+    return J({matches});
+  }
+  if(path==="upi/confirm"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const orders=await getOrders(),o=orders.find(x=>x.id===b.id&&x.method==="upi"&&!x.cancelled);
+    if(!o)return J({error:"Pending UPI order not found."},404);
+    if(o.paid)return J({ok:1,already:true,no:o.no});
+    const utr=String(b.utr||"").replace(/\W/g,"").slice(0,30)||String(o.utr||"").replace(/\W/g,"");
+    if(utr.length<8)return J({error:"Add the UPI transaction ID before confirming."},400);
+    if(orders.some(x=>x.id!==o.id&&x.method!=="cod"&&String(x.utr||"").replace(/\W/g,"")===utr))return J({error:"That transaction ID is already used on another order."},400);
+    o.utr=utr;o.paid=true;(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});
+    if(!o.next&&!orders.some(x=>x.id!==o.id&&x.paid&&!x.cancelled&&last10(x.phone)===last10(o.phone))){const nc=await issueCode(o.phone);if(nc)o.next=nc}
+    await saveOrders(orders);await custMail(o,"paid");
+    await notify("UPI matched and paid\n"+orderText(o,"Order #"+o.no+" confirmed — payment received."),true).catch(()=>{});
+    return J({ok:1,no:o.no,next:o.next||""});
   }
   if(path==="orders/update"){
     if(!admin())return J({error:"Wrong password"},401);
-    const orders=await get("orders",[]),o=orders.find(x=>x.id===b.id);
-    if(o){let justPaid=false;for(const k of ["paid","shipped","delivered","cancelled"])if(typeof b[k]==="boolean"&&o[k]!==b[k]){o[k]=b[k];if(b[k])(o.ev=o.ev||[]).push({a:k==="cancelled"?"cancelled":k,t:new Date().toISOString()});if(k==="paid"&&b[k])justPaid=true}
+    const orders=await getOrders(),o=orders.find(x=>x.id===b.id);
+    if(o){let justPaid=false,justDelivered=false;for(const k of ["paid","shipped","delivered","cancelled"])if(typeof b[k]==="boolean"&&o[k]!==b[k]){o[k]=b[k];if(b[k])(o.ev=o.ev||[]).push({a:k==="cancelled"?"cancelled":k,t:new Date().toISOString()});if(k==="paid"&&b[k])justPaid=true;if(k==="delivered"&&b[k])justDelivered=true}
       if(b.track!==undefined)o.track=cut(b.track,120);if(b.note!==undefined)o.note=cut(b.note,500);
-       if(b.trackStatus!==undefined){const ts=String(b.trackStatus);if(["placed","confirmed","processing","shipped","intransit","outfordelivery","delivered","cancelled"].includes(ts)){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.status=ts;o.track.events=o.track.events||[];o.track.events.push({a:ts,t:new Date().toISOString(),note:cut(b.trackNote||"",200)});if(ts==="shipped"&&!o.shipped){o.shipped=true;(o.ev=o.ev||[]).push({a:"shipped",t:new Date().toISOString()})}if(ts==="delivered"&&!o.delivered){o.delivered=true;(o.ev=o.ev||[]).push({a:"delivered",t:new Date().toISOString()})}}}
+       if(b.trackStatus!==undefined){const ts=String(b.trackStatus);if(["placed","confirmed","processing","shipped","intransit","outfordelivery","delivered","cancelled"].includes(ts)){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.status=ts;o.track.events=o.track.events||[];o.track.events.push({a:ts,t:new Date().toISOString(),note:cut(b.trackNote||"",200)});if(ts==="shipped"&&!o.shipped){o.shipped=true;(o.ev=o.ev||[]).push({a:"shipped",t:new Date().toISOString()})}if(ts==="delivered"&&!o.delivered){o.delivered=true;justDelivered=true;(o.ev=o.ev||[]).push({a:"delivered",t:new Date().toISOString()})}}}
        if(b.courier!==undefined){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.courier=cut(String(b.courier||""),60)}
        if(b.trackNo!==undefined){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.trackNo=cut(String(b.trackNo||""),60)}
        if(b.estDays!==undefined){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.estDays=Math.max(1,Math.min(30,+b.estDays||5))}
        if(b.estDate!==undefined){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.estDate=cut(String(b.estDate||""),20)}
        if(b.trackNote!==undefined){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.note=cut(String(b.trackNote||""),300)}
-      if(justPaid&&!o.next&&!orders.some(x=>x.id!==o.id&&x.paid&&!x.cancelled&&last10(x.phone)===last10(o.phone))){const nc=await issueCode(o.phone);if(nc)o.next=nc}
-      await db.setJSON("orders",orders);
+      if((justPaid||justDelivered)&&!o.next&&!orders.some(x=>x.id!==o.id&&x.paid&&!x.cancelled&&last10(x.phone)===last10(o.phone))){const nc=await issueCode(o.phone);if(nc)o.next=nc}
+      await saveOrders(orders);
       if(b.cancelled===true&&o.disc&&o.disc.code)await freeCode(o.disc.code);
       if(justPaid)await custMail(o,"paid").catch(()=>{})}
     return J({ok:1});
   }
 
   if(path==="orders/track"&&req.method==="POST"){
+    if(!(await limit("track",ipKey(),20)))return J({error:"Too many lookups. Try again in an hour."},429);
     const no=+b.no||0,phone=String(b.phone||"").replace(/\D/g,"").slice(-10);
-    if(!no||phone.length<10)return J({error:"Enter your order number and phone number."},400);
-    const orders=await get("orders",[]),o=orders.find(x=>x.no===no&&last10(x.phone)===phone);
+    if(!no||phone.length!==10)return J({error:"Enter your order number and 10-digit phone number."},400);
+    const orders=await getOrders(),o=orders.find(x=>x.no===no&&last10(x.phone)===phone);
     if(!o)return J({error:"No order found with that number and phone."},404);
     const t=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};
     const placed=new Date(o.t||Date.now());
@@ -807,10 +893,11 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
   }
   if(path==="orders/delete"){
     if(!admin())return J({error:"Wrong password"},401);
-    const all=await get("orders",[]),o=all.find(x=>x.id===b.id);
-    await db.setJSON("orders",all.filter(x=>x.id!==b.id));
+    const all=await getOrders(),o=all.find(x=>x.id===b.id);
+    if(o){const gone=await get("orders_deleted",[]);await db.setJSON("orders_deleted",[o,...gone].slice(0,5000))}
+    await saveOrders(all.filter(x=>x.id!==b.id));
     if(o&&o.disc&&o.disc.code)await freeCode(o.disc.code);
-    return J({ok:1});
+    return J({ok:1,archived:!!o});
   }
   if(path==="messages/delete"){
     if(!admin())return J({error:"Wrong password"},401);
@@ -839,7 +926,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(!admin())return J({error:"Wrong password"},401);
     const days=Math.max(1,Math.min(30,+new URL(req.url).searchParams.get("days")||7)),list=[];
     for(let i=0;i<days;i++)list.push(ist(Date.now()-i*864e5));
-    const docs=await Promise.all(list.map(d=>get("an/"+d,{s:{}}))),orders=await get("orders",[]),S=[];
+    const docs=await Promise.all(list.map(d=>get("an/"+d,{s:{}}))),orders=await getOrders(),S=[];
     docs.forEach(d=>Object.values(d.s||{}).forEach(x=>S.push(x)));
     const top=(arr,f,n=8)=>{const m={};arr.forEach(x=>{const k=f(x);if(k)m[k]=(m[k]||0)+1});return Object.entries(m).sort((a,c)=>c[1]-a[1]).slice(0,n).map(([k,v])=>({k,v}))};
     const lastP=x=>{const p=x.pages||[];return p.length?p[p.length-1].p:""},firstP=x=>{const p=x.pages||[];return p.length?p[0].p:""};
@@ -953,23 +1040,33 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(n)await db.setJSON("products",list);
     return J({ok:1,updated:n});
   }
-  if(path==="products"&&req.method==="GET"){const all=await get("products",[]);const before=JSON.stringify(all);all.forEach(cleanProduct);if(await pack(all)||JSON.stringify(all)!==before)await db.setJSON("products",all);return J(admin()?all:all.filter(p=>!p.hid))}
+  if(path==="products"&&req.method==="GET"){const all=await get("products",[]);const before=JSON.stringify(all);all.forEach(cleanProduct);if(await pack(all)||JSON.stringify(all)!==before)await db.setJSON("products",all);return J(admin()?all:all.filter(p=>!p.hid),200,{"cache-control":"public,max-age=0,must-revalidate","netlify-cdn-cache-control":"public,max-age=60,stale-while-revalidate=300"})}
   if(path==="products"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
-    const list=Array.isArray(b.products)?b.products:[];list.forEach(cleanProduct);await pack(list);await db.setJSON("products",list);return J({ok:1});
+    const before=await get("products",[]),list=Array.isArray(b.products)?b.products:[];list.forEach(cleanProduct);await pack(list);await db.setJSON("products",list);const dropped=await priceDrops(before,list);return J({ok:1,priceAlerts:dropped});
+  }
+  if(path==="pricealert"&&req.method==="POST"){
+    const pid=String(b.pid||""),email=emailNorm(b.email);
+    if(!pid||!emailOk(email))return J({error:"Enter a valid email address."},400);
+    const P=await get("products",[]),p=P.find(x=>String(x.id)===pid);if(!p)return J({error:"Product not found."},404);
+    const all=await get("pricealerts",[]),i=all.findIndex(a=>String(a.pid)===pid&&a.email===email);
+    const rec={pid,email,price:+p.p||0,t:new Date().toISOString()};
+    if(i>=0)all[i]=rec;else all.unshift(rec);
+    await db.setJSON("pricealerts",all.slice(0,5000));
+    return J({ok:1});
   }
   if(path==="admin/boot"&&req.method==="GET"){
     if(!admin())return J({error:"Wrong password"},401);
-    const [orders,messages,products,settings,feedback,codes,reviews,sessions]=await Promise.all([get("orders",[]),get("messages",[]),get("products",[]),get("settings",{}),get("feedback",[]),get("codes",[]),get("reviews",[]),get("sessions",[])]);
+    const [orders,messages,products,settings,feedback,codes,reviews,sessions,mailFails]=await Promise.all([getOrders(),get("messages",[]),get("products",[]),get("settings",{}),get("feedback",[]),get("codes",[]),get("reviews",[]),get("sessions",[]),get("mail_fails",[])]);
     products.forEach(cleanProduct);
     let mx=Math.max(1000,...orders.map(o=>o.no||0)),ch=false;
     [...orders].reverse().forEach(o=>{if(!o.no){o.no=++mx;ch=true}if(!o.method)o.method=o.manual?"upi":"online"});
-    if(ch)await db.setJSON("orders",orders);
+    if(ch){await db.setJSON("seq/order",{n:mx});await saveOrders(orders)}
     const tgTok=E.TELEGRAM_BOT_TOKEN||settings.tgToken||"",tgChat=E.TELEGRAM_CHAT_ID||settings.tgChat||"";
     const igUser=settings.igUser||"",igTok=E.IG_TOKEN||settings.igToken||"";
     const safe={upi:settings.upi||"",name:settings.name||"",qr:settings.qr||"",brand:settings.brand||null,paymentMethod:settings.paymentMethod||"both",googleClientId:settings.googleClientId||"",ig:{connected:!!(igUser&&igTok),user:igUser,auto:!!settings.igAuto,story:!!settings.igStory}};
     const acctMap={};(sessions||[]).forEach(s=>{const k=s.ph||emailNorm(s.email||"");if(!k)return;if(!acctMap[k]||new Date(s.t||0)>new Date(acctMap[k].t||0))acctMap[k]={name:s.name||"Customer",phone:s.ph||"",email:s.email||"",t:s.t};});const accounts=Object.values(acctMap).sort((a,b)=>new Date(b.t||0)-new Date(a.t||0));
-    return J({orders,messages,products,settings:safe,feedback,codes,reviews,accounts,
+    return J({orders,messages,products,settings:safe,feedback,codes,reviews,accounts,mailFails,
       notify:{whatsapp:!!(E.CALLMEBOT_KEY||settings.waKey),whatsapp_number:String(E.WA_NUMBER||settings.waPhone||WA).replace(/\D/g,""),
       email:!!(E.RESEND_API_KEY||settings.rsKey),email_to:E.ALERT_EMAIL||settings.rsTo||"producingmj@gmail.com",email_saved:!!settings.rsKey,email_from:E.MAIL_FROM||settings.rsFrom||"",
       telegram:!!(tgTok&&tgChat),telegram_saved:!!settings.tgToken,telegram_chat:tgChat,
@@ -979,12 +1076,12 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
   }
   if(path==="admin"&&req.method==="GET"){
     if(!admin())return J({error:"Wrong password"},401);
-    const orders=await get("orders",[]);let mx=Math.max(1000,...orders.map(o=>o.no||0)),ch=false;
-    [...orders].reverse().forEach(o=>{if(!o.no){o.no=++mx;ch=true}if(!o.method)o.method=o.manual?"upi":"online"});if(ch)await db.setJSON("orders",orders);
+    const orders=await getOrders();let mx=Math.max(1000,...orders.map(o=>o.no||0)),ch=false;
+    [...orders].reverse().forEach(o=>{if(!o.no){o.no=++mx;ch=true}if(!o.method)o.method=o.manual?"upi":"online"});if(ch){await db.setJSON("seq/order",{n:mx});await saveOrders(orders)}
     return J({orders,messages:await get("messages",[])});
   }
   if(path==="event"){
-    const L={open:"ðŸ‘€ Someone opened your store",view:"ðŸ›ï¸ Viewing: ",cart:"âž• Added to cart: ",buy:"ðŸ’³ Going to pay: "};
+    const L={open:"👀 Someone opened your store",view:"🛍️ Viewing: ",cart:"➕ Added to cart: ",buy:"💳 Going to pay: "};
     if(L[b.type])await notify("Crossroads\n"+L[b.type]+cut(b.name,80),b.type==="cart"||b.type==="buy");
     return J({ok:1});
   }
@@ -992,7 +1089,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const m={name:cut(b.name,60),contact:cut(b.contact,80),text:cut(b.text,800),t:new Date().toISOString()};
     if(!m.text)return J({error:"Write a message first."},400);
     const all=await get("messages",[]);all.unshift(m);await db.setJSON("messages",all.slice(0,200));
-    await notify(`âœ‰ï¸ New message\n${m.name} (${m.contact})\n${m.text}`,true);return J({ok:1});
+    await notify(`✉️ New message\n${m.name} (${m.contact})\n${m.text}`,true);return J({ok:1});
   }
   if(path==="feedback"&&req.method==="POST"){
     const f={topic:cut(b.topic,40),text:cut(b.text,900),name:cut(b.name,60),contact:cut(b.contact,80),page:cut(b.page,120),device:cut(b.device,40),t:new Date().toISOString()};
@@ -1002,8 +1099,8 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(rl.n>=30)return J({error:"Too many messages just now. Try again in a while."},429);
     rl.n++;await db.setJSON("rlf",rl);
     const all=await get("feedback",[]);all.unshift(f);await db.setJSON("feedback",all.slice(0,400));
-    const who=[f.name,f.contact].filter(Boolean).join(" Â· ")||"Anonymous visitor";
-    await notify(`ðŸ’¬ New shop feedback\n${f.topic?f.topic+" â€” ":""}${f.text}\n\n${who}\nPage: ${f.page||"/"}${f.device?" Â· "+f.device:""}`,true);
+    const who=[f.name,f.contact].filter(Boolean).join(" · ")||"Anonymous visitor";
+    await notify(`💬 New shop feedback\n${f.topic?f.topic+" — ":""}${f.text}\n\n${who}\nPage: ${f.page||"/"}${f.device?" · "+f.device:""}`,true);
     return J({ok:1});
   }
   if(path==="feedback"&&req.method==="GET"){
@@ -1126,10 +1223,10 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const s=await me();if(!s)return J({error:"Log in to rate this product."},401);
     const pid=String(b.pid||""),stars=Math.max(1,Math.min(5,Math.round(+b.stars||0)));
     if(!pid||!stars)return J({error:"Choose a star rating first."},400);
-    const text=cut(String(b.text||"").trim(),500),photo=typeof b.photo==="string"&&b.photo.startsWith("data:image/")?b.photo.slice(0,200000):"";
+    const text=cut(String(b.text||"").trim(),500),photo=await packPhoto(b.photo);
     const key=s.ph||emailNorm(s.email||""),em=emailNorm(s.email||"");
     const all=await getReviews(),i=all.findIndex(r=>String(r.pid)===pid&&(r.ph===key||(em&&emailNorm(r.em||"")===em)));
-    const orders=await get("orders",[]),verified=orders.some(o=>!o.cancelled&&(o.paid===true||o.method==="cod")&&((key&&last10(o.phone)===key)||(em&&emailNorm(o.email)===em)));
+    const orders=await getOrders(),verified=orders.some(o=>!o.cancelled&&(o.paid===true||o.method==="cod")&&((key&&last10(o.phone)===key)||(em&&emailNorm(o.email)===em)));
     const rec={id:i>=0?all[i].id:Date.now(),pid,ph:key,em,nm:cut(s.name,60),s:stars,x:text,t:new Date().toISOString(),v:verified,src:"customer",photo:photo||""};
     if(i>=0)all[i]=rec;else all.unshift(rec);
     await db.setJSON("reviews",all.slice(0,2000));
@@ -1137,7 +1234,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
   }
   if(path==="reviews/add"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
-    const pid=String(b.pid||""),name=cut(String(b.name||"").trim(),60),stars=Math.max(1,Math.min(5,Math.round(+b.stars||0))),text=cut(String(b.text||"").trim(),500),photo=typeof b.photo==="string"&&b.photo.startsWith("data:image/")?b.photo.slice(0,200000):"";
+    const pid=String(b.pid||""),name=cut(String(b.name||"").trim(),60),stars=Math.max(1,Math.min(5,Math.round(+b.stars||0))),text=cut(String(b.text||"").trim(),500),photo=await packPhoto(b.photo);
     if(!pid||!name||!stars)return J({error:"Pick a product, add a name and choose stars."},400);
     const prods=await get("products",[]),p=prods.find(x=>String(x.id)===pid);
     const all=await getReviews();
@@ -1170,13 +1267,15 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const st=await cfg().catch(()=>({})),key=E.RESEND_API_KEY||st.rsKey||"";
     if(!key)return J({error:"Email service not configured. Set up Resend in Settings."},400);
     const from=E.MAIL_FROM||st.rsFrom||"Crossroads <onboarding@resend.dev>";
-    const orders=await get("orders",[]);
+    const orders=await getOrders();
     const emails=[...new Set(orders.map(o=>String(o.email||"").trim().toLowerCase()).filter(e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)))];
     if(!emails.length)return J({error:"No customer emails found."},400);
     let sent=0;for(const em of emails){try{await mail(subject,text,{key,to:em,from});sent++}catch(e){}}
     return J({ok:1,sent,total:emails.length});
   }
   if(path==="pay/create"){
+    const cfgPay=await cfg().catch(()=>({})),payAllow=cfgPay.paymentMethod||"both";
+    if(payAllow!=="both")return J({error:"Online payment is not available right now."},400);
     if(!E.RAZORPAY_KEY_ID||!E.RAZORPAY_KEY_SECRET)return J({error:"Online payment isn't switched on yet."},503);
     const prods=await get("products",[]),c=b.customer||{},lines=[],its=[];let total=0;
     for(const i of b.items||[]){
@@ -1185,6 +1284,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       lines.push(`${p.n} (${cut(i.size,20)}) x${q}`);its.push({n:shortN(p.n,90),s:cut(i.size,20),q,p:p.p});total+=p.p*q;
     }
     if(!lines.length||!c.name||!c.phone||!c.address)return J({error:"Fill in your details."},400);
+    if(!emailOk(c.email))return J({error:"Enter a valid email address for your receipt."},400);
     const cc=await checkCode(b.code,c.phone,false);
     if(cc.err)return J({error:cc.err},400);
     total=applyOff(total,cc.off);
@@ -1193,24 +1293,24 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       body:JSON.stringify({amount:Math.round(total*100),currency:"INR",receipt:"cr"+Date.now()})});
     const o=await r.json();
     if(!r.ok)return J({error:"Could not start payment. Try again."},502);
-    const orders=await get("orders",[]);
-    const mx=Math.max(1000,...orders.map(x=>x.no||0));
-    const ord={id:o.id,no:mx+1,method:"online",ev:[{a:"placed",t:new Date().toISOString()}],lines,it:its,total,paid:false,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300),track:{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[{a:"placed",t:new Date().toISOString()}]}};
+    const orders=await getOrders();
+    const no=await nextOrderNo(orders);
+    const ord={id:o.id,no,method:"online",ev:[{a:"placed",t:new Date().toISOString()}],lines,it:its,total,paid:false,t:new Date().toISOString(),name:cut(c.name,60),phone:cut(c.phone,20),email:cut(c.email,80),address:cut(c.address,300),track:{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[{a:"placed",t:new Date().toISOString()}]}};
     if(cc.off){ord.code=cc.code;ord.disc={code:cc.code,off:cc.off}}
     orders.unshift(ord);
-    await db.setJSON("orders",orders.slice(0,500));
-    return J({order:o.id,amount:o.amount,key:E.RAZORPAY_KEY_ID});
+    await saveOrders(orders);
+    return J({order:o.id,amount:o.amount,key:E.RAZORPAY_KEY_ID,total,payable:total});
   }
   if(path==="pay/verify"){
     const sig=crypto.createHmac("sha256",E.RAZORPAY_KEY_SECRET||"").update(b.order_id+"|"+b.payment_id).digest("hex");
     if(sig!==b.signature)return J({error:"Payment could not be verified."},400);
-    const orders=await get("orders",[]),o=orders.find(x=>x.id===b.order_id);
+    const orders=await getOrders(),o=orders.find(x=>x.id===b.order_id);
     if(o&&!o.paid){
       o.paid=true;o.pay=cut(b.payment_id,40);(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});
       if(o.code)await checkCode(o.code,o.phone,true,o.id);
       const first=!orders.some(x=>x.id!==o.id&&x.paid&&!x.cancelled&&last10(x.phone)===last10(o.phone));
       if(first){const nc=await issueCode(o.phone);if(nc)o.next=nc}
-      await db.setJSON("orders",orders);
+      await saveOrders(orders);
       const paidHead=o.method==="cod"?"New order - Cash on Delivery. Collect payment on delivery.":o.method==="online"?"New order - Online payment received.":"New order - UPI payment received.";
       await notify(orderText(o,paidHead)+(o.disc?`\nDiscount code used: ${o.disc.code}`:""),true).catch(()=>{});
       await custMail(o,"paid").catch(()=>{});
@@ -1248,4 +1348,34 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     return J(chatRule(text,prods,cart));
   }
   return J({error:"Not found"},404);
+}
+
+async function reportError(err,req){
+  try{
+    const msg=String((err&&err.message)||err||"Unknown error"),url=String((req&&req.url)||"").slice(0,200);
+    const db=getStore({name:"shop",consistency:"strong"});
+    const L=await db.get("errors",{type:"json"})||[];
+    L.unshift({t:new Date().toISOString(),msg:cut(msg,400),url});
+    await db.setJSON("errors",L.slice(0,100));
+    const h=new Date().toISOString().slice(0,13),rl=await db.get("err/rl",{type:"json"})||{};
+    if(rl.h!==h){rl.h=h;rl.n=0}
+    rl.n++;await db.setJSON("err/rl",rl);
+    if(rl.n>3)return;
+    const text="Crossroads error ("+rl.n+" this hour)\n"+cut(msg,180)+"\n"+url;
+    const s=await db.get("settings",{type:"json"}).catch(()=>({}))||{};
+    const ntfy=E.NTFY_TOPIC;
+    if(ntfy)await fetch("https://ntfy.sh/"+encodeURIComponent(ntfy),{method:"POST",headers:{Title:"Crossroads error"},body:text}).catch(()=>{});
+    const tok=E.TELEGRAM_BOT_TOKEN||s.tgToken||"",chat=String(E.TELEGRAM_CHAT_ID||s.tgChat||"").trim();
+    if(tok&&chat)await fetch("https://api.telegram.org/bot"+tok+"/sendMessage",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({chat_id:chat,text,disable_web_page_preview:true})}).catch(()=>{});
+    if(E.DISCORD_WEBHOOK)await fetch(E.DISCORD_WEBHOOK,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({content:text})}).catch(()=>{});
+    if(E.RESEND_API_KEY)await fetch("https://api.resend.com/emails",{method:"POST",headers:{authorization:"Bearer "+E.RESEND_API_KEY,"content-type":"application/json"},body:JSON.stringify({from:E.MAIL_FROM||"Crossroads <onboarding@resend.dev>",to:[E.ALERT_EMAIL||"producingmj@gmail.com"],subject:"Crossroads website error",text})}).catch(()=>{});
+  }catch(e){}
+}
+
+export default async(req,context)=>{
+  try{return await handle(req,context)}
+  catch(e){
+    reportError(e,req).catch(()=>{});
+    return J({error:"Something went wrong. Please try again."},500);
+  }
 };

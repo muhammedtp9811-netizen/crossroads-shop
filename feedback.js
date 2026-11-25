@@ -98,7 +98,7 @@
 
   function pageLabel() {
     var h = location.hash || "";
-    if (h.indexOf("#p/") === 0) return "Product page";
+    if (/\/p\/[^/]+/.test(location.pathname) || h.indexOf("#p/") === 0) return "Product page";
     if (h === "#checkout") return "Checkout";
     if (h === "#contact") return "Contact";
     if (h === "#about") return "About";
