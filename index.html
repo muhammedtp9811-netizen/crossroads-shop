@@ -40,7 +40,7 @@
 <link rel="dns-prefetch" href="https://accounts.google.com">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>(function(){var t="dark";try{t=localStorage.getItem("cr_theme")==="light"?"light":"dark"}catch(e){}document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="light"?"#F4F6FB":"#080A10"})();</script>
-<script>(function(){var V="vf5acf1d700",D="",busyB=false,busyD=false,CH=null,PENDING=null;
+<script>(function(){var V="v91c7f8159d",D="",busyB=false,busyD=false,CH=null,PENDING=null;
  function typing(){return location.hash.indexOf("#checkout")>=0||!!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest("form"))}
  function fire(src,v){if(!v)return;if(src==="b"){if(v===V)return}else{if(!D||v===D)return}var tag=src+":"+v;
   try{if(sessionStorage.getItem("cr_reload_seen")===tag)return;sessionStorage.setItem("cr_reload_seen",tag);localStorage.setItem("cr_reload",tag)}catch(e){}
@@ -56,6 +56,7 @@
  addEventListener("storage",function(e){if(e.key==="cr_reload")parse(e.newValue)});
  try{if(window.BroadcastChannel){CH=new BroadcastChannel("cr_reload");CH.onmessage=function(e){parse(e.data)}}}catch(e){}
 })();</script>
+<script>(function(){var n=0;function send(msg,url){if(n++>=3)return;msg=String(msg||"Unknown error").slice(0,300);if(/Script error|ResizeObserver loop/i.test(msg))return;var body=JSON.stringify({msg:msg,url:String(url||location.href).slice(0,200)});try{if(navigator.sendBeacon)navigator.sendBeacon("/api/error",new Blob([body],{type:"application/json"}));else fetch("/api/error",{method:"POST",headers:{"content-type":"application/json"},body:body,keepalive:true}).catch(function(){})}catch(e){}}addEventListener("error",function(e){if(e&&e.message)send(e.message,e.filename||location.href)});addEventListener("unhandledrejection",function(e){var r=e&&e.reason;send((r&&r.message)||r||"Unhandled promise rejection",location.href)})})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <style>

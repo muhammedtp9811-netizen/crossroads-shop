@@ -997,6 +997,14 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     }
     return J({ok:1});
   }
+  if(path==="error"&&req.method==="POST"){
+    const msg=String(b.msg||b.message||"").trim();
+    if(!msg||/Script error|ResizeObserver loop/i.test(msg))return J({ok:1});
+    if(!await limit("error/ip",ipKey(),3))return J({ok:1});
+    if(!await limit("error/all","all",5))return J({ok:1});
+    await reportError({message:"Browser error: "+cut(msg,250)+(b.url?" at "+cut(b.url,120):"")},req).catch(()=>{});
+    return J({ok:1});
+  }
   if(path==="resolve"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
     const raw=String(b.url||"").trim();let u;try{u=new URL(raw)}catch(e){return J({error:"Bad URL"},400)}
@@ -1511,7 +1519,8 @@ async function reportError(err,req){
     const tok=E.TELEGRAM_BOT_TOKEN||s.tgToken||"",chat=String(E.TELEGRAM_CHAT_ID||s.tgChat||"").trim();
     if(tok&&chat)await fetch("https://api.telegram.org/bot"+tok+"/sendMessage",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({chat_id:chat,text,disable_web_page_preview:true})}).catch(()=>{});
     if(E.DISCORD_WEBHOOK)await fetch(E.DISCORD_WEBHOOK,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({content:text})}).catch(()=>{});
-    if(E.RESEND_API_KEY)await fetch("https://api.resend.com/emails",{method:"POST",headers:{authorization:"Bearer "+E.RESEND_API_KEY,"content-type":"application/json"},body:JSON.stringify({from:E.MAIL_FROM||"Crossroads <onboarding@resend.dev>",to:[E.ALERT_EMAIL||"producingmj@gmail.com"],subject:"Crossroads website error",text})}).catch(()=>{});
+    const key=E.RESEND_API_KEY||s.rsKey||"";
+    if(key)await fetch("https://api.resend.com/emails",{method:"POST",headers:{authorization:"Bearer "+key,"content-type":"application/json"},body:JSON.stringify({from:E.MAIL_FROM||s.rsFrom||"Crossroads <onboarding@resend.dev>",to:[E.ALERT_EMAIL||s.rsTo||"producingmj@gmail.com"],subject:"Crossroads website error",text})}).catch(()=>{});
   }catch(e){}
 }
 
