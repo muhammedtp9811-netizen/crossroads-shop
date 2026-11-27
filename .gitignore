@@ -1,6 +1,9 @@
 # Local Netlify folder
 .netlify
 
+# Dependencies
+node_modules/
+
 # OS junk
 Thumbs.db
 .DS_Store

@@ -1,5 +1,5 @@
 [build]
-command = "node build-version.js"
+command = "npm ci && node build-version.js"
 publish = "."
 functions = "netlify/functions"
 
