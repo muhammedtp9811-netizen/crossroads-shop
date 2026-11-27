@@ -1,6 +1,5 @@
 import {getStore} from "@netlify/blobs";
-
-const SITE = "https://crossroads-shopping.netlify.app";
+import {SITE} from "./site.js";
 const xe = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"}[c]));
 
 function lastmod(v) {

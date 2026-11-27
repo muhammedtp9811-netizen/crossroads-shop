@@ -1,6 +1,6 @@
 import {getStore} from "@netlify/blobs";
+import {SITE} from "./site.js";
 
-const SITE = "https://crossroads-shopping.netlify.app";
 const OG_IMAGE = SITE + "/og-image.png";
 const CACHE = {
   "cache-control": "public, max-age=0, must-revalidate",
@@ -25,8 +25,8 @@ function replaceTag(html, re, tag) {
   return re.test(html) ? html.replace(re, tag) : html.replace(/<\/head>/i, tag + "</head>");
 }
 
-function productSchema(p, id, canonical, title, desc, images) {
-  return {
+function productSchema(p, id, canonical, title, desc, images, reviews) {
+  const schema = {
     "@context": "https://schema.org",
     "@type": "Product",
     "name": title.replace(/\s*\|\s*Crossroads Shopping$/, ""),
@@ -43,7 +43,34 @@ function productSchema(p, id, canonical, title, desc, images) {
       "availability": p.sold ? "https://schema.org/OutOfStock" : "https://schema.org/InStock"
     }
   };
+  if (reviews && reviews.length) {
+    const total = reviews.reduce((a, r) => a + (+r.s || 0), 0);
+    schema.aggregateRating = {
+      "@type": "AggregateRating",
+      "ratingValue": (Math.round(total / reviews.length * 10) / 10).toFixed(1),
+      "reviewCount": String(reviews.length),
+      "bestRating": "5",
+      "worstRating": "1"
+    };
+    schema.review = reviews.slice(0, 5).map(r => ({
+      "@type": "Review",
+      "author": {"@type": "Person", "name": String(r.nm || "Customer")},
+      "reviewRating": {"@type": "Rating", "ratingValue": String(+r.s || 5), "bestRating": "5", "worstRating": "1"},
+      "reviewBody": String(r.x || "")
+    }));
+  }
+  return schema;
 }
+
+const breadcrumbSchema = (name, canonical) => ({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Home", "item": SITE + "/"},
+    {"@type": "ListItem", "position": 2, "name": "Shop", "item": SITE + "/#products"},
+    {"@type": "ListItem", "position": 3, "name": name, "item": canonical}
+  ]
+});
 
 export default async function productPage(req) {
   if (req.method && !/^(GET|HEAD)$/.test(req.method)) {
@@ -62,9 +89,9 @@ export default async function productPage(req) {
 
   const store = getStore({name: "shop", consistency: "strong"});
   const products = await store.get("products", {type: "json"}).catch(() => []);
-  const product = (Array.isArray(products) ? products : []).find(p => p && String(p.id) === String(id));
+  const product = (Array.isArray(products) ? products : []).find(p => p && String(p.id) === String(id) && !p.hid);
 
-  let title, desc, ogType, schema = null;
+  let title, desc, ogType, schema = null, crumb = null;
   if (product) {
     const name = cut(product.n || product.sn || "Product", 120) || "Product";
     title = name + " | Crossroads Shopping";
@@ -73,7 +100,10 @@ export default async function productPage(req) {
     const raw = Array.isArray(product.images) && product.images.length ? product.images : (product.img ? [product.img] : []);
     const images = raw.map(x => String(x)).filter(Boolean).slice(0, 4).map(x =>
       /^https?:\/\//i.test(x) ? x : (x.startsWith("/") ? SITE + x : SITE + "/" + x));
-    schema = productSchema(product, id, canonical, title, desc, images);
+    const reviews = await store.get("reviews", {type: "json"}).catch(() => []);
+    const mine = (Array.isArray(reviews) ? reviews : []).filter(r => r && String(r.pid) === String(id) && +r.s >= 1 && +r.s <= 5).slice(0, 20);
+    schema = productSchema(product, id, canonical, title, desc, images, mine);
+    crumb = breadcrumbSchema(name, canonical);
   } else {
     title = "Product not found | Crossroads Shopping";
     desc = "This product is no longer available at Crossroads Shopping.";
@@ -102,10 +132,10 @@ export default async function productPage(req) {
   }
   for (const [re, tag] of tags) out = replaceTag(out, re, tag);
 
-  // Do not leave a stale Product schema behind, then add the one for this URL.
+  // Do not leave stale Product/Breadcrumb schema behind, then add the one for this URL.
   out = out.replace(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi,
-    m => /"@type"\s*:\s*"Product"/i.test(m) ? "" : m);
-  if (schema) out = out.replace(/<\/head>/i, ld(schema) + "</head>");
+    m => /"@type"\s*:\s*"(Product|BreadcrumbList)"/i.test(m) ? "" : m);
+  if (schema) out = out.replace(/<\/head>/i, ld(schema) + (crumb ? ld(crumb) : "") + "</head>");
 
   // Make the shell render the requested product even before its own scripts boot.
   out = out.replace(/<script[^>]*>\s*window\.CR_PRERENDER_PID\s*=[\s\S]*?<\/script>/i, "");

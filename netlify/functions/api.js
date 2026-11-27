@@ -1,13 +1,16 @@
 import {getStore} from "@netlify/blobs";
 import crypto from "node:crypto";
+import dns from "node:dns";
+import net from "node:net";
+import {SITE,abs} from "./site.js";
 export const config={path:"/api/*"};
 const E=process.env, WA=E.WA_NUMBER||"918281036836";
 const J=(d,s=200,h={})=>new Response(JSON.stringify(d),{status:s,headers:{"content-type":"application/json","cache-control":"no-store",...h}});
 const HTML=(s,status=200,h={})=>new Response(s,{status,headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store",...h}});
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const cut=(s,n)=>String(s??"").slice(0,n);
-const ist=(t=Date.now())=>new Date(t+19800000).toISOString().slice(0,10);
-const hourOf=t=>new Date(t+19800000).getUTCHours();
+const ist=(t=Date.now())=>{const n=Number(t);const d=new Date((Number.isFinite(n)?n:Date.now())+19800000);return isNaN(d.getTime())?new Date().toISOString().slice(0,10):d.toISOString().slice(0,10)};
+const hourOf=t=>{const n=Number(t),d=new Date((Number.isFinite(n)?n:Date.now())+19800000);return isNaN(d.getTime())?0:d.getUTCHours()};
 const devOf=u=>/iPhone/.test(u)?"iPhone":/iPad/.test(u)?"iPad":/Android/.test(u)?"Android phone":/Windows/.test(u)?"Windows PC":/Macintosh|Mac OS/.test(u)?"Mac":/Linux/.test(u)?"Linux":"Other";
 const brOf=u=>/Instagram/.test(u)?"Instagram app":/FBAN|FBAV/.test(u)?"Facebook app":/Edg\//.test(u)?"Edge":/OPR\//.test(u)?"Opera":/CriOS|Chrome\//.test(u)?"Chrome":/FxiOS|Firefox/.test(u)?"Firefox":/Safari\//.test(u)?"Safari":"Other";
 function srcOf(ref,utm,ua,host){const x=String(utm||"").toLowerCase();if(x){if(/insta|^ig/.test(x))return"Instagram";if(/whats|^wa/.test(x))return"WhatsApp";return cut(utm,20)}
@@ -28,7 +31,7 @@ const STORE={ig:"crossroads_shopping",mail:"producingmj@gmail.com",
   hours:"We usually reply within a few hours, between 9 AM and 9 PM IST."};
 const inr=n=>"₹"+(+n||0).toLocaleString("en-IN");
 const shortN=(s,n=58)=>{s=String(s??"").replace(/\s+/g," ").trim();if(s.length<=n)return s;const c=s.slice(0,n),i=c.lastIndexOf(" ");return(i>20?c.slice(0,i):c)+"…"};
-const DASH="https://crossroads-shopping.netlify.app/#admin";
+const DASH=SITE+"/#admin";
 const normPhone=v=>String(v??"").replace(/\D/g,"").replace(/^00+/,"").slice(0,15);
 const last10=v=>String(v??"").replace(/\D/g,"").slice(-10);
 const emailNorm=v=>String(v??"").trim().toLowerCase();
@@ -38,6 +41,20 @@ const CODE_CHARS="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const newCode=()=>"CR-"+Array.from({length:6},()=>CODE_CHARS[crypto.randomInt(0,CODE_CHARS.length)]).join("");
 const CODE_OFF=30;
 let cfgCache={t:0,v:null};
+const ip4Blocked=ip=>{const a=String(ip||"").split(".").map(Number);if(a.length!==4||a.some(x=>!Number.isInteger(x)||x<0||x>255))return true;
+  const [a1,a2]=a;return a1===0||a1===10||a1===127||a1>=224||a1===169&&a2===254||a1===172&&a2>=16&&a2<=31||a1===100&&a2>=64&&a2<=127||a1===192&&(a2===168||a2===0||a2===2)||a1===198&&(a2===18||a2===19||a2===51)||a1===203&&a2===0};
+const ip6Blocked=ip=>{const s=String(ip||"").toLowerCase().replace(/^\[|\]$/g,""),m=/^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(s);if(m)return ip4Blocked(m[1]);
+  return s==="::"||s==="::1"||/^f[cd]/.test(s)||/^fe[89ab]/.test(s)||/^2001:db8/.test(s)};
+const publicIP=ip=>{const v=net.isIP(String(ip||""));return v===4?!ip4Blocked(ip):v===6?!ip6Blocked(ip):false};
+async function publicHost(host){
+  const h=String(host||"").toLowerCase().replace(/^\[|\]$/g,"").replace(/\.$/,"");
+  if(!h)return false;
+  if(net.isIP(h))return publicIP(h);
+  if(!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(h))return false;
+  if(/(^|\.)(localhost|local|internal|home\.arpa|test|invalid|example)$/.test(h))return false;
+  let found=[];try{found=await dns.promises.lookup(h,{all:true})}catch(e){return false}
+  return found.length>0&&found.every(x=>publicIP(x.address));
+}
 function orderText(o,head){
   let when="";try{when=new Date(o.t||Date.now()).toLocaleString("en-IN",{timeZone:"Asia/Kolkata",day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})}catch(e){when=new Date(o.t||Date.now()).toISOString().slice(0,16).replace("T"," ")}
   const pay=o.method==="upi"?"UPI QR":o.method==="online"?"Online payment":"Cash on Delivery";
@@ -359,7 +376,7 @@ async function meeshoProduct(u){
   // IDs above every sitemap range are brand-new and cannot be in the public catalogue.
   // Meesho blocks the product page from server IPs, so make a clean editable draft instead of waiting/timing out.
   if(target > maxFirst){
-    if(fromSlug) return{n:fromSlug.n,sn:fromSlug.sn,c:guessCatServer(fromSlug.n),d:"",images:[],cost:0,partial:true,hidden:true,sup:{s:"meesho",id,u:rawUrl}};
+    if(fromSlug) return{n:fromSlug.n,sn:fromSlug.sn,c:guessCatServer(fromSlug.n),d:"",images:[],cost:0,partial:true,hid:true,sup:{s:"meesho",id,u:rawUrl}};
     throw new Error("Could not read this new Meesho product. Paste the full Share text, or add it manually.");
   }
   if(guess < 0) throw new Error("Product not found in Meesho catalogue.");
@@ -433,7 +450,7 @@ async function jvecProduct(u){
 }
 
 /* ---------- Instagram publishing (official Graph API) ---------- */
-const IG_VER="v21.0",IG_BASE="https://crossroads-shopping.netlify.app";
+const IG_VER="v21.0",IG_BASE=SITE;
 const IG_TAGS={Electronics:["#electronics","#tech","#gadgets","#techdeals"],Accessories:["#accessories","#style","#gifts"],Shirts:["#shirts","#fashion","#menswear"],Fashion:["#fashion","#style","#ootd"],Shoes:["#shoes","#sneakers","#footwear"]};
 function igCaption(p){
   const name=cut(String(p.n||"").trim(),90),desc=plainText(p.d||"").replace(/\s+/g," ").slice(0,300),price=+p.p||0,old=+p.o||0;
@@ -464,15 +481,20 @@ async function igPublish(user,token,id){
 async function handle(req,context){
   const db=getStore({name:"shop",consistency:"strong"}), path=new URL(req.url).pathname.replace(/^\/api\/?/,"");
   const get=async(k,d)=>(await db.get(k,{type:"json"}))??d;
+  const siteVer=async()=>{const v=await get("sitever",{v:1});return String(v.v||1)};
+  const put=async(k,v)=>{await db.setJSON(k,v);if(/^(products|settings|reviews|qa|codes)$/.test(k)){const cur=await get("sitever",{v:1});await db.setJSON("sitever",{v:(+cur.v||0)+1,t:Date.now()})}};
   const cfg=async()=>{if(cfgCache.v&&Date.now()-cfgCache.t<15000)return cfgCache.v;const s=await get("settings",{});cfgCache={t:Date.now(),v:s};return s};
   const admin=()=>E.ADMIN_PASSWORD&&req.headers.get("x-admin")===E.ADMIN_PASSWORD;
   const b=req.method==="POST"?await req.json().catch(()=>({})):{};
   const imgId=b=>crypto.createHash("sha1").update(b).digest("hex").slice(0,24);
   const ipKey=()=>{const ip=String(req.headers.get("x-forwarded-for")||"").split(",")[0].trim()||"unknown";return crypto.createHash("sha256").update(ip).digest("hex").slice(0,16)};
   const limit=async(name,key,n,hour=true)=>{const h=new Date().toISOString().slice(0,hour?13:10),k="rl/"+name+"/"+h,rl=await get(k,{}),v=(rl[key]||0)+1;if(v>n)return false;rl[key]=v;await db.setJSON(k,rl);return true};
+  const chan=async(name,n)=>limit("notify/"+name,"all",n);
+  const dedupe=async(t)=>{const k="nd/"+crypto.createHash("sha1").update(t).digest("hex").slice(0,16),prev=await get(k,0);if(Date.now()-(+prev||0)<60000)return false;await db.setJSON(k,Date.now());return true};
   const getOrders=async()=>{const [cur,arc]=await Promise.all([get("orders",[]),get("orders_archive",[])]);return [...cur,...arc]};
-  const saveOrders=async(list)=>{const seen=new Set(),uniq=[];for(const o of list||[]){const k=String((o&&o.id)||(o&&o.no)||"");if(k&&seen.has(k))continue;if(k)seen.add(k);uniq.push(o)}const keep=uniq.slice(0,5000),arc=uniq.slice(5000,25000);await db.setJSON("orders_archive",arc);await db.setJSON("orders",keep)};
-  const nextOrderNo=async(orders)=>{const seq=await get("seq/order",{n:1000}),n=Math.max(1000,+seq.n||0,...orders.map(o=>+o.no||0))+1;await db.setJSON("seq/order",{n});return n};
+  const trackObj=o=>o.track&&typeof o.track==="object"?o.track:(o.track={status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]});
+  const saveOrders=async(list)=>{const seen=new Set(),uniq=[];for(const o of list||[]){const k=String((o&&o.id)||"");if(k&&seen.has(k))continue;if(k)seen.add(k);uniq.push(o)}const keep=uniq.slice(0,5000),arc=uniq.slice(5000,25000);await db.setJSON("orders_archive",arc);await db.setJSON("orders",keep)};
+  const nextOrderNo=async(orders)=>{const fresh=await getOrders(),used=new Set([...orders,...fresh].map(o=>+o.no||0)),seq=await get("seq/order",{n:1000});let n=Math.max(1000,+seq.n||0,...used)+1;while(used.has(n))n++;await db.setJSON("seq/order",{n});return n};
   const mailFail=async(msg)=>{try{const L=await get("mail_fails",[]);L.unshift({t:new Date().toISOString(),msg:cut(msg,300)});await db.setJSON("mail_fails",L.slice(0,100));if(await limit("mailfail","owner",2))await notify("Crossroads email problem: "+cut(msg,160))}catch(e){}};
   async function pack(list){let changed=false;
     for(const p of list){
@@ -483,7 +505,7 @@ async function handle(req,context){
           const id=imgId(buf),ab=buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength);
           await db.set("img/"+id,ab,{metadata:{type:"image/"+(m[1]==="png"?"png":m[1]==="webp"?"webp":"jpeg")}});out.push("/api/img/"+id)}
         else if(str.startsWith("/api/img/"))out.push(str);
-        else if(/^https?:\/\//i.test(str)&&!str.includes(new URL(req.url).hostname)){
+        else if(/^https?:\/\//i.test(str)&&!str.includes(new URL(req.url).hostname)&&await publicHost(new URL(str).hostname)){
           try{const r=await fetch(str);if(r.ok){const ct=r.headers.get("content-type")||"";if(/^image\/(png|jpe?g|webp)/i.test(ct)){const buf=Buffer.from(await r.arrayBuffer());if(buf.length&&buf.length<=5000000){const id=imgId(buf);await db.set("img/"+id,buf,{metadata:{type:ct.includes("png")?"image/png":ct.includes("webp")?"image/webp":"image/jpeg"}});out.push("/api/img/"+id);continue}}}}catch(e){}
           out.push(str)
         }
@@ -496,9 +518,9 @@ async function handle(req,context){
   const mail=(subject,text,cred)=>fetch("https://api.resend.com/emails",{method:"POST",headers:{authorization:"Bearer "+((cred&&cred.key)||E.RESEND_API_KEY),"content-type":"application/json"},body:JSON.stringify({from:(cred&&cred.from)||E.MAIL_FROM||"Crossroads <onboarding@resend.dev>",to:[(cred&&cred.to)||E.ALERT_EMAIL||"producingmj@gmail.com"],subject:cut(subject,80),text})});
   const custMail=async(o,kind)=>{
     const email=String(o&&o.email||"").trim().toLowerCase();
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return;
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return false;
     const st=await cfg().catch(()=>({})),key=E.RESEND_API_KEY||st.rsKey||"";
-    if(!key)return;
+    if(!key)return false;
     const from=E.MAIL_FROM||st.rsFrom||"Crossroads <onboarding@resend.dev>";
     const when=(()=>{try{return new Date(o.t||Date.now()).toLocaleString("en-IN",{timeZone:"Asia/Kolkata",day:"numeric",month:"short",year:"numeric",hour:"numeric",minute:"2-digit"})}catch(e){return""}})();
     const body=
@@ -529,10 +551,10 @@ ${o.phone||""}
 Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
 
 — Crossroads Shopping`;
-    try{const r=await mail(kind==="paid"?"Order #"+(o.no||"")+" confirmed — payment received":"Order #"+(o.no||"")+" received",body,{key,to:email,from});if(!r.ok){const t=await r.text().catch(()=>"");await mailFail("Receipt to "+email+" failed ("+r.status+"): "+t)}}catch(e){await mailFail("Receipt to "+email+" failed: "+String(e))}
+    try{const r=await mail(kind==="paid"?"Order #"+(o.no||"")+" confirmed — payment received":"Order #"+(o.no||"")+" received",body,{key,to:email,from});if(!r.ok){const t=await r.text().catch(()=>"");await mailFail("Receipt to "+email+" failed ("+r.status+"): "+t);return false}return true}catch(e){await mailFail("Receipt to "+email+" failed: "+String(e));return false}
   };
   const priceDrops=async(oldList,newList)=>{
-    let sent=0;
+    let sent=0,failed=0;
     for(const p of newList){
       const old=oldList.find(x=>String(x.id)===String(p.id)),now=+p.p||0;
       if(!old||!(+old.p>now))continue;
@@ -540,12 +562,17 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       if(!alerts.length)continue;
       const st=await cfg().catch(()=>({})),key=E.RESEND_API_KEY||st.rsKey||"",from=E.MAIL_FROM||st.rsFrom||"Crossroads <onboarding@resend.dev>";
       if(!key)continue;
-      const link="https://crossroads-shopping.netlify.app/p/"+encodeURIComponent(p.id);
+      const link=abs("/p/"+encodeURIComponent(p.id));
       for(const a of alerts){
-        try{const r=await mail("Price drop at Crossroads Shopping","Hi!\n\nThe price of "+p.n+" is now "+inr(now)+" (was "+inr(+old.p)+").\n\nOrder it here: "+link+"\n\nFree delivery across India within 5 days.\n\n— Crossroads Shopping",{key,to:a.email,from});if(r.ok)sent++;else await mailFail("Price alert to "+a.email+" failed: "+r.status)}catch(e){await mailFail("Price alert failed: "+String(e))}
+        if(!await chan("email",20))break;
+        try{
+          const r=await mail("Price drop at Crossroads Shopping","Hi!\n\nThe price of "+p.n+" is now "+inr(now)+" (was "+inr(+old.p)+").\n\nOrder it here: "+link+"\n\nFree delivery across India within 5 days.\n\n— Crossroads Shopping",{key,to:a.email,from});
+          if(!r.ok){failed++;await mailFail("Price alert to "+a.email+" failed: "+r.status);continue}
+          sent++;
+          const cur=await get("pricealerts",[]);
+          await db.setJSON("pricealerts",cur.filter(x=>!(String(x.pid)===String(p.id)&&emailNorm(x.email)===emailNorm(a.email))));
+        }catch(e){failed++;await mailFail("Price alert failed: "+String(e))}
       }
-      const keep=(await get("pricealerts",[])).filter(a=>!(String(a.pid)===String(p.id)&&emailOk(a.email)&&!(+a.price<=now)));
-      await db.setJSON("pricealerts",keep);
     }
     if(sent)await notify("Price drop emails sent: "+sent);
     return sent;
@@ -558,7 +585,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(have)return have.c;
     let c="";do{c=newCode()}while(list.some(k=>k.c===c));
     list.unshift({c,ph,used:false,t:new Date().toISOString()});
-    await db.setJSON("codes",list.slice(0,3000));
+    await put("codes",list.slice(0,3000));
     return c;
   }
   async function checkCode(raw,phone,consume,ref){
@@ -568,16 +595,21 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(!x)return{off:0,err:"That code is not valid. Check the spelling."};
     if(x.used)return{off:0,err:"That code has already been used."};
     if(x.ph!==ph)return{off:0,err:"That code belongs to a different phone number."};
-    if(consume){x.used=true;x.ut=new Date().toISOString();if(ref)x.ord=String(ref);await db.setJSON("codes",list)}
+    if(consume){x.used=true;x.ut=new Date().toISOString();if(ref)x.ord=String(ref);await put("codes",list)}
     return{off:CODE_OFF,code:x.c};
   }
   async function freeCode(raw){
     const c=codeNorm(raw);if(!c)return;
     const list=await getCodes(),x=list.find(k=>codeNorm(k.c)===c);
-    if(x&&x.used){x.used=false;delete x.ut;delete x.ord;await db.setJSON("codes",list)}
+    if(x&&x.used){x.used=false;delete x.ut;delete x.ord;await put("codes",list)}
   }
   const shortName=v=>{const p=String(v||"").trim().split(/\s+/).filter(Boolean);if(!p.length)return "Customer";return p.length>1?p[0]+" "+p[p.length-1][0].toUpperCase()+".":p[0]};
   const getReviews=()=>get("reviews",[]);
+  const rvHelp=id=>get("rvhelp/"+String(id),{up:0,down:0,v:{}});
+  const qaList=()=>get("qa",[]);
+  const feedAuth=async tok=>{const st=await cfg().catch(()=>({})),want=String(E.FEED_TOKEN||st.feedToken||"");return !!want&&String(tok||"")===want};
+  const feedProducts=async()=>(await get("products",[])).filter(p=>p&&!p.hid&&p.id!==undefined&&p.id!==null&&p.id!=="");
+  const feedImage=p=>{const raw=(Array.isArray(p.images)&&p.images[0])||p.img||p.image||"";const s=String(raw||"");if(/^https?:\/\//i.test(s))return s;if(s.startsWith("/"))return abs(s);return abs("/"+s)};
   const packPhoto=async(v)=>{
     const str=String(v||"");
     if(str.startsWith("/api/img/")||/^https?:\/\//i.test(str))return cut(str,500);
@@ -654,12 +686,13 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     const rsKey=E.RESEND_API_KEY||st.rsKey||"",rsTo=E.ALERT_EMAIL||st.rsTo||"producingmj@gmail.com",rsFrom=E.MAIL_FROM||st.rsFrom||"";
     if(!waKey&&!E.DISCORD_WEBHOOK&&!E.FAST2SMS_KEY&&!E.NTFY_TOPIC&&!rsKey&&!(tgTok&&tgChat))return;
     if(!imp&&!await allow())return;
-    if(waKey&&!skipWa)await fetch(`https://api.callmebot.com/whatsapp.php?phone=${waPhone}&apikey=${encodeURIComponent(waKey)}&text=${encodeURIComponent(t)}`).catch(()=>{});
-    if(imp&&E.FAST2SMS_KEY&&!skip.sms)await fetch("https://www.fast2sms.com/dev/bulkV2?"+new URLSearchParams({route:"q",message:t.replace(/[^\x20-\x7E\n]/g,"").slice(0,150),flash:"0",numbers:E.SMS_TO||"8281036836"}),{headers:{Authorization:E.FAST2SMS_KEY}}).catch(()=>{});
-    if(E.DISCORD_WEBHOOK&&!skip.discord)await fetch(E.DISCORD_WEBHOOK,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({content:t})}).catch(()=>{});
-    if(E.NTFY_TOPIC&&!skip.ntfy)await fetch("https://ntfy.sh/"+encodeURIComponent(E.NTFY_TOPIC),{method:"POST",headers:{Title:"Crossroads"},body:t}).catch(()=>{});
-    if(imp&&rsKey&&!skip.email)await mail(t.split("\n").filter(Boolean)[0],t,{key:rsKey,to:rsTo,from:rsFrom}).catch(()=>{});
-    if(tgTok&&tgChat&&!skip.tg)await tgSend(t,{tok:tgTok,chat:tgChat});
+    if(!await dedupe(t))return;
+    if(waKey&&!skipWa&&await chan("wa",30))await fetch(`https://api.callmebot.com/whatsapp.php?phone=${waPhone}&apikey=${encodeURIComponent(waKey)}&text=${encodeURIComponent(cut(t,900))}`).catch(()=>{});
+    if(imp&&E.FAST2SMS_KEY&&!skip.sms&&await chan("sms",10))await fetch("https://www.fast2sms.com/dev/bulkV2?"+new URLSearchParams({route:"q",message:t.replace(/[^\x20-\x7E\n]/g,"").slice(0,150),flash:"0",numbers:E.SMS_TO||"8281036836"}),{headers:{Authorization:E.FAST2SMS_KEY}}).catch(()=>{});
+    if(E.DISCORD_WEBHOOK&&!skip.discord&&await chan("discord",60))await fetch(E.DISCORD_WEBHOOK,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({content:t})}).catch(()=>{});
+    if(E.NTFY_TOPIC&&!skip.ntfy&&await chan("ntfy",60))await fetch("https://ntfy.sh/"+encodeURIComponent(E.NTFY_TOPIC),{method:"POST",headers:{Title:"Crossroads"},body:t}).catch(()=>{});
+    if(imp&&rsKey&&!skip.email&&await chan("email",20))await mail(t.split("\n").filter(Boolean)[0],t,{key:rsKey,to:rsTo,from:rsFrom}).catch(()=>{});
+    if(tgTok&&tgChat&&!skip.tg&&await chan("tg",30))await tgSend(t,{tok:tgTok,chat:tgChat});
   }
   if(path==="health"&&req.method==="GET")return J({ok:true,t:Date.now(),service:"crossroads"});
   if(path==="test"){
@@ -672,7 +705,8 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     }
     return J(r);
   }
-  if(path==="settings"&&req.method==="GET"){const t=await get("settings",{});if(t.paymentMethod==="upi"&&!t.pmBothMigrated){t.paymentMethod="both";t.pmBothMigrated=true;await db.setJSON("settings",t)}return J({upi:t.upi||"",name:t.name||"",online:!!(E.RAZORPAY_KEY_ID&&E.RAZORPAY_KEY_SECRET),paymentMethod:t.paymentMethod||"both",googleClientId:t.googleClientId||""})}
+  if(path==="version"&&req.method==="GET")return J({v:await siteVer()});
+  if(path==="settings"&&req.method==="GET"){const t=await get("settings",{});if(t.paymentMethod==="upi"&&!t.pmBothMigrated){t.paymentMethod="both";t.pmBothMigrated=true;await put("settings",t)}return J({upi:t.upi||"",name:t.name||"",online:!!(E.RAZORPAY_KEY_ID&&E.RAZORPAY_KEY_SECRET),paymentMethod:t.paymentMethod||"both",googleClientId:t.googleClientId||"",metaPixelId:t.metaPixelId||""})}
   if(path==="settings/qr"&&req.method==="GET"){const t=await get("settings",{});return J({qr:t.qr||""})}
   if(path==="settings"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
@@ -699,7 +733,9 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(b.igToken!==undefined){const t=String(b.igToken).trim();if(t)nxt.igToken=cut(t,500);else delete nxt.igToken}
     if(b.igAuto!==undefined)nxt.igAuto=!!b.igAuto;
     if(b.igStory!==undefined)nxt.igStory=!!b.igStory;
-    await db.setJSON("settings",nxt);cfgCache={t:0,v:null};return J({ok:1});
+    if(b.metaPixelId!==undefined)nxt.metaPixelId=String(b.metaPixelId).replace(/\D/g,"").slice(0,20);
+    if(b.feedToken!==undefined)nxt.feedToken=cut(String(b.feedToken).trim().replace(/[^A-Za-z0-9_-]/g,""),60);
+    await put("settings",nxt);cfgCache={t:0,v:null};return J({ok:1});
   }
   if(path==="notify"&&req.method==="GET"){
     if(!admin())return J({error:"Wrong password"},401);
@@ -730,7 +766,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       if(!chat)return J({error:`Token is good (@${me.result.username}). Now open Telegram, find @${me.result.username}, tap Start (or send "hi"), then press Connect again.`},400);
     }
     const nxt={...cur,tgToken:cut(tok,120),tgChat:cut(chat,40)};
-    await db.setJSON("settings",nxt);cfgCache={t:0,v:null};
+    await put("settings",nxt);cfgCache={t:0,v:null};
     const err=await tgSend("✅ Telegram alerts are connected to Crossroads Shopping.\nYou will get every new order here.\n"+DASH,{tok,chat});
     if(err)return J({error:"Saved, but Telegram said: "+err},400);
     return J({ok:1,bot:me.result.username,chat,who});
@@ -753,7 +789,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       if(/invalid|not authorized|unauthorized/i.test(m))return J({error:"Resend says the API key is invalid. Copy it again from resend.com → API Keys."},400);
       return J({error:"Resend refused the email: "+(m||("status "+r.status))},400);
     }
-    await db.setJSON("settings",{...cur,rsKey:cut(key,90),rsTo:cut(to,120),rsFrom:cut(from,120)});cfgCache={t:0,v:null};
+    await put("settings",{...cur,rsKey:cut(key,90),rsTo:cut(to,120),rsFrom:cut(from,120)});cfgCache={t:0,v:null};
     return J({ok:1,to,from});
   }
   if(path==="notify/test"&&req.method==="POST"){
@@ -800,6 +836,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(method==="upi"&&payAllow!=="upi"&&payAllow!=="both")return J({error:"UPI payment is not available right now."},400);
     const utr=String(b.utr||"").replace(/\W/g,"").slice(0,30);
     if(!lines.length||!c.name||!c.phone||!c.address)return J({error:"Fill in your details."},400);
+    if(String(c.phone||"").replace(/\D/g,"").slice(-10).length!==10)return J({error:"Enter a valid 10-digit phone number."},400);
     if(!emailOk(c.email))return J({error:"Enter a valid email address for your receipt."},400);
     if(method==="upi"&&utr.length<8)return J({error:"Fill in your details and the UPI transaction ID."},400);
     const orders=await getOrders();
@@ -814,21 +851,24 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     orders.unshift(o);
     await saveOrders(orders);
     await notify(orderText(o,method==="cod"?"New order - Cash on Delivery. Collect payment on delivery.":"New order - UPI payment pending until verified. Check your bank app, then mark it paid.")+(cc.off?`\nDiscount code used: ${cc.code}`:""),true).catch(()=>{});
-    await custMail(o,"received").catch(()=>{});
-    return J({ok:1,next:o.next||""});
+    const emailed=await custMail(o,"received").catch(()=>false);
+    return J({ok:1,next:o.next||"",emailed});
   }
   if(path==="orders/paid"){
     if(!admin())return J({error:"Wrong password"},401);
     const orders=await getOrders(),o=orders.find(x=>x.id===b.id);
-    if(o&&!o.paid){o.paid=true;(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});if(!o.next&&!orders.some(x=>x.id!==o.id&&x.paid&&!x.cancelled&&last10(x.phone)===last10(o.phone))){const nc=await issueCode(o.phone);if(nc)o.next=nc}await saveOrders(orders);await custMail(o,"paid").catch(()=>{})}return J({ok:1});
+    if(!o)return J({error:"Order not found."},404);
+    if(o.paid)return J({ok:1,already:true});
+    o.paid=true;(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});if(!o.next&&!orders.some(x=>x.id!==o.id&&x.paid&&!x.cancelled&&last10(x.phone)===last10(o.phone))){const nc=await issueCode(o.phone);if(nc)o.next=nc}await saveOrders(orders);const emailed=await custMail(o,"paid").catch(()=>false);return J({ok:1,emailed});
   }
   if(path==="orders/resend"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
     const o=(await getOrders()).find(x=>x.id===b.id);
     if(!o)return J({error:"Order not found."},404);
     if(!emailOk(o.email))return J({error:"This order has no valid email address."},400);
-    await custMail(o,o.paid?"paid":"received");
-    return J({ok:1});
+    const emailed=await custMail(o,o.paid?"paid":"received").catch(()=>false);
+    if(!emailed)return J({error:"The receipt could not be sent. Check the email alert setup, then try again."},502);
+    return J({ok:1,emailed:true});
   }
   if(path==="mail/fails"&&req.method==="GET"){
     if(!admin())return J({error:"Wrong password"},401);
@@ -856,26 +896,30 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(orders.some(x=>x.id!==o.id&&x.method!=="cod"&&String(x.utr||"").replace(/\W/g,"")===utr))return J({error:"That transaction ID is already used on another order."},400);
     o.utr=utr;o.paid=true;(o.ev=o.ev||[]).push({a:"paid",t:new Date().toISOString()});
     if(!o.next&&!orders.some(x=>x.id!==o.id&&x.paid&&!x.cancelled&&last10(x.phone)===last10(o.phone))){const nc=await issueCode(o.phone);if(nc)o.next=nc}
-    await saveOrders(orders);await custMail(o,"paid");
+    await saveOrders(orders);const emailed=await custMail(o,"paid").catch(()=>false);
     await notify("UPI matched and paid\n"+orderText(o,"Order #"+o.no+" confirmed — payment received."),true).catch(()=>{});
-    return J({ok:1,no:o.no,next:o.next||""});
+    return J({ok:1,no:o.no,next:o.next||"",emailed});
   }
   if(path==="orders/update"){
     if(!admin())return J({error:"Wrong password"},401);
     const orders=await getOrders(),o=orders.find(x=>x.id===b.id);
+    if(!o)return J({error:"Order not found."},404);
+    let emailed=null;
     if(o){let justPaid=false,justDelivered=false;for(const k of ["paid","shipped","delivered","cancelled"])if(typeof b[k]==="boolean"&&o[k]!==b[k]){o[k]=b[k];if(b[k])(o.ev=o.ev||[]).push({a:k==="cancelled"?"cancelled":k,t:new Date().toISOString()});if(k==="paid"&&b[k])justPaid=true;if(k==="delivered"&&b[k])justDelivered=true}
-      if(b.track!==undefined)o.track=cut(b.track,120);if(b.note!==undefined)o.note=cut(b.note,500);
-       if(b.trackStatus!==undefined){const ts=String(b.trackStatus);if(["placed","confirmed","processing","shipped","intransit","outfordelivery","delivered","cancelled"].includes(ts)){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.status=ts;o.track.events=o.track.events||[];o.track.events.push({a:ts,t:new Date().toISOString(),note:cut(b.trackNote||"",200)});if(ts==="shipped"&&!o.shipped){o.shipped=true;(o.ev=o.ev||[]).push({a:"shipped",t:new Date().toISOString()})}if(ts==="delivered"&&!o.delivered){o.delivered=true;justDelivered=true;(o.ev=o.ev||[]).push({a:"delivered",t:new Date().toISOString()})}}}
-       if(b.courier!==undefined){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.courier=cut(String(b.courier||""),60)}
-       if(b.trackNo!==undefined){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.trackNo=cut(String(b.trackNo||""),60)}
-       if(b.estDays!==undefined){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.estDays=Math.max(1,Math.min(30,+b.estDays||5))}
-       if(b.estDate!==undefined){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.estDate=cut(String(b.estDate||""),20)}
-       if(b.trackNote!==undefined){o.track=o.track||{status:"placed",estDays:5,courier:"",trackNo:"",note:"",events:[]};o.track.note=cut(String(b.trackNote||""),300)}
+      if(typeof b.track==="string"){trackObj(o);o.track.trackNo=cut(b.track,120);o.trackNo=cut(b.track,120)}
+      else if(b.track&&typeof b.track==="object"){const t=trackObj(o);for(const k of ["status","courier","trackNo","estDate","estDays","note"])if(b.track[k]!==undefined)t[k]=b.track[k]}
+      if(b.note!==undefined)o.note=cut(b.note,500);
+       if(b.trackStatus!==undefined){const ts=String(b.trackStatus);if(["placed","confirmed","processing","shipped","intransit","outfordelivery","delivered","cancelled"].includes(ts)){trackObj(o);o.track.status=ts;o.track.events=o.track.events||[];o.track.events.push({a:ts,t:new Date().toISOString(),note:cut(b.trackNote||"",200)});if(ts==="shipped"&&!o.shipped){o.shipped=true;(o.ev=o.ev||[]).push({a:"shipped",t:new Date().toISOString()})}if(ts==="delivered"&&!o.delivered){o.delivered=true;justDelivered=true;(o.ev=o.ev||[]).push({a:"delivered",t:new Date().toISOString()})}}}
+       if(b.courier!==undefined){trackObj(o);o.track.courier=cut(String(b.courier||""),60)}
+       if(b.trackNo!==undefined){trackObj(o);o.track.trackNo=cut(String(b.trackNo||""),60)}
+       if(b.estDays!==undefined){trackObj(o);o.track.estDays=Math.max(1,Math.min(30,+b.estDays||5))}
+       if(b.estDate!==undefined){trackObj(o);o.track.estDate=cut(String(b.estDate||""),20)}
+       if(b.trackNote!==undefined){trackObj(o);o.track.note=cut(String(b.trackNote||""),300)}
       if((justPaid||justDelivered)&&!o.next&&!orders.some(x=>x.id!==o.id&&x.paid&&!x.cancelled&&last10(x.phone)===last10(o.phone))){const nc=await issueCode(o.phone);if(nc)o.next=nc}
       await saveOrders(orders);
       if(b.cancelled===true&&o.disc&&o.disc.code)await freeCode(o.disc.code);
-      if(justPaid)await custMail(o,"paid").catch(()=>{})}
-    return J({ok:1});
+      if(justPaid)emailed=await custMail(o,"paid").catch(()=>false)}
+    return J({ok:1,emailed});
   }
 
   if(path==="orders/track"&&req.method==="POST"){
@@ -930,10 +974,11 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     docs.forEach(d=>Object.values(d.s||{}).forEach(x=>S.push(x)));
     const top=(arr,f,n=8)=>{const m={};arr.forEach(x=>{const k=f(x);if(k)m[k]=(m[k]||0)+1});return Object.entries(m).sort((a,c)=>c[1]-a[1]).slice(0,n).map(([k,v])=>({k,v}))};
     const lastP=x=>{const p=x.pages||[];return p.length?p[p.length-1].p:""},firstP=x=>{const p=x.pages||[];return p.length?p[0].p:""};
-    const inR=o=>list.includes(ist(Date.parse(o.t))),ordR=orders.filter(o=>inR(o)&&!o.cancelled),paid=ordR.filter(o=>o.paid);
+    const stamp=o=>{const t=Date.parse(o.t||"");return Number.isFinite(t)?ist(t):""};
+    const inR=o=>list.includes(stamp(o)),ordR=orders.filter(o=>inR(o)&&!o.cancelled),paid=ordR.filter(o=>o.paid);
     const funnel={sessions:S.length,viewed:S.filter(x=>x.ev&&x.ev.v>0).length,cart:S.filter(x=>x.ev&&x.ev.c>0).length,checkout:S.filter(x=>x.ev&&x.ev.k>0).length,ordered:S.filter(x=>x.ev&&x.ev.o>0).length};
     const prod={};S.forEach(x=>(x.acts||[]).forEach(a=>{if(a.a==="view"||a.a==="cart"){const p=prod[a.n]||(prod[a.n]={n:a.n,v:0,c:0});a.a==="view"?p.v++:p.c++}}));
-    const series=list.slice().reverse().map(d=>{const ss=S.filter(x=>ist(x.t0)===d);return{d,sessions:ss.length,visitors:new Set(ss.map(x=>x.vid)).size,orders:orders.filter(o=>!o.cancelled&&ist(Date.parse(o.t))===d).length,sales:orders.filter(o=>o.paid&&!o.cancelled&&ist(Date.parse(o.t))===d).reduce((a,o)=>a+o.total,0)}});
+    const series=list.slice().reverse().map(d=>{const ss=S.filter(x=>ist(x.t0)===d);return{d,sessions:ss.length,visitors:new Set(ss.map(x=>x.vid)).size,orders:orders.filter(o=>!o.cancelled&&stamp(o)===d).length,sales:orders.filter(o=>o.paid&&!o.cancelled&&stamp(o)===d).reduce((a,o)=>a+o.total,0)}});
     const hours=Array(24).fill(0);S.forEach(x=>hours[hourOf(x.t0)]++);
     const durs=S.filter(x=>x.dur>0).map(x=>x.dur),now=Date.now();
     const outcome=x=>x.ev&&x.ev.o>0?"Ordered":x.ev&&x.ev.k>0?"Reached checkout":x.ev&&x.ev.c>0?"Added to cart":x.ev&&x.ev.v>0?"Viewed a product":(x.pages||[]).length>1?"Browsed":"Left quickly";
@@ -962,18 +1007,27 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
   if(path==="proxy/img"&&req.method==="GET"){
     let target="";try{target=new URL(req.url).searchParams.get("u")||""}catch(e){}
     let tu;try{tu=new URL(target)}catch(e){return J({error:"Bad image URL"},400)}
-    if(!/^https?:$/.test(tu.protocol))return J({error:"Bad image URL"},400);
-    const host=tu.hostname.toLowerCase();
-    if(/^(localhost|127\.|0\.0\.0\.0|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(host)||/\.local$/.test(host)||host==="::1")return J({error:"Blocked"},400);
+    if(!/^https?:$/.test(tu.protocol)||tu.username||tu.password||tu.port&&!/^(80|443)$/.test(tu.port))return J({error:"Bad image URL"},400);
     try{
-      const r=await fetch(tu.href,{headers:{...UA,accept:"image/avif,image/webp,image/apng,image/*,*/*;q=0.8",referer:tu.origin+"/"},redirect:"follow"});
-      if(!r.ok)return J({error:"Image fetch failed"},404);
-      const ct=String(r.headers.get("content-type")||"").toLowerCase();
-      if(ct&&!ct.startsWith("image/"))return J({error:"Not an image"},415);
-      const buf=Buffer.from(await r.arrayBuffer());
-      if(!buf.length)return J({error:"Empty image"},404);
-      if(buf.length>8*1024*1024)return J({error:"Image too large"},413);
-      return new Response(buf,{headers:{"content-type":ct&&ct.startsWith("image/")?ct:"image/jpeg","cache-control":"public, max-age=86400","access-control-allow-origin":"*"}});
+      let cur=tu;
+      for(let hop=0;hop<4;hop++){
+        if(!await publicHost(cur.hostname))return J({error:"Blocked"},400);
+        const r=await fetch(cur.href,{headers:{...UA,accept:"image/avif,image/webp,image/apng,image/*,*/*;q=0.8",referer:cur.origin+"/"},redirect:"manual",signal:AbortSignal.timeout(10000)});
+        if([301,302,303,307,308].includes(r.status)){
+          const loc=r.headers.get("location");if(!loc)return J({error:"Image fetch failed"},404);
+          cur=new URL(loc,cur.href);
+          if(!/^https?:$/.test(cur.protocol)||cur.username||cur.password||cur.port&&!/^(80|443)$/.test(cur.port))return J({error:"Blocked"},400);
+          continue;
+        }
+        if(!r.ok)return J({error:"Image fetch failed"},404);
+        const ct=String(r.headers.get("content-type")||"").split(";")[0].trim().toLowerCase();
+        if(!/^image\/(png|jpe?g|webp|gif|avif)$/.test(ct))return J({error:"Not an image"},415);
+        const buf=Buffer.from(await r.arrayBuffer());
+        if(!buf.length)return J({error:"Empty image"},404);
+        if(buf.length>8*1024*1024)return J({error:"Image too large"},413);
+        return new Response(buf,{headers:{"content-type":ct,"cache-control":"public, max-age=86400","x-content-type-options":"nosniff","access-control-allow-origin":"*"}});
+      }
+      return J({error:"Too many redirects"},400);
     }catch(e){return J({error:"Image fetch failed"},502)}
   }
   if(path.startsWith("img/")&&req.method==="GET"){
@@ -1002,7 +1056,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       const id=await igCreate(user,token,{image_url:img,caption:cap});
       done.push("post:"+await igPublish(user,token,id));
       if(b.story||s.igStory){try{const sid=await igCreate(user,token,{media_type:"STORIES",image_url:img});done.push("story:"+await igPublish(user,token,sid))}catch(e){done.push("story-error:"+String((e&&e.message)||e))}}
-      p.ig={t:Date.now(),ids:done};await db.setJSON("products",list);
+      p.ig={t:Date.now(),ids:done};await put("products",list);
       return J({ok:1,posted:done,caption:cap});
     }catch(e){return J({error:String((e&&e.message)||e)},502)}
   }
@@ -1037,36 +1091,39 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     let n=0;for(const p of list){if(!p.sup||p.sup.s!=="jvecomb2b")continue;const r=map[p.sup.id];if(!r)continue;
       const cost=[+r.discounted_price,+r.original_price].filter(x=>x>0).sort((a,b)=>a-b)[0]||0;
       p.sup.cost=cost;p.sup.stock=+(r.on_hand_stock??r.stock??0)||0;n++}
-    if(n)await db.setJSON("products",list);
+    if(n)await put("products",list);
     return J({ok:1,updated:n});
   }
-  if(path==="products"&&req.method==="GET"){const all=await get("products",[]);const before=JSON.stringify(all);all.forEach(cleanProduct);if(await pack(all)||JSON.stringify(all)!==before)await db.setJSON("products",all);return J(admin()?all:all.filter(p=>!p.hid),200,{"cache-control":"public,max-age=0,must-revalidate","netlify-cdn-cache-control":"public,max-age=60,stale-while-revalidate=300"})}
+  if(path==="products"&&req.method==="GET"){const all=await get("products",[]);const before=JSON.stringify(all);all.forEach(cleanProduct);if(await pack(all)||JSON.stringify(all)!==before)await put("products",all);return J(admin()?all:all.filter(p=>!p.hid),200,{"cache-control":"public,max-age=0,must-revalidate","netlify-cdn-cache-control":"public,max-age=60,stale-while-revalidate=300"})}
   if(path==="products"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
-    const before=await get("products",[]),list=Array.isArray(b.products)?b.products:[];list.forEach(cleanProduct);await pack(list);await db.setJSON("products",list);const dropped=await priceDrops(before,list);return J({ok:1,priceAlerts:dropped});
+    const before=await get("products",[]),list=Array.isArray(b.products)?b.products:[];list.forEach(cleanProduct);await pack(list);await put("products",list);const dropped=await priceDrops(before,list);return J({ok:1,priceAlerts:dropped});
   }
   if(path==="pricealert"&&req.method==="POST"){
     const pid=String(b.pid||""),email=emailNorm(b.email);
     if(!pid||!emailOk(email))return J({error:"Enter a valid email address."},400);
-    const P=await get("products",[]),p=P.find(x=>String(x.id)===pid);if(!p)return J({error:"Product not found."},404);
-    const all=await get("pricealerts",[]),i=all.findIndex(a=>String(a.pid)===pid&&a.email===email);
+    if(!await limit("pricealert/ip",ipKey(),12))return J({error:"Too many alert requests. Try again later."},429);
+    if(!await limit("pricealert/mail",crypto.createHash("sha256").update(email).digest("hex").slice(0,16),20,false))return J({error:"Too many alerts for this email today. Try again tomorrow."},429);
+    const P=await get("products",[]),p=P.find(x=>String(x.id)===pid);if(!p||p.hid)return J({error:"Product not found."},404);
+    const all=await get("pricealerts",[]),i=all.findIndex(a=>String(a.pid)===pid&&emailNorm(a.email)===email);
     const rec={pid,email,price:+p.p||0,t:new Date().toISOString()};
     if(i>=0)all[i]=rec;else all.unshift(rec);
+    all.sort((a,c)=>String(c.t||"").localeCompare(String(a.t||"")));
     await db.setJSON("pricealerts",all.slice(0,5000));
     return J({ok:1});
   }
   if(path==="admin/boot"&&req.method==="GET"){
     if(!admin())return J({error:"Wrong password"},401);
-    const [orders,messages,products,settings,feedback,codes,reviews,sessions,mailFails]=await Promise.all([getOrders(),get("messages",[]),get("products",[]),get("settings",{}),get("feedback",[]),get("codes",[]),get("reviews",[]),get("sessions",[]),get("mail_fails",[])]);
+    const [orders,messages,products,settings,feedback,codes,reviews,qa,sessions,mailFails]=await Promise.all([getOrders(),get("messages",[]),get("products",[]),get("settings",{}),get("feedback",[]),get("codes",[]),get("reviews",[]),get("qa",[]),get("sessions",[]),get("mail_fails",[])]);
     products.forEach(cleanProduct);
     let mx=Math.max(1000,...orders.map(o=>o.no||0)),ch=false;
     [...orders].reverse().forEach(o=>{if(!o.no){o.no=++mx;ch=true}if(!o.method)o.method=o.manual?"upi":"online"});
     if(ch){await db.setJSON("seq/order",{n:mx});await saveOrders(orders)}
     const tgTok=E.TELEGRAM_BOT_TOKEN||settings.tgToken||"",tgChat=E.TELEGRAM_CHAT_ID||settings.tgChat||"";
     const igUser=settings.igUser||"",igTok=E.IG_TOKEN||settings.igToken||"";
-    const safe={upi:settings.upi||"",name:settings.name||"",qr:settings.qr||"",brand:settings.brand||null,paymentMethod:settings.paymentMethod||"both",googleClientId:settings.googleClientId||"",ig:{connected:!!(igUser&&igTok),user:igUser,auto:!!settings.igAuto,story:!!settings.igStory}};
+    const safe={upi:settings.upi||"",name:settings.name||"",qr:settings.qr||"",brand:settings.brand||null,paymentMethod:settings.paymentMethod||"both",googleClientId:settings.googleClientId||"",metaPixelId:settings.metaPixelId||"",feedToken:settings.feedToken||"",ig:{connected:!!(igUser&&igTok),user:igUser,auto:!!settings.igAuto,story:!!settings.igStory}};
     const acctMap={};(sessions||[]).forEach(s=>{const k=s.ph||emailNorm(s.email||"");if(!k)return;if(!acctMap[k]||new Date(s.t||0)>new Date(acctMap[k].t||0))acctMap[k]={name:s.name||"Customer",phone:s.ph||"",email:s.email||"",t:s.t};});const accounts=Object.values(acctMap).sort((a,b)=>new Date(b.t||0)-new Date(a.t||0));
-    return J({orders,messages,products,settings:safe,feedback,codes,reviews,accounts,mailFails,
+    return J({orders,messages,products,settings:safe,feedback,codes,reviews,qa:Array.isArray(qa)?qa:[],accounts,mailFails,
       notify:{whatsapp:!!(E.CALLMEBOT_KEY||settings.waKey),whatsapp_number:String(E.WA_NUMBER||settings.waPhone||WA).replace(/\D/g,""),
       email:!!(E.RESEND_API_KEY||settings.rsKey),email_to:E.ALERT_EMAIL||settings.rsTo||"producingmj@gmail.com",email_saved:!!settings.rsKey,email_from:E.MAIL_FROM||settings.rsFrom||"",
       telegram:!!(tgTok&&tgChat),telegram_saved:!!settings.tgToken,telegram_chat:tgChat,
@@ -1130,7 +1187,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     if(!admin())return J({error:"Wrong password"},401);
     const c=codeNorm(b.code);if(!c)return J({ok:1});
     const list=(await getCodes()).filter(k=>codeNorm(k.c)!==c);
-    await db.setJSON("codes",list);
+    await put("codes",list);
     return J({ok:1});
   }
   if(path==="sms/test"&&req.method==="POST"){
@@ -1170,11 +1227,11 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     let g=null;
     try{const r=await fetch("https://oauth2.googleapis.com/tokeninfo?id_token="+encodeURIComponent(cred));if(!r.ok)throw 0;g=await r.json()}catch(e){return J({error:"Google sign-in could not be verified."},401)}
     const st=await cfg().catch(()=>({})),cid=String(st.googleClientId||"").trim();
-    if(!cid||String(g.aud||"")!==cid)return J({error:"Google login is not configured for this site."},401);
+    if(!cid||String(g.aud||"")!==cid||!/^https:\/\/accounts\.google\.com$/.test(String(g.iss||"")))return J({error:"Google login is not configured for this site."},401);
     if(!(+g.exp>Date.now()/1000))return J({error:"That Google sign-in expired. Please try again."},401);
     const email=emailNorm(g.email||"");
     if(!emailOk(email))return J({error:"Google did not return a valid email address."},401);
-    if(g.email_verified===false||String(g.email_verified).toLowerCase()==="false")return J({error:"Please verify your Google email address first."},401);
+    if(g.email_verified!==true&&String(g.email_verified).toLowerCase()!=="true")return J({error:"Please verify your Google email address first."},401);
     const name=cut(String(g.name||g.given_name||"Customer").trim(),60)||"Customer";
     const token=crypto.randomBytes(24).toString("hex"),ss=await get("sessions",[]);
     ss.unshift({token,ph:"",name,email,t:new Date().toISOString(),provider:"google"});
@@ -1211,43 +1268,64 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
     await db.setJSON("sessions",[]);return J({ok:1});
   }
   if(path==="reviews"&&req.method==="GET"){
-    const pid=String(new URL(req.url).searchParams.get("pid")||""),all=await getReviews();
-    const L=pid?all.filter(r=>String(r.pid)===pid):all, n=L.length;
-    const avg=n?Math.round(L.reduce((a,r)=>a+(+r.s||0),0)/n*10)/10:0;
-    const dist=[5,4,3,2,1].map(s=>({s,n:L.filter(r=>+r.s===s).length}));
-    const s=await me().catch(()=>null),key=s?(s.ph||emailNorm(s.email||"")):"",mine=s?L.find(r=>r.ph===key||(s.email&&emailNorm(r.em||"")===emailNorm(s.email))):null;
-    return J({pid,count:n,avg,dist,mine:mine?{s:mine.s,x:mine.x||"",t:mine.t}:null,
-      reviews:L.slice(0,25).map(r=>({s:+r.s,n:shortName(r.nm),x:r.x||"",t:r.t,v:!!r.v,src:r.src||"customer",photo:r.photo||""}))});
+    const q=new URL(req.url).searchParams,pid=String(q.get("pid")||""),star=+q.get("stars")||0,photosOnly=q.get("photos")==="1";
+    const all=await getReviews(),R=pid?all.filter(r=>String(r.pid)===pid):all,n=R.length;
+    const avg=n?Math.round(R.reduce((a,r)=>a+(+r.s||0),0)/n*10)/10:0;
+    const dist=[5,4,3,2,1].map(s=>({s,n:R.filter(r=>+r.s===s).length}));
+    const photos=[...new Set(R.map(r=>String(r.photo||"")).filter(Boolean))].slice(0,12);
+    let L=R;if(star>=1&&star<=5)L=L.filter(r=>+r.s===star);if(photosOnly)L=L.filter(r=>!!r.photo);
+    const s=await me().catch(()=>null),key=s?(s.ph||emailNorm(s.email||"")):"",mine=s?R.find(r=>r.ph===key||(s.email&&emailNorm(r.em||"")===emailNorm(s.email))):null;
+    const list=await Promise.all(L.slice(0,40).map(async r=>{const h=await rvHelp(r.id),voter=crypto.createHash("sha256").update(ipKey()+String(r.id)).digest("hex").slice(0,16);
+      return{id:String(r.id),s:+r.s,n:shortName(r.nm),x:r.x||"",t:r.t,v:!!r.v,src:r.src||"customer",photo:r.photo||"",up:+h.up||0,down:+h.down||0,myVote:(h.v&&h.v[voter])||""}}));
+    return J({pid,count:n,avg,dist,photos,mine:mine?{s:mine.s,x:mine.x||"",t:mine.t}:null,reviews:list});
+  }
+  if(path==="reviews/helpful"&&req.method==="POST"){
+    const id=String(b.id||""),dir=b.vote==="down"?"down":b.vote==="up"?"up":"";
+    if(!id||!dir)return J({error:"Choose a helpful vote."},400);
+    if(!await limit("rvhelp",ipKey(),40))return J({error:"Too many votes just now. Try again later."},429);
+    const all=await getReviews();if(!all.some(r=>String(r.id)===id))return J({error:"Review not found."},404);
+    const k="rvhelp/"+id,h=await get(k,{up:0,down:0,v:{}}),voter=crypto.createHash("sha256").update(ipKey()+id).digest("hex").slice(0,16),prev=h.v&&h.v[voter];
+    h.v=h.v||{};
+    if(prev===dir){delete h.v[voter];h[dir]=Math.max(0,(+h[dir]||0)-1)}
+    else{if(prev)h[prev]=Math.max(0,(+h[prev]||0)-1);h.v[voter]=dir;h[dir]=(+h[dir]||0)+1}
+    const keys=Object.keys(h.v);if(keys.length>1000)keys.slice(0,keys.length-1000).forEach(x=>delete h.v[x]);
+    await db.setJSON(k,h);
+    return J({ok:1,up:+h.up||0,down:+h.down||0,vote:h.v[voter]||""});
   }
   if(path==="reviews"&&req.method==="POST"){
     const s=await me();if(!s)return J({error:"Log in to rate this product."},401);
-    const pid=String(b.pid||""),stars=Math.max(1,Math.min(5,Math.round(+b.stars||0)));
-    if(!pid||!stars)return J({error:"Choose a star rating first."},400);
+    if(!await limit("review",ipKey(),10))return J({error:"Too many ratings just now. Try again later."},429);
+    const pid=String(b.pid||""),stars=Number(b.stars);
+    if(!pid)return J({error:"Choose a product first."},400);
+    if(!Number.isInteger(stars)||stars<1||stars>5)return J({error:"Choose a star rating from 1 to 5."},400);
     const text=cut(String(b.text||"").trim(),500),photo=await packPhoto(b.photo);
     const key=s.ph||emailNorm(s.email||""),em=emailNorm(s.email||"");
     const all=await getReviews(),i=all.findIndex(r=>String(r.pid)===pid&&(r.ph===key||(em&&emailNorm(r.em||"")===em)));
-    const orders=await getOrders(),verified=orders.some(o=>!o.cancelled&&(o.paid===true||o.method==="cod")&&((key&&last10(o.phone)===key)||(em&&emailNorm(o.email)===em)));
-    const rec={id:i>=0?all[i].id:Date.now(),pid,ph:key,em,nm:cut(s.name,60),s:stars,x:text,t:new Date().toISOString(),v:verified,src:"customer",photo:photo||""};
+    const prods=await get("products",[]),p=prods.find(x=>String(x.id)===pid),pn=String((p&&p.n)||(p&&p.sn)||"").toLowerCase().slice(0,20);
+    const bought=o=>(o.it||[]).some(it=>String(it.id||"")===pid||(pn&&String(it.n||"").toLowerCase().includes(pn)))||(o.lines||[]).some(l=>pn&&String(l).toLowerCase().includes(pn));
+    const orders=await getOrders(),verified=orders.some(o=>!o.cancelled&&(o.paid===true||o.method==="cod")&&((key&&last10(o.phone)===key)||(em&&emailNorm(o.email)===em))&&bought(o));
+    const rec={id:i>=0?all[i].id:String(Date.now())+String(crypto.randomInt(100,999)),pid,ph:key,em,nm:cut(s.name,60),s:stars,x:text,t:new Date().toISOString(),v:verified,src:"customer",photo:photo||""};
     if(i>=0)all[i]=rec;else all.unshift(rec);
-    await db.setJSON("reviews",all.slice(0,2000));
+    await put("reviews",all.slice(0,2000));
     return J({ok:1,review:{s:stars,x:text,v:verified}});
   }
   if(path==="reviews/add"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
-    const pid=String(b.pid||""),name=cut(String(b.name||"").trim(),60),stars=Math.max(1,Math.min(5,Math.round(+b.stars||0))),text=cut(String(b.text||"").trim(),500),photo=await packPhoto(b.photo);
-    if(!pid||!name||!stars)return J({error:"Pick a product, add a name and choose stars."},400);
+    const pid=String(b.pid||""),name=cut(String(b.name||"").trim(),60),stars=Number(b.stars),text=cut(String(b.text||"").trim(),500),photo=await packPhoto(b.photo);
+    if(!pid||!name)return J({error:"Pick a product and add a name."},400);
+    if(!Number.isInteger(stars)||stars<1||stars>5)return J({error:"Choose a star rating from 1 to 5."},400);
     const prods=await get("products",[]),p=prods.find(x=>String(x.id)===pid);
     const all=await getReviews();
     let when=new Date().toISOString();
     if(b.t){const d=new Date(b.t);if(!isNaN(d.getTime())&&d.getTime()<Date.now())when=d.toISOString()}
-    const rec={id:Date.now(),pid,pn:p?shortN(p.sn||p.n,80):"",ph:"",nm:name,s:stars,x:text,t:when,v:false,src:"shop",photo:photo||""};
-    all.unshift(rec);await db.setJSON("reviews",all.slice(0,2000));
+    const rec={id:String(Date.now())+String(crypto.randomInt(100,999)),pid,pn:p?shortN(p.sn||p.n,80):"",ph:"",nm:name,s:stars,x:text,t:when,v:false,src:"shop",photo:photo||""};
+    all.unshift(rec);await put("reviews",all.slice(0,2000));
     return J({ok:1,review:rec});
   }
   if(path==="reviews/delete"&&req.method==="POST"){
     if(!admin())return J({error:"Wrong password"},401);
     const id=String(b.id||"");
-    await db.setJSON("reviews",(await getReviews()).filter(r=>String(r.id)!==id));
+    await put("reviews",(await getReviews()).filter(r=>String(r.id)!==id));
     return J({ok:1});
   }
   if(path==="welcome"&&req.method==="POST"){
@@ -1284,6 +1362,7 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       lines.push(`${p.n} (${cut(i.size,20)}) x${q}`);its.push({n:shortN(p.n,90),s:cut(i.size,20),q,p:p.p});total+=p.p*q;
     }
     if(!lines.length||!c.name||!c.phone||!c.address)return J({error:"Fill in your details."},400);
+    if(String(c.phone||"").replace(/\D/g,"").slice(-10).length!==10)return J({error:"Enter a valid 10-digit phone number."},400);
     if(!emailOk(c.email))return J({error:"Enter a valid email address for your receipt."},400);
     const cc=await checkCode(b.code,c.phone,false);
     if(cc.err)return J({error:cc.err},400);
@@ -1313,27 +1392,91 @@ Need help? Just reply to this email, or message us on Instagram @${STORE.ig}.
       await saveOrders(orders);
       const paidHead=o.method==="cod"?"New order - Cash on Delivery. Collect payment on delivery.":o.method==="online"?"New order - Online payment received.":"New order - UPI payment received.";
       await notify(orderText(o,paidHead)+(o.disc?`\nDiscount code used: ${o.disc.code}`:""),true).catch(()=>{});
-      await custMail(o,"paid").catch(()=>{});
-      return J({ok:1,next:o.next||""});
+      const emailed=await custMail(o,"paid").catch(()=>false);
+      return J({ok:1,next:o.next||"",emailed});
     }
     return J({ok:1});
   }
+  if(path==="feed/google"&&req.method==="GET"){
+    const tok=new URL(req.url).searchParams.get("token")||"";
+    if(!await feedAuth(tok))return J({error:"Feed token is missing or incorrect."},401);
+    const P=await feedProducts();
+    const items=P.map(p=>{
+      const id=String(p.id),link=abs("/p/"+encodeURIComponent(id)),title=cut(p.sn||p.n||"Product",150);
+      const desc=cut(p.d||p.desc||(title+". Free delivery across India within 5 days."),4000);
+      const price=Math.max(0,+p.p||0).toFixed(2);
+      return `<item><id>${esc(id)}</id><title>${esc(title)}</title><description>${esc(desc)}</description><link>${esc(link)}</link><image_link>${esc(feedImage(p))}</image_link><price>${price} INR</price><availability>${p.sold?"out of stock":"in stock"}</availability><condition>new</condition><brand><name>Crossroads Shopping</name></brand></item>`;
+    });
+    const xml='<?xml version="1.0" encoding="UTF-8"?>\n<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0"><channel><title>Crossroads Shopping</title><link>'+esc(SITE+"/")+'</link><description>Products from Crossroads Shopping. Free delivery across India within 5 days.</description>'+items.join("")+'</channel></rss>\n';
+    return new Response(xml,{status:200,headers:{"content-type":"application/xml; charset=utf-8","cache-control":"public, max-age=300"}});
+  }
+  if(path==="feed/meta"&&req.method==="GET"){
+    const tok=new URL(req.url).searchParams.get("token")||"";
+    if(!await feedAuth(tok))return J({error:"Feed token is missing or incorrect."},401);
+    const P=await feedProducts();
+    const csvCell=v=>'"'+String(v??"").replace(/"/g,'""').replace(/[\r\n]+/g," ")+'"';
+    const rows=[["id","title","description","availability","condition","price","brand","image_link","link"].map(csvCell).join(",")];
+    for(const p of P){
+      const id=String(p.id),title=cut(p.sn||p.n||"Product",150);
+      rows.push([id,title,cut(p.d||p.desc||(title+". Free delivery across India within 5 days."),1000),p.sold?"out of stock":"in stock","new",Math.max(0,+p.p||0).toFixed(2)+" INR","Crossroads Shopping",feedImage(p),abs("/p/"+encodeURIComponent(id))].map(csvCell).join(","));
+    }
+    return new Response(rows.join("\r\n")+"\r\n",{status:200,headers:{"content-type":"text/csv; charset=utf-8","cache-control":"public, max-age=300"}});
+  }
+  if(path==="qa"&&req.method==="GET"){
+    const pid=String(new URL(req.url).searchParams.get("pid")||"");
+    const L=(await qaList()).filter(q=>String(q.pid)===pid).slice(0,20);
+    return J({pid,questions:L.map(q=>({id:String(q.id),q:cut(q.q,300),a:cut(q.a||"",800),name:shortName(q.nm,40),t:q.t,answered:!!q.a}))});
+  }
+  if(path==="qa"&&req.method==="POST"){
+    const s=await me();if(!s)return J({error:"Log in to ask a question."},401);
+    if(!await limit("qa",ipKey(),6))return J({error:"Too many questions just now. Try again later."},429);
+    const pid=String(b.pid||""),q=cut(String(b.q||"").trim(),300);
+    if(!pid||q.length<5)return J({error:"Write a question of at least 5 characters."},400);
+    const P=await get("products",[]);if(!P.some(p=>String(p.id)===pid&&!p.hid))return J({error:"Product not found."},404);
+    const all=await qaList(),rec={id:String(Date.now())+String(crypto.randomInt(100,999)),pid,q,nm:cut(s.name,60),a:"",t:new Date().toISOString(),at:""};
+    all.unshift(rec);await put("qa",all.slice(0,3000));
+    await notify("New product question\n"+q+"\nProduct: "+pid,true).catch(()=>{});
+    return J({ok:1,question:{id:rec.id,q,nm:rec.nm,t:rec.t,answered:false}});
+  }
+  if(path==="qa/answer"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    const id=String(b.id||""),a=cut(String(b.a||"").trim(),800);
+    if(!id||!a)return J({error:"Write an answer first."},400);
+    const all=await qaList(),x=all.find(q=>String(q.id)===id);
+    if(!x)return J({error:"Question not found."},404);
+    x.a=a;x.at=new Date().toISOString();await put("qa",all);return J({ok:1});
+  }
+  if(path==="qa/delete"&&req.method==="POST"){
+    if(!admin())return J({error:"Wrong password"},401);
+    await put("qa",(await qaList()).filter(q=>String(q.id)!==String(b.id||"")));return J({ok:1});
+  }
   if(path==="cart/remind"&&req.method==="POST"){
-    const email=emailNorm(b.email),name=cut(String(b.name||"").trim(),60)||"there";
-    if(!emailOk(email))return J({error:"Enter a valid email address."},400);
+    const email=emailNorm(b.email),phone=normPhone(b.phone),name=cut(String(b.name||"").trim(),60)||"there";
+    const wantWa=b.optinWhatsapp===true||b.whatsapp===true;
+    const wantEmail=b.optinEmail===true||(!wantWa&&emailOk(email));
     const items=(Array.isArray(b.items)?b.items:[]).slice(0,8).map(i=>({n:cut(String(i.n||i.name||"Item"),70),q:Math.max(1,Math.min(10,+i.q||1)),p:+i.p||0}));
-    if(!items.length)return J({ok:1});
+    if(!items.length)return J({error:"Your bag is empty."},400);
+    if(wantEmail&&!emailOk(email))return J({error:"Enter a valid email address."},400);
+    if(wantWa&&phone.slice(-10).length!==10)return J({error:"Enter a valid 10-digit WhatsApp number."},400);
+    if(!wantEmail&&!wantWa)return J({error:"Choose email or WhatsApp for the reminder."},400);
+    if(!await limit("cartremind",ipKey(),4))return J({error:"Too many reminder requests. Try again later."},429);
+    const total=items.reduce((a,i)=>a+i.p*i.q,0),line=items.map(i=>`${i.q} x ${i.n} - ${inr(i.p*i.q)}`).join("\n");
+    const short=`Hi ${name}, you left ${items.length} item${items.length===1?"":"s"} in your Crossroads bag (${inr(total)}). Finish your order: ${abs("/")}`;
     const st=await cfg().catch(()=>({})),key=E.RESEND_API_KEY||st.rsKey||"";
-    if(!key)return J({ok:1});
-    const hash=crypto.createHash("sha1").update(email+"|"+items.map(i=>i.n+"x"+i.q).join("|")).digest("hex").slice(0,16);
-    const logs=await get("cartmail",{}),last=logs[hash];
+    const logs=await get("cartmail",{}),hash=crypto.createHash("sha1").update((wantWa?phone:email)+"|"+items.map(i=>i.n+"x"+i.q).join("|")).digest("hex").slice(0,16),last=logs[hash];
     if(last&&Date.now()-new Date(last).getTime()<24*3600e3)return J({ok:1});
-    const total=items.reduce((a,i)=>a+i.p*i.q,0);
-    const body=`Hi ${name},\n\nYou left these items in your Crossroads Shopping bag:\n\n${items.map(i=>`${i.q} x ${i.n} - ${inr(i.p*i.q)}`).join("\n")}\n\nBag total: ${inr(total)}\nShipping is free and delivery is within 5 days.\n\nCome back and finish your order: https://crossroads-shopping.netlify.app/\n\n— Crossroads Shopping`;
-    await mail("You left something in your Crossroads bag",body,{key,to:email,from:E.MAIL_FROM||st.rsFrom||"Crossroads <onboarding@resend.dev>"}).catch(()=>{});
+    let sent=0;
+    if(wantWa&&st.waKey&&await chan("wa",30)){
+      try{const r=await fetch(`https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&apikey=${encodeURIComponent(st.waKey)}&text=${encodeURIComponent(cut(short,900))}`);if(r.ok)sent++}catch(e){}
+    }
+    if(wantEmail&&key){
+      const body=`Hi ${name},\n\nYou left these items in your Crossroads Shopping bag:\n\n${line}\n\nBag total: ${inr(total)}\nShipping is free and delivery is within 5 days.\n\nCome back and finish your order: ${abs("/")}\n\n— Crossroads Shopping`;
+      const r=await mail("You left something in your Crossroads bag",body,{key,to:email,from:E.MAIL_FROM||st.rsFrom||"Crossroads <onboarding@resend.dev>"}).catch(()=>({ok:false}));
+      if(r.ok)sent++;
+    }
     logs[hash]=new Date().toISOString();const ks=Object.keys(logs);if(ks.length>500)ks.sort((a,b)=>String(logs[a]).localeCompare(String(logs[b]))).slice(0,ks.length-500).forEach(k=>delete logs[k]);
     await db.setJSON("cartmail",logs);
-    return J({ok:1});
+    return J({ok:1,sent});
   }
   if(path==="chat"&&req.method==="POST"){
     const prods=(await get("products",[])).filter(p=>!p.hid);
