@@ -40,7 +40,7 @@
 <link rel="dns-prefetch" href="https://accounts.google.com">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>(function(){var t="dark";try{t=localStorage.getItem("cr_theme")==="light"?"light":"dark"}catch(e){}document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="light"?"#F4F6FB":"#080A10"})();</script>
-<script>(function(){var V="v9cb6c36d43",D="",busy=false,CH=null,PENDING=null,TRIES=0,START=Date.now(),LAST=0;
+<script>(function(){var V="v26ef66b615",D="",busy=false,CH=null,PENDING=null,TRIES=0,START=Date.now(),LAST=0;
   function busyUI(){return location.hash.indexOf("#checkout")>=0||!!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest("form"))||!!document.querySelector("dialog[open]")}
   function ready(){return !document.hidden&&!busyUI()&&Date.now()-START>3000}
   function clearCache(){try{localStorage.removeItem("cr_pc_t");localStorage.removeItem("cr_st_t")}catch(e){}}
@@ -278,6 +278,14 @@ details{border-top:1px solid var(--line);padding:14px 0}details:last-of-type{bor
 @keyframes shim{to{background-position:-120% 0}}
 #bTheme svg{transition:transform .5s}#bTheme:hover svg{transform:rotate(180deg)}
 @media(hover:none){.card .im{transform:none!important}}
+/* Touch devices must never spend the first tap on a desktop hover effect. */
+@media(hover:none),(pointer:coarse){
+ .card:hover .im img:first-child{transform:none}
+ .card:hover .im2{opacity:0}
+ .card:hover .qv{transform:translateY(130%)}
+ .card.in:hover .im{box-shadow:0 10px 30px rgba(8,10,16,.10),inset 0 0 0 1px rgba(255,255,255,.06);transform:none}
+ .card:hover .im:after{opacity:0}
+}
 @media(max-width:700px){#c3d{opacity:.6}.hero .hi{padding-top:44px;padding-bottom:44px}.hi h2{max-width:9ch}}
 @keyframes bump{40%{transform:scale(1.35)}}
 @keyframes pop{from{opacity:0;transform:translateY(12px) scale(.98)}}
@@ -1003,6 +1011,12 @@ $("mf").onsubmit=async e=>{e.preventDefault();const t=$("mt").value.trim();if(!t
 function tilt(root){let raf=0;root.addEventListener("pointermove",e=>{if(e.pointerType!=="mouse")return;if(raf)return;raf=requestAnimationFrame(()=>{raf=0;const c=document.elementFromPoint(e.clientX,e.clientY)?.closest?.(".card");if(!c||c.classList.contains("sk"))return;const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;c.style.setProperty("--ry",(x*12).toFixed(2)+"deg");c.style.setProperty("--rx",(-y*12).toFixed(2)+"deg");c.style.setProperty("--gx",(x*100+50).toFixed(0)+"%");c.style.setProperty("--gy",(y*100+50).toFixed(0)+"%")})},{passive:true});
  root.addEventListener("pointerout",e=>{const c=e.target.closest(".card");if(c&&!c.contains(e.relatedTarget)){c.style.setProperty("--ry","0deg");c.style.setProperty("--rx","0deg")}})}
 tilt($("grid"));tilt($("product"));
+let cardTap=null,cardTapAt=0;
+$("grid").addEventListener("touchstart",e=>{if(e.touches.length!==1){cardTap=null;return}const a=e.target.closest(".card");if(!a)return;const t=e.touches[0];cardTap={a,x:t.clientX,y:t.clientY,t:Date.now()}},{passive:true});
+$("grid").addEventListener("touchmove",e=>{if(!cardTap||e.touches.length!==1){cardTap=null;return}const t=e.touches[0];if(Math.abs(t.clientX-cardTap.x)>12||Math.abs(t.clientY-cardTap.y)>12)cardTap=null},{passive:true});
+$("grid").addEventListener("touchend",e=>{const tap=cardTap;cardTap=null;if(!tap||e.changedTouches.length!==1)return;const t=e.changedTouches[0];if(Math.abs(t.clientX-tap.x)>12||Math.abs(t.clientY-tap.y)>12||Date.now()-tap.t>800)return;cardTapAt=Date.now();if(e.cancelable)e.preventDefault();location.assign(tap.a.href)},{passive:false});
+$("grid").addEventListener("touchcancel",()=>{cardTap=null},{passive:true});
+$("grid").addEventListener("click",e=>{if(Date.now()-cardTapAt<900&&e.target.closest(".card"))e.preventDefault()},true);
 let h3=false,threeP=null;const threeLib=()=>threeP||(threeP=import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"));function maybeHero(){if(!h3&&view()==="shop"){h3=true;const go=()=>{hero3d();hero3d2()};if("requestIdleCallback" in window)requestIdleCallback(go,{timeout:matchMedia("(max-width:700px)").matches?5000:2500});else setTimeout(go,1200)}}
 async function hero3d(){const c=$("c3d");if(!c)return;
  if((navigator.connection&&navigator.connection.saveData)||(navigator.connection&&/2g/.test(navigator.connection.effectiveType||""))){c.remove();return}
