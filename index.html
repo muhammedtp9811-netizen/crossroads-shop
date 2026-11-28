@@ -40,7 +40,7 @@
 <link rel="dns-prefetch" href="https://accounts.google.com">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>(function(){var t="dark";try{t=localStorage.getItem("cr_theme")==="light"?"light":"dark"}catch(e){}document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="light"?"#F4F6FB":"#080A10"})();</script>
-<script>(function(){var V="v6f4b3482db",D="",busy=false,CH=null,PENDING=null,TRIES=0,START=Date.now(),LAST=0;
+<script>(function(){var V="v99fe1e7b51",D="",busy=false,CH=null,PENDING=null,TRIES=0,START=Date.now(),LAST=0;
   function busyUI(){return location.hash.indexOf("#checkout")>=0||!!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest("form"))||!!document.querySelector("dialog[open]")}
   function ready(){return !document.hidden&&!busyUI()&&Date.now()-START>3000}
   function clearCache(){try{localStorage.removeItem("cr_pc_t");localStorage.removeItem("cr_st_t")}catch(e){}}
@@ -921,13 +921,13 @@ function ensureQR(){
 function snapCk(){const g=id=>{const e=$(id);return e?e.value:""};const p=document.querySelector("input[name=pm]:checked");return{fn:g("fn"),fp:g("fp"),fe:g("fe"),fa:g("fa"),dc:g("dc"),ut:g("ut"),pm:p?p.value:""}}
 function restoreCk(s){if(!s)return;for(const k of ["fn","fp","fe","fa","dc","ut"])if(s[k]&&$(k))$(k).value=s[k];if(s.pm){const r=document.querySelector('input[name=pm][value="'+s.pm+'"]');if(r){r.checked=true;r.dispatchEvent(new Event("change",{bubbles:true}))}}}
 function renderCheckout(){const el=$("checkout"),snap=view()==="checkout"?snapCk():null;syncCartPrices();
-  if(!ckItems().length){resetProductMeta();el.innerHTML=`<div class="wrap narrow"><h1 style="font-size:clamp(1.8rem,4vw,2.4rem)">Your bag is empty</h1><p>Add something you like, then come back to check out.</p><p style="margin-top:16px"><a class="btn" href="/" data-nav="" style="max-width:240px">Continue shopping</a></p></div>`;return}
+  if(!ckItems().length){resetProductMeta();el.innerHTML=`<div class="wrap narrow"><h2 style="font-size:clamp(1.8rem,4vw,2.4rem);margin:0 0 8px">Your bag is empty</h2><p>Add something you like, then come back to check out.</p><p style="margin-top:16px"><a class="btn" href="/" data-nav="" style="max-width:240px">Continue shopping</a></p></div>`;return}
   if(ST_ERROR){el.innerHTML=`<div class="wrap narrow"><p class="err" style="padding:40px 0 0">We could not load the payment options. Please try again.</p><button class="btn" id="retryPay" type="button">Retry</button></div>`;$("retryPay").onclick=async()=>{const b=$("retryPay");b.disabled=true;b.textContent="Retrying…";await loadSettings();if(view()==="checkout")renderCheckout()};return}
   if(!ST_READY){el.innerHTML=`<div class="wrap narrow"><p class="muted" style="padding:60px 0">Loading payment options…</p></div>`;return}
   const pm=ST.paymentMethod||"both";
   let showCod=pm==="cod"||pm==="both",showUpi=pm==="upi"||pm==="both",showOnline=ST.online&&pm==="both";
   const first=showOnline?"online":ST.upi&&showUpi?"upi":showCod?"cod":"";
-  el.innerHTML=`<div class="wrap"><nav class="bc" aria-label="Breadcrumb"><a href="/" data-nav="">Home</a><span>/</span><b>Checkout</b></nav><h1 style="font-size:clamp(1.8rem,4vw,2.4rem)">Checkout</h1>
+  el.innerHTML=`<div class="wrap"><nav class="bc" aria-label="Breadcrumb"><a href="/" data-nav="">Home</a><span>/</span><b>Checkout</b></nav><h2 style="font-size:clamp(1.8rem,4vw,2.4rem);margin:0 0 8px">Checkout</h2>
   <div class="ck"><form id="f" novalidate class="cardx"><h2 class="fh">Delivery details</h2>
   <label>Full name<input id="fn" autocomplete="name"></label><label>Phone number<input id="fp" inputmode="tel" autocomplete="tel"></label>
   <label>Email (for your receipt)<input id="fe" type="email" autocomplete="email"></label><label>Full address with pincode<textarea id="fa" rows="3" autocomplete="street-address"></textarea></label>
