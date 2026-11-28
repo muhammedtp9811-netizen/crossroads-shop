@@ -2,8 +2,5 @@ User-agent: *
 Allow: /
 Disallow: /admin*
 Disallow: /api/*
-Disallow: /cart
-Disallow: /checkout
-Disallow: /track
 
 Sitemap: https://crossroads-shopping.netlify.app/sitemap.xml
